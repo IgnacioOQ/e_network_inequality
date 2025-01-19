@@ -2,7 +2,7 @@ import numpy as np
 import tqdm
 import pandas as pd
 
-from agents_clean import Agent, Bandit, UncertaintyProblem
+from zollman_setup.agents import Agent, Bandit, UncertaintyProblem
 
 
 class Model:
