@@ -1,9 +1,7 @@
 import numpy as np
 import tqdm
 import pandas as pd
-
 from agents import Agent, Bandit, UncertaintyProblem
-
 
 class Model:
     """
@@ -135,6 +133,12 @@ class Model:
     def agents_update(self):
         for agent in self.agents:
             # gather information from neighbors
+            # if the graph is directed, the neighbors are the successors
+            # https://networkx.org/documentation/stable/reference/classes/generated/networkx.DiGraph.neighbors.html
+            # I will keep it like this so its compatible with undirected graphs
+            # BUT the directed citation networks have to go from citing to cited
+            # namely inverse of the direction of information flow.
+            # and in studying gini we need to consider in-degree mostly
             neighbor_nodes = list(self.network.neighbors(agent.id))
             neighbor_agents = [self.agents[x] for x in neighbor_nodes]
             total_success = agent.n_success
