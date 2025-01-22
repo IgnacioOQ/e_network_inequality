@@ -153,8 +153,6 @@ class Model:
             elif self.agent_type == "bayes":    
                 agent.bayes_update(total_success, total_experiments)
                 # The Jeffrey update is not really working still
-            elif self.agent_type == 'perceptron':
-                agent.perceptron_update(total_success, total_experiments)
             elif self.agent_type == "jeffrey":
                 for neighbor in neighbor_agents: # I am here copying what Weisberg did
                     if neighbor.id==agent.id:

@@ -149,25 +149,7 @@ class Agent:
         self.credence = mean[0]
         self.credence_history.append(self.credence) # this is usually a vector to factor multiple theories
 
-    def perceptron_update(self,n_success,n_experiments):
-        # Update inner variables
-        self.accumulated_successes += n_success
-        self.accumulated_failures += (n_experiments-n_success)
-        n_failures = n_experiments - n_success
-        # train the inner perceptron with incoming data
-        success_rate = n_success/n_experiments #this will be our label
-        training_input = np.array([[n_success,n_failures]])
-        label = np.array([success_rate])
-        self.inner_perceptron.train(training_input, label)
-        # Now we need an estimate for the credence
-        # let it be the prediction over the accumulated information
-        #print(type(self.accumulated_successes))
-        test_input = np.array([self.accumulated_successes[0], self.accumulated_failures[0]])
-        #print(test_input.shape)
-        big_prediction = self.inner_perceptron.predict(test_input)
-        self.credence = big_prediction
-        self.credence_history.append(self.credence)
-        
+       
     def jeffrey_update(self, neighbor, uncertainty, mistrust_rate=0.5):
         """
         Updates the agent's credence using Jeffrey's rule.
