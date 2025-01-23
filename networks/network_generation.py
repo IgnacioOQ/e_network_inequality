@@ -1,4 +1,5 @@
 import networkx as nx
+import random
 
 def barabasi_albert_directed(n, m):
     """
