@@ -5,7 +5,7 @@ import numpy as np
 import seaborn as sns
 
 # Plotting Functions
-def plot_network_degree_distribution(G, directed=False, title='title'):
+def plot_network_degree_distribution(G, directed=True, title='title'):
     if directed:
         degrees = np.array([degree for node, degree in G.in_degree()])
     else:
@@ -29,7 +29,7 @@ def plot_network_degree_distribution(G, directed=False, title='title'):
     plt.xticks(fontsize=8,rotation=20)
     plt.show()
     
-def plot_loglog(G,directed=False,m=10):
+def plot_loglog(G,directed=True,m=10):
     if directed:
         # Get the in-degree of all nodes
         in_degrees = [d for _, d in G.in_degree()]

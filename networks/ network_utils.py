@@ -75,3 +75,60 @@ def get_connected_component(G):
   largest_cc = max(nx.weakly_connected_components(G), key=len)
   G = G.subgraph(largest_cc)
   return G
+
+
+
+
+def calculate_degree_gini(degrees):
+    # Sort the degrees in ascending order
+    sorted_degrees = sorted(degrees)
+    n = len(degrees)
+
+    # Calculate the cumulative sum of the sorted degrees
+    cumulative_degrees = sum(sorted_degrees)
+
+    # Calculate the Gini coefficient
+    gini_numerator = 0
+    for i, degree in enumerate(sorted_degrees):
+        gini_numerator += (i + 1) * degree
+
+    gini_denominator = n * cumulative_degrees
+
+    # Gini formula
+    gini_coefficient = (2 * gini_numerator) / gini_denominator - (n + 1) / n
+
+    return gini_coefficient
+
+
+
+
+def network_statistics(G):
+    stats = {}
+
+    # Number of nodes and edges#
+#    stats['number_of_nodes'] = G.number_of_nodes()
+#    stats['number_of_edges'] = G.number_of_edges()
+
+    # Average degree
+    degrees = [deg for _, deg in G.degree()]
+    stats['average_degree'] = sum(degrees) / len(degrees)
+
+    # Gini coefficient
+    #print(degrees)
+    stats['degree_gini_coefficient'] = calculate_degree_gini(degrees)
+
+    # Approximate average clustering coefficient
+    stats['approx_average_clustering_coefficient'] = nx.average_clustering(G)#, trials=50000)
+
+    # Calculate the diameter (approximate)
+    if nx.is_connected(G):
+        stats['diameter'] = nx.diameter(G)
+    else:
+        largest_component = max(nx.connected_components(G), key=len)
+        subgraph = G.subgraph(largest_component)
+        stats['diameter'] = nx.diameter(subgraph)
+
+    # Add additional metrics as needed here, e.g., centrality measures
+
+    return stats
+
