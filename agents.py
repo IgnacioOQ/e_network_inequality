@@ -64,7 +64,6 @@ class Agent:
         self.credence: float = rd.uniform(0, 1)
         self.credence_history = []
         self.credence_history.append(self.credence)
-        self.inner_perceptron = Perceptron(input_size=2, learning_rate=0.1, epochs=10)
         self.epsilon=0.1
         
     def init_bayes(self):
@@ -144,8 +143,6 @@ class Agent:
     def beta_update(self,n_success,n_experiments):
         self.accumulated_successes += n_success
         self.accumulated_failures += (n_experiments-n_success)
-        p_new_better = 0.5 + self.uncertainty_problem.uncertainty
-        p_new_worse = 0.5 - self.uncertainty_problem.uncertainty   
         mean, var= beta.stats(self.accumulated_successes, self.accumulated_failures, moments='mv')
         self.credence = mean[0]
         self.credence_history.append(self.credence) # this is usually a vector to factor multiple theories
@@ -315,3 +312,105 @@ if False:#__name__ == "__main__":
     # Test the perceptron
     test_input = np.array([2, 3])
     print("Prediction for input [2, 3]:", perceptron.predict(test_input))
+
+
+# class Bandit:
+#     def __init__(self, p_theories=None):
+#         if p_theories is None:
+#             self.n_theories = 2
+#             self.p_theories = np.random.random(2)
+#         if p_theories is not None:
+#             self.n_theories = len(p_theories)
+#             self.p_theories = p_theories
+
+#     def experiment(self, theory, n_experiments):
+#         p_theory = self.p_theories[theory]
+#         n_success = rd.binomial(n_experiments, p_theory)
+#         return n_success, n_experiments
+
+
+# class BetaAgent:
+#     """Inspired by Zollman, Kevin J. S. 2010. The Epistemic Benefit of Transient
+#     Diversity. Erkenntnis 72 (1): 17--35. https://doi.org/10.1007/s10670-009-9194-6.
+#     (Especially sections 2 and 3.)
+
+#     Attributes:
+#     - id: The id of the BetaAgent
+#     - beliefs (np.array): The beliefs of the agent. Each index of the array represents a
+#     theory and contains an array the form [alpha (float), beta (float)]
+#     representing the beta-distribution that models the agent's beliefs about that
+#     theory.
+#     - experiment_result (np.array): The result of the agent's last experiment.
+#     Each index of the array represents a theory and contains an array of the form
+#     [n_success (int), n_experiments (int)] representing the result of the experiment on
+#     that theory, if any. If there is no experiment on a given theory, then the result of
+#     the experiment on that theory is [0, 0].
+
+#     Methods:
+#     - __init__(self): Initializes the BetaAgent object.
+#     - __str__(self): Returns a string representation of the BetaAgent object.
+#     - n_theories (int): The number of theories under consideration.
+#     - experiment(self, n_experiments, p_theories): Performs an experiment and updates
+#     the agent's experiment_result.
+#     - beta_update(self, experiment_results): Updates the agent's beliefs on the basis of
+#     experiments. Experiments are represented by an array, where each index of the array
+#     represents a theory and contains an array of the form [n_success (int),
+#     n_experiments (int)] representing the result of the experiments.
+#     """
+
+#     def __init__(self, id, bandit: Bandit):
+#         self.id = id
+#         self.bandit = bandit
+#         self.n_theories = bandit.n_theories
+#         self.beliefs: np.array = np.array(
+#             [[rd.random(), rd.random()] for _ in range(self.n_theories)]
+#         )
+#         self.experiment_result: np.array = np.array(
+#             [[0, 0] for _ in range(self.n_theories)]
+#         )
+
+#     def __str__(self):
+#         return (
+#             # f"credence = {round(self.credence, 2)}, n_success = {self.n_success},"
+#             # f"n_experiments = {self.n_experiments}, alpha = {self.alpha},"
+#             # f"beta = {self.beta}"
+#         )
+
+#     def experiment(self, n_experiments: int):
+#         """Performs an experiment and updates the agent's experiment_result.
+
+#         Args:
+#         - n_experiments (int): The number of experiments.
+#         - p_theories (np.array): The probabilities of success, one for each theory."""
+#         # Reset experiment_result
+#         self.experiment_result = np.array([[0, 0] for _ in range(self.n_theories)])
+
+#         decision = self.decision()
+
+#         # Perform experiment on that theory and update experiment_result
+#         n_success, n_experiments = self.bandit.experiment(decision, n_experiments)
+#         self.experiment_result[decision] = [n_success, n_experiments]
+
+#     def decision(self):
+#         credences = np.array(
+#             [
+#                 self.beliefs[theory_id][0]
+#                 / (self.beliefs[theory_id][0] + self.beliefs[theory_id][1])
+#                 for theory_id in range(self.n_theories)
+#             ]
+#         )
+#         return rd.choice(np.flatnonzero(credences == np.max(credences)))
+
+#     def beta_update(self, experiment_results):
+#         """Updates the agent's beliefs based on experiment_results.
+
+#         Args:
+#         - experiment_results (np.array): An array representing the results from
+#         experiments represented in an array.
+#         """
+#         for theory in range(self.n_theories):
+#             n_success = experiment_results[theory][0]
+#             n_experiments = experiment_results[theory][1]
+#             n_failures = n_experiments - n_success
+#             self.beliefs[theory][0] += n_success
+#             self.beliefs[theory][1] += n_failures
