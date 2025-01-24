@@ -1,7 +1,6 @@
 from imports import *  
 
 # Plotting functions
-
 def plot_network_degree_distribution(G, directed=True, title='title'):
     if directed:
         degrees = np.array([degree for node, degree in G.in_degree()])
@@ -117,8 +116,12 @@ def get_connected_component(G):
   G = G.subgraph(largest_cc)
   return G
 
-
-def calculate_degree_gini(degrees):
+# Network statistics
+def calculate_degree_gini(G, directed = True):
+    if directed:
+        degrees = [deg for _, deg in G.in_degree()]
+    else:
+        degrees = [deg for _, deg in randomized_network.degree()]
     # Sort the degrees in ascending order
     sorted_degrees = sorted(degrees)
     n = len(degrees)
@@ -139,31 +142,64 @@ def calculate_degree_gini(degrees):
     return gini_coefficient
 
 
-def network_statistics(G):
+def network_statistics(G, directed = True):
     stats = {}
 
-    # Number of nodes and edges#
-#    stats['number_of_nodes'] = G.number_of_nodes()
-#    stats['number_of_edges'] = G.number_of_edges()
-
     # Average degree
-    degrees = [deg for _, deg in G.degree()]
+    if directed:
+        degrees = [deg for _, deg in G.in_degree()]
+    else:
+        degrees = [deg for _, deg in G.degree()]
     stats['average_degree'] = sum(degrees) / len(degrees)
 
     # Gini coefficient
     #print(degrees)
-    stats['degree_gini_coefficient'] = calculate_degree_gini(degrees)
+    stats['degree_gini_coefficient'] = calculate_degree_gini(degrees, directed=directed)
 
     # Approximate average clustering coefficient
-    stats['approx_average_clustering_coefficient'] = nx.average_clustering(G)#, trials=50000)
+    try:
+        if directed: 
+            # Calculate clustering coefficient considering directions
+            clustering_directed = nx.clustering(G, mode='dot')
+            avg_clustering = sum(clustering_directed.values()) / len(clustering_directed)
+        # Calculate average clustering coefficient (ignoring edge directions)
+        else:
+            avg_clustering = nx.average_clustering(G)
+    except:
+        avg_clustering = 0   
+    stats['approx_average_clustering_coefficient'] = avg_clustering
 
     # Calculate the diameter (approximate)
-    if nx.is_connected(G):
-        stats['diameter'] = nx.diameter(G)
+    if directed:    
+        if nx.is_strongly_connected(G):
+            stats['diameter'] = nx.diameter(G)
+        else:
+            stats['diameter'] = 0
+            # largest_component = max(nx.weakly_connected_components(G), key=len)
+            # subgraph = G.subgraph(largest_component)
+            # stats['diameter'] = nx.diameter(subgraph)
     else:
-        largest_component = max(nx.connected_components(G), key=len)
-        subgraph = G.subgraph(largest_component)
-        stats['diameter'] = nx.diameter(subgraph)
+        if nx.is_connected(G):
+            stats['diameter'] = nx.diameter(G)
+        else:
+            stats['diameter'] = 0
+            # largest_component = max(nx.connected_components(G), key=len)
+            # subgraph = G.subgraph(largest_component)
+            # stats['diameter'] = nx.diameter(subgraph)
+
+    if directed:
+        in_degrees = np.array([d for _, d in G.in_degree()])
+        # out_degrees = np.array([d for _, d in graph.out_degree()])
+        in_hist, _ = np.histogram(in_degrees, bins=range(np.max(in_degrees) + 2), density=True)
+        # out_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
+        in_entropy = -np.sum(in_hist[in_hist > 0] * np.log(in_hist[in_hist > 0]))
+        # out_entropy = -np.sum(out_hist[out_hist > 0] * np.log(out_hist[out_hist > 0]))
+        stats['degree_entropy'] = in_entropy
+    else:
+        degrees = np.array([d for _, d in G.degree()])
+        hist, _ = np.histogram(degrees, bins=range(np.max(degrees) + 2), density=True)
+        entropy = -np.sum(hist[hist > 0] * np.log(hist[hist > 0]))
+        stats['degree_entropy'] = entropy
 
     # Add additional metrics as needed here, e.g., centrality measures
 
