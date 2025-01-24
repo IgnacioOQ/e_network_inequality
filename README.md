@@ -12,5 +12,10 @@ This means that the directed networks we are going to use are inverse of the dir
 2. Networks
 
 - network_utils.py where the plotting functions, as well as some cleaning functions and the network statistic functions are defined.
+- network_generation.py defines the generative models that we are going to use.
+- network_randomization.py is a single file containing the network randomization function that is at the core of our project.
+- getting_citations_networks.ipynb (still unclean) is a self contained notebook that we used to generate the empirical networks used for the study.
+- networ_testing.ipynb tests the functions defined here.
 
+  
 3. 
