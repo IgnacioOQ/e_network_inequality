@@ -154,7 +154,7 @@ def network_statistics(G, directed = True):
 
     # Gini coefficient
     #print(degrees)
-    stats['degree_gini_coefficient'] = calculate_degree_gini(degrees, directed=directed)
+    stats['degree_gini_coefficient'] = calculate_degree_gini(G, directed=directed)
 
     # Approximate average clustering coefficient
     try:
