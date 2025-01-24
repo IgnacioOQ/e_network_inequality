@@ -16,7 +16,7 @@ This means that the directed networks we are going to use are inverse of the dir
   - Since we constructed the networks inverse to the direction of flow, the relevant degree (for gini, entropy, etc.) is the in_degree.
   - Since some network properties might not be defined, there are some ad-hoc definitions to deal with this.
   - Advanced network plotting functions are not defined.
-- network_generation.py defines the generative models that we are going to use.
+- network_generation.py defines the generative models that we are going to use. We need to continue working on this.
 - network_randomization.py is a single file containing the network randomization function that is at the core of our project.
 - getting_citations_networks.ipynb (still unclean) is a self contained notebook that we used to generate the empirical networks used for the study.
 - Both the (clean) peptic ulcer and the perceptron networks are in the repository.
