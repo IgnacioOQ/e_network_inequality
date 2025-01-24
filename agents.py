@@ -1,6 +1,7 @@
-import numpy as np
-import numpy.random as rd
-from scipy.stats import beta
+# import numpy as np
+# import numpy.random as rd
+# from scipy.stats import beta
+from imports import *  
 
 class UncertaintyProblem:
     """
