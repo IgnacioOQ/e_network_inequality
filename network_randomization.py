@@ -1,5 +1,4 @@
-import networkx as nx
-import random
+from imports import *
 
 def randomize_network(G, p_rewiring):
     edges = list(G.edges()).copy()
