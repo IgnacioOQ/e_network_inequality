@@ -121,7 +121,7 @@ def calculate_degree_gini(G, directed = True):
     if directed:
         degrees = [deg for _, deg in G.in_degree()]
     else:
-        degrees = [deg for _, deg in randomized_network.degree()]
+        degrees = [deg for _, deg in G.degree()]
     # Sort the degrees in ascending order
     sorted_degrees = sorted(degrees)
     n = len(degrees)
@@ -158,13 +158,7 @@ def network_statistics(G, directed = True):
 
     # Approximate average clustering coefficient
     try:
-        if directed: 
-            # Calculate clustering coefficient considering directions
-            clustering_directed = nx.clustering(G, mode='dot')
-            avg_clustering = sum(clustering_directed.values()) / len(clustering_directed)
-        # Calculate average clustering coefficient (ignoring edge directions)
-        else:
-            avg_clustering = nx.average_clustering(G)
+        avg_clustering = nx.average_clustering(G)
     except:
         avg_clustering = 0   
     stats['approx_average_clustering_coefficient'] = avg_clustering
