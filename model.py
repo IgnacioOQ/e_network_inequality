@@ -109,24 +109,24 @@ class Model:
                 break
             self.conclusion = true_consensus_condition(credences_post)  # We should set this even if we don't break, right??? - MN
         
-        self.add_agent_history()
+        self.add_agents_history()
             
 
     def step(self):
         """Updates the model with one step, consisting of experiments and updates."""
         self.n_steps+=1
-        experiment_results = self.agents_experiment()
-        self.agents_update(experiment_results)
+        experiments_results = self.agents_experiment()
+        self.agents_update(experiments_results)
 
     def agents_experiment(self):
-        experiment_results = {}
+        experiments_results = {}
         for agent in self.agents:
             theory_index, n_success, n_failures = agent.greedy_experiment(self.n_experiments)
-            experiment_results[agent.id]=[theory_index, n_success, n_failures]
+            experiments_results[agent.id]=[theory_index, n_success, n_failures]
         # print('experiments done')
-        return experiment_results
+        return experiments_results
 
-    def agents_update(self,experiment_results):
+    def agents_update(self,experiments_results):
         for agent in self.agents:
             # gather information from neighbors
             # if the graph is directed, the neighbors are the successors
@@ -136,9 +136,9 @@ class Model:
             # namely inverse of the direction of information flow.
             # and in studying gini we need to consider in-degree mostly
             neighbor_nodes = list(self.network.neighbors(agent.id))
-            theories_exp_results = [[0,0],[0,0]]
+            theories_exp_results = np.array([np.array([0,0]),np.array([0,0])])
             for id in neighbor_nodes:
-                results = experiment_results[id]
+                results = experiments_results[id]
                 theory_index = results[0]
                 successes = results[1]
                 failures = results[2]
@@ -150,7 +150,7 @@ class Model:
             agent.beta_update(1,theories_exp_results[1][0], theories_exp_results[1][1])
 
                 
-    def add_agent_history(self):
+    def add_agents_history(self):
         self.agent_histories = [agent.credences_history for agent in self.agents]
         #agent_choices = [agent.choice_history for agent in self.agents]
         #self.agents_choices = pd.DataFrame(agent_choices)

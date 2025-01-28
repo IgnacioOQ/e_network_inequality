@@ -54,7 +54,7 @@ class BetaAgent:
     credence using Jeffrey's rule.
     """
 
-    def __init__(self, id, uncertainty_problem: UncertaintyProblem):
+    def __init__(self, id, uncertainty_problem = UncertaintyProblem):
         self.id = id
         self.uncertainty_problem = uncertainty_problem
         
@@ -69,8 +69,7 @@ class BetaAgent:
         # self.choice_history = []
         # self.epsilon=0.1
         
-    # I am not sure adding epsilon greedy helps because in this case all models will
-    # achieve correct true consensus
+    # Fully greedy update (no epsilon)
     def greedy_experiment(self, n_experiments: int):
         # I want to break ties at random
         # Find all indices of the maximum value
@@ -91,7 +90,7 @@ class BetaAgent:
         self.alphas_betas[theory_index][1]+= n_failures
         # update credences
         alpha = self.alphas_betas[theory_index][0]
-        b = self.alphas_betas[theory_index][1]
+        b = self.alphas_betas[theory_index][1] # cant use 'beta' because thats the stats function
         mean= beta.stats(alpha, b, moments='m')   
         self.credences[theory_index] = mean
         self.credences_history.append(self.credences) # this is usually a vector to factor multiple theories
