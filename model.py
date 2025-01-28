@@ -137,13 +137,15 @@ class Model:
             # and in studying gini we need to consider in-degree mostly
             neighbor_nodes = list(self.network.neighbors(agent.id))
             theories_exp_results = np.array([np.array([0,0]),np.array([0,0])])
+            results = experiments_results[agent.id]
+            theory_index = results[0]
+            theories_exp_results[theory_index][0]+=results[1]
+            theories_exp_results[theory_index][1]+=results[2]
             for id in neighbor_nodes:
                 results = experiments_results[id]
                 theory_index = results[0]
-                successes = results[1]
-                failures = results[2]
-                theories_exp_results[theory_index][0]+=successes
-                theories_exp_results[theory_index][1]+=failures
+                theories_exp_results[theory_index][0]+=results[1] #n_success
+                theories_exp_results[theory_index][1]+=results[2] #n_failures
 
             # update
             agent.beta_update(0,theories_exp_results[0][0], theories_exp_results[0][1])

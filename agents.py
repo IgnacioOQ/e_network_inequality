@@ -91,6 +91,9 @@ class BetaAgent:
         # update credences
         alpha = self.alphas_betas[theory_index][0]
         b = self.alphas_betas[theory_index][1] # cant use 'beta' because thats the stats function
-        mean= beta.stats(alpha, b, moments='m')   
-        self.credences[theory_index] = mean
-        self.credences_history.append(self.credences) # this is usually a vector to factor multiple theories
+        new_credences = self.credences.copy()
+        mean= beta.stats(alpha, b, moments='m')
+        new_credences[theory_index] = mean
+        self.credences = new_credences
+        # self.credences[theory_index] = mean
+        self.credences_history.append(new_credences) # this is usually a vector to factor multiple theories
