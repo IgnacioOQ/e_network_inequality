@@ -90,8 +90,8 @@ class BetaAgent:
         self.alphas_betas[theory_index][0]+= n_success
         self.alphas_betas[theory_index][1]+= n_failures
         # update credences
-        alpha = int(self.alphas_betas[theory_index][0])
-        b = int(self.alphas_betas[theory_index][1])
+        alpha = self.alphas_betas[theory_index][0]
+        b = self.alphas_betas[theory_index][1]
         mean= beta.stats(alpha, b, moments='m')   
         self.credences[theory_index] = mean
         self.credences_history.append(self.credences) # this is usually a vector to factor multiple theories
