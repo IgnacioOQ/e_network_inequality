@@ -2,7 +2,7 @@
 # import tqdm
 # import pandas as pd
 from imports import *  
-from agents import Agent, Bandit, UncertaintyProblem
+from agents import BetaAgent, UncertaintyProblem
 
 class Model:
     """
@@ -30,10 +30,10 @@ class Model:
         self,
         network,
         n_experiments: int,
-        agent_type: str,
+        # agent_type: str,
         uncertainty: float = None,
         p_theories: list = None,
-        tolerance = 1e-05,
+        tolerance = 1e-03,
         *args,
         **kwargs
     ):
@@ -44,18 +44,9 @@ class Model:
         # else:
         self.uncertainty_problem = UncertaintyProblem(uncertainty)
         self.agents = [
-            Agent(i, self.uncertainty_problem) for i in range(self.n_agents)
+            BetaAgent(i, self.uncertainty_problem) for i in range(self.n_agents)
         ]
-        self.agent_type = agent_type
-        # Theres a choice of initialization to be made
-        #if self.agent_type == "beta":
-            #for agent in self.agents:
-                #agent.init_beta()
-        #if self.agent_type == "bayes":
-            #for agent in self.agents:
-                #agent.init_bayes()
-            #self.bandit = Bandit(p_theories)
-            # self.agents = [BetaAgent(i, self.bandit) for i in range(self.n_agents)]
+        # self.agent_type = agent_type
         self.n_steps = 0
         self.tolerance = tolerance
         
@@ -82,14 +73,14 @@ class Model:
             # the tolerance is too tight, originally: rtol=1e-05, atol=1e-08
             return np.allclose(credences_prior, credences_post,rtol=self.tolerance, atol=self.tolerance)
         
-        # This stop condition is (similar to) what Zollman says in the paper pg. 8
-        # Namely the process changes if scientists are making the same choice before and after
-        def stop_condition2(self):
-            agents_choices = [agent.choice_history for agent in self.agents]
-            length = len(agents_choices[0])
-            previous_choices = [hist[length-2] for hist in agents_choices]
-            present_choices = [hist[length-1] for hist in agents_choices] # this shouldnt' have worked due to a typo. Did we use this somewhere? Investigate! (MN)
-            return np.allclose(np.array(previous_choices), np.array(present_choices))
+        # # This stop condition is (similar to) what Zollman says in the paper pg. 8
+        # # Namely the process changes if scientists are making the same choice before and after
+        # def stop_condition2(self):
+        #     agents_choices = [agent.choice_history for agent in self.agents]
+        #     length = len(agents_choices[0])
+        #     previous_choices = [hist[length-2] for hist in agents_choices]
+        #     present_choices = [hist[length-1] for hist in agents_choices] # this shouldnt' have worked due to a typo. Did we use this somewhere? Investigate! (MN)
+        #     return np.allclose(np.array(previous_choices), np.array(present_choices))
             
         def true_consensus_condition(credences: np.array) -> float:
             return (credences > 0.5).mean()
@@ -102,9 +93,9 @@ class Model:
         alternative_stop = False
         self.conclusion_alternative_stop = False
         for _ in iterable:
-            credences_prior = np.array([agent.credence for agent in self.agents])
+            credences_prior = np.array([agent.credences for agent in self.agents])
             self.step()
-            credences_post = np.array([agent.credence for agent in self.agents])
+            credences_post = np.array([agent.credences for agent in self.agents])
             # if not alternative_stop:
             #     if alternative_stop_condition(credences_prior, credences_post):
             #         alternative_stop = True
@@ -124,14 +115,18 @@ class Model:
     def step(self):
         """Updates the model with one step, consisting of experiments and updates."""
         self.n_steps+=1
-        self.agents_experiment()
-        self.agents_update()
+        experiment_results = self.agents_experiment()
+        self.agents_update(experiment_results)
 
     def agents_experiment(self):
+        experiment_results = {}
         for agent in self.agents:
-            agent.experiment(self.n_experiments)
+            theory_index, n_success, n_failures = agent.greedy_experiment(self.n_experiments)
+            experiment_results[agent.id]=[theory_index, n_success, n_failures]
+        # print('experiments done')
+        return experiment_results
 
-    def agents_update(self):
+    def agents_update(self,experiment_results):
         for agent in self.agents:
             # gather information from neighbors
             # if the graph is directed, the neighbors are the successors
@@ -141,35 +136,21 @@ class Model:
             # namely inverse of the direction of information flow.
             # and in studying gini we need to consider in-degree mostly
             neighbor_nodes = list(self.network.neighbors(agent.id))
-            neighbor_agents = [self.agents[x] for x in neighbor_nodes]
-            total_success = agent.n_success
-            total_experiments = agent.n_experiments
-            for neighbor in neighbor_agents:
-                total_success += neighbor.n_success
-                total_experiments += neighbor.n_experiments
+            theories_exp_results = [[0,0],[0,0]]
+            for id in neighbor_nodes:
+                results = experiment_results[id]
+                theory_index = results[0]
+                successes = results[1]
+                failures = results[2]
+                theories_exp_results[theory_index][0]+=successes
+                theories_exp_results[theory_index][1]+=failures
 
             # update
-            if self.agent_type == "beta":
-                agent.beta_update(total_success, total_experiments)
-            elif self.agent_type == "bayes":    
-                agent.bayes_update(total_success, total_experiments)
-                # The Jeffrey update is not really working still
-            elif self.agent_type == "jeffrey":
-                for neighbor in neighbor_agents: # I am here copying what Weisberg did
-                    if neighbor.id==agent.id:
-                        agent.bayes_update(agent.n_success, agent.n_experiments)
-                    else:
-                        neighbor_n_success = int(neighbor.n_success)
-                        neighbor_n_experiments=int(neighbor.n_experiments)
-                        #print(type(neighbor_n_success))
-                        #print(type(neighbor_n_experiments))
-                        neigbor_n_failures = neighbor_n_experiments - neighbor_n_success
-                        #print(type(neigbor_n_failures))
-                        neighbor_credence = neighbor.credence
-                        agent.jeffrey_updatev2(neighbor_n_success, neigbor_n_failures,neighbor_credence)
-                
+            agent.beta_update(0,theories_exp_results[0][0], theories_exp_results[0][1])
+            agent.beta_update(1,theories_exp_results[1][0], theories_exp_results[1][1])
+
                 
     def add_agent_history(self):
-        self.agent_histories = [agent.credence_history for agent in self.agents]
+        self.agent_histories = [agent.credences_history for agent in self.agents]
         #agent_choices = [agent.choice_history for agent in self.agents]
         #self.agents_choices = pd.DataFrame(agent_choices)
