@@ -88,7 +88,9 @@ class Model:
         # should I look at the second coordinate (the one corresponding to the alternative theory?)
         def true_consensus_condition(credences: np.array) -> float:
             second_coordinates = np.array([credences[1] for pair in credences])
-            return (second_coordinates > 0.5).mean()
+            # Count how many pairs have the second coordinate larger than the first
+            counts = np.sum([pair[1] > pair[0] for pair in credences])
+            return counts/len(credences) #(second_coordinates > 0.5).mean()
 
         iterable = range(number_of_steps)
 
