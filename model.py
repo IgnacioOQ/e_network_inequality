@@ -45,7 +45,7 @@ class Model:
         # else:
         self.uncertainty_problem = UncertaintyProblem(uncertainty)
         self.agents = [
-            BetaAgent(i, self.uncertainty_problem) for i in range(self.n_agents)
+            BetaAgent(i, self.uncertainty_problem,histories=histories) for i in range(self.n_agents)
         ]
         # self.agent_type = agent_type
         self.n_steps = 0
