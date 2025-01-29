@@ -123,23 +123,12 @@ def calculate_degree_gini(G, directed = True):
     else:
         degrees = [deg for _, deg in G.degree()]
     # Sort the degrees in ascending order
-    sorted_degrees = sorted(degrees)
-    n = len(degrees)
+    sorted_x = np.sort(np.array(degrees))
+    n = len(np.array(degrees))
+    cumx = np.cumsum(sorted_x, dtype=float)
+    gini = (n + 1 - 2 * np.sum(cumx) / cumx[-1]) / n
 
-    # Calculate the cumulative sum of the sorted degrees
-    cumulative_degrees = sum(sorted_degrees)
-
-    # Calculate the Gini coefficient
-    gini_numerator = 0
-    for i, degree in enumerate(sorted_degrees):
-        gini_numerator += (i + 1) * degree
-
-    gini_denominator = n * cumulative_degrees
-
-    # Gini formula
-    gini_coefficient = (2 * gini_numerator) / gini_denominator - (n + 1) / n
-
-    return gini_coefficient
+    return gini
 
 
 def network_statistics(G, directed = True):
