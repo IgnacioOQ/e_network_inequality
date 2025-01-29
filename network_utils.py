@@ -113,8 +113,8 @@ def remove_duplicate_nodes_undirected(G, consider='both'):
 def get_connected_component(G):
   # Extract largest component:
   largest_cc = max(nx.weakly_connected_components(G), key=len)
-  G = G.subgraph(largest_cc)
-  return G
+#   G = G.subgraph(largest_cc)
+  return G.subgraph(largest_cc)
 
 # Network statistics
 def calculate_degree_gini(G, directed = True):
@@ -157,18 +157,14 @@ def network_statistics(G, directed = True):
     stats['degree_gini_coefficient'] = calculate_degree_gini(G, directed=directed)
 
     # Approximate average clustering coefficient
-    try:
-        avg_clustering = nx.average_clustering(G)
-    except:
-        avg_clustering = 0   
-    stats['approx_average_clustering_coefficient'] = avg_clustering
+    stats['approx_average_clustering_coefficient'] = nx.average_clustering(G)
 
     # Calculate the diameter (approximate)
     if directed:    
         if nx.is_strongly_connected(G):
             stats['diameter'] = nx.diameter(G)
         else:
-            stats['diameter'] = 0
+            stats['diameter'] = len(G.nodes)+1
             # largest_component = max(nx.weakly_connected_components(G), key=len)
             # subgraph = G.subgraph(largest_component)
             # stats['diameter'] = nx.diameter(subgraph)
@@ -176,7 +172,7 @@ def network_statistics(G, directed = True):
         if nx.is_connected(G):
             stats['diameter'] = nx.diameter(G)
         else:
-            stats['diameter'] = 0
+            stats['diameter'] = len(G.nodes)+1
             # largest_component = max(nx.connected_components(G), key=len)
             # subgraph = G.subgraph(largest_component)
             # stats['diameter'] = nx.diameter(subgraph)
