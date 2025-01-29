@@ -83,9 +83,12 @@ class Model:
         #     previous_choices = [hist[length-2] for hist in agents_choices]
         #     present_choices = [hist[length-1] for hist in agents_choices] # this shouldnt' have worked due to a typo. Did we use this somewhere? Investigate! (MN)
         #     return np.allclose(np.array(previous_choices), np.array(present_choices))
-            
+        
+        # I am not sure how this true consensus should work
+        # should I look at the second coordinate (the one corresponding to the alternative theory?)
         def true_consensus_condition(credences: np.array) -> float:
-            return (credences > 0.5).mean()
+            second_coordinates = np.array([credences[1] for pair in credences])
+            return (second_coordinates > 0.5).mean()
 
         iterable = range(number_of_steps)
 
