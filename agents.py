@@ -68,8 +68,6 @@ class BetaAgent:
         if self.histories:
             self.credences_history = []
             self.credences_history.append(self.credences)
-        # self.choice_history = []
-        # self.epsilon=0.1
         
     # Fully greedy update (no epsilon)
     def greedy_experiment(self, n_experiments: int):
