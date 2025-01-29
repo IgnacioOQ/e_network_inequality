@@ -59,7 +59,7 @@ class BetaAgent:
         self.uncertainty_problem = uncertainty_problem
         
         # Initializing Beta Agent
-        # For the beta agent, for each of the two theories we store history of successess and failures
+        # For the beta agent, for each of the two theories we store accumulated successess and failures
         # initialize with one success and one failure for each theory
         self.alphas_betas = np.array([np.array([1,1]),np.array([1,1])])
         mean = beta.stats(1, 1, moments='m')        
