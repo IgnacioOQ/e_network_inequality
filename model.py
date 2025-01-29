@@ -34,6 +34,7 @@ class Model:
         uncertainty: float = None,
         p_theories: list = None,
         tolerance = 1e-04,
+        histories = False,
         *args,
         **kwargs
     ):
@@ -49,6 +50,7 @@ class Model:
         # self.agent_type = agent_type
         self.n_steps = 0
         self.tolerance = tolerance
+        self.histories = histories
         
     def run_simulation(
         self, number_of_steps: int = 10**6, show_bar: bool = False, *args, **kwargs
@@ -109,7 +111,8 @@ class Model:
                 break
             self.conclusion = true_consensus_condition(credences_post)  # We should set this even if we don't break, right??? - MN
         
-        self.add_agents_history()
+        if self.histories:
+            self.add_agents_history()
             
 
     def step(self):

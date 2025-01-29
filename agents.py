@@ -54,7 +54,7 @@ class BetaAgent:
     credence using Jeffrey's rule.
     """
 
-    def __init__(self, id, uncertainty_problem = UncertaintyProblem):
+    def __init__(self, id, uncertainty_problem = UncertaintyProblem, histories=False):
         self.id = id
         self.uncertainty_problem = uncertainty_problem
         
@@ -64,8 +64,10 @@ class BetaAgent:
         self.alphas_betas = np.array([np.array([1,1]),np.array([1,1])])
         mean = beta.stats(1, 1, moments='m')        
         self.credences = np.array([mean,mean])
-        self.credences_history = []
-        self.credences_history.append(self.credences)
+        self.histories = histories
+        if self.histories:
+            self.credences_history = []
+            self.credences_history.append(self.credences)
         # self.choice_history = []
         # self.epsilon=0.1
         
@@ -96,4 +98,5 @@ class BetaAgent:
         new_credences[theory_index] = mean
         self.credences = new_credences
         # self.credences[theory_index] = mean
-        self.credences_history.append(new_credences) # this is usually a vector to factor multiple theories
+        if self.histories:
+            self.credences_history.append(new_credences) # this is usually a vector to factor multiple theories
