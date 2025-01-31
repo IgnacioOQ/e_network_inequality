@@ -65,5 +65,5 @@ def run_simulation_with_params(param_dict, number_of_steps=20000, show_bar=False
     return result_dict
 
 # Wrapper function for multiprocessing
-def run_simulation_wrapper(param_dict, number_of_steps=500):
+def run_simulation_wrapper(param_dict, number_of_steps=5000):
     return run_simulation_with_params(param_dict, number_of_steps=number_of_steps, show_bar=False)
