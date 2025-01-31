@@ -145,26 +145,39 @@ def network_statistics(G, directed = True):
     #print(degrees)
     stats['degree_gini_coefficient'] = calculate_degree_gini(G, directed=directed)
 
-    # Approximate average clustering coefficient
-    stats['approx_average_clustering_coefficient'] = nx.average_clustering(G)
-
+    # Notes on clustering:
+    # 1. nx.average_clustering(G) says:
+    # "Directed graphs and weight parameter are not yet supported." 
+    # so idk what to do about that.
+    # 2. nx.clustering(G) returns a dictionary of clustering coefficients 
+    # # for each node, which can be later averaged.
+    # stats['approx_average_clustering_coefficient'] = nx.average_clustering(G)
+    # Compute clustering for each node
+    # it allows us to use weights, which we have...
+    clustering_values = nx.clustering(G, weight="weight")
+    # Compute the average clustering coefficient manually
+    average_clustering = sum(clustering_values.values()) / len(clustering_values)
+    stats['approx_average_clustering_coefficient'] = average_clustering
+    
+    # Diamater is a big bottleneck for large graphs,
+    # that is why I commented it out.
     # Calculate the diameter (approximate)
-    if directed:    
-        if nx.is_strongly_connected(G):
-            stats['diameter'] = nx.diameter(G)
-        else:
-            stats['diameter'] = len(G.nodes)+1
-            # largest_component = max(nx.weakly_connected_components(G), key=len)
-            # subgraph = G.subgraph(largest_component)
-            # stats['diameter'] = nx.diameter(subgraph)
-    else:
-        if nx.is_connected(G):
-            stats['diameter'] = nx.diameter(G)
-        else:
-            stats['diameter'] = len(G.nodes)+1
-            # largest_component = max(nx.connected_components(G), key=len)
-            # subgraph = G.subgraph(largest_component)
-            # stats['diameter'] = nx.diameter(subgraph)
+    # if directed:    
+    #     if nx.is_strongly_connected(G):
+    #         stats['diameter'] = nx.diameter(G)
+    #     else:
+    #         stats['diameter'] = len(G.nodes)+1
+    #         # largest_component = max(nx.weakly_connected_components(G), key=len)
+    #         # subgraph = G.subgraph(largest_component)
+    #         # stats['diameter'] = nx.diameter(subgraph)
+    # else:
+    #     if nx.is_connected(G):
+    #         stats['diameter'] = nx.diameter(G)
+    #     else:
+    #         stats['diameter'] = len(G.nodes)+1
+    #         # largest_component = max(nx.connected_components(G), key=len)
+    #         # subgraph = G.subgraph(largest_component)
+    #         # stats['diameter'] = nx.diameter(subgraph)
 
     if directed:
         in_degrees = np.array([d for _, d in G.in_degree()])
