@@ -66,22 +66,32 @@ class BetaAgent:
     
     Attributes:
     - id (int): Unique identifier for the agent.
-    - uncertainty_problem (UncertaintyProblem): An instance representing the uncertainty model.
+    - bandit (Bandit): An instance representing the environment providing experiments.
     - alphas_betas (np.ndarray): A 2D array storing alpha (success) and beta (failure) parameters for each theory.
     - credences (np.ndarray): The agent's belief in each theory, initialized as the mean of beta distributions.
     - histories (bool): Whether to store the history of credences.
     - credences_history (list): A list storing past credences if histories are enabled.
     
     Methods:
-    - __init__(self, id, uncertainty_problem=UncertaintyProblem, histories=False):
-      Initializes the agent with given ID and uncertainty problem.
-    - greedy_experiment(self, n_experiments: int):
-      Selects the theory with the highest credence (breaking ties randomly) and runs an experiment.
+    - __init__(self, id, bandit: Bandit, histories=False):
+      Initializes the agent with given ID and an instance of the bandit environment.
+    - greedy_choice(self):
+      Selects the theory with the highest credence (breaking ties randomly).
+    - experiment(self, n_experiments: int):
+      Runs an experiment on the selected theory and returns the observed successes and failures.
     - beta_update(self, theory_index, n_success, n_failures):
       Updates the agent's belief using Bayesian updating based on observed successes and failures.
     """
 
-    def __init__(self, id, bandit: Bandit, histories=False):
+    def __init__(self, id, bandit, histories=False):
+        """
+        Initializes the BetaAgent with a given ID and an instance of the bandit environment.
+        
+        Parameters:
+        - id (int): Unique identifier for the agent.
+        - bandit (Bandit): An instance of the bandit problem environment.
+        - histories (bool): If True, stores a history of credences over time.
+        """
         self.id = id
         self.bandit = bandit
         
@@ -96,12 +106,30 @@ class BetaAgent:
             self.credences_history.append(self.credences)
     
     def greedy_choice(self):
+        """
+        Selects the theory with the highest credence.
+        If multiple theories have the same maximum credence, a random one is chosen.
+        
+        Returns:
+        - best_theory_index (int): The index of the chosen theory.
+        """
         max_value = np.max(self.credences)
         max_indices = np.where(self.credences == max_value)[0]
         best_theory_index = np.random.choice(max_indices)
         return best_theory_index
         
     def experiment(self, n_experiments: int):
+        """
+        Runs an experiment on the selected theory.
+        
+        Parameters:
+        - n_experiments (int): Number of experiments to perform.
+        
+        Returns:
+        - theory_index (int): The index of the selected theory.
+        - n_success (int): The number of successful experiments.
+        - n_failures (int): The number of failed experiments.
+        """
         theory_index = self.greedy_choice()
         n_success, n_experiments = self.bandit.experiment(theory_index, n_experiments)
         n_failures = n_experiments - n_success
@@ -129,3 +157,4 @@ class BetaAgent:
         
         if self.histories:
             self.credences_history.append(new_credences)
+
