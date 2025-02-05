@@ -5,33 +5,59 @@ from imports import *
 
 class Bandit:
     """
-    The problem of theory choice involves two theories where the new_theory is better
-    by the margin of uncertainty.
+    A model representing the problem of theory choice, where a new theory is compared 
+    to an existing one with an added margin of uncertainty.
 
     Attributes:
-    - uncertainty (float): The uncertainty in the theory choice.
+    - uncertainty (float): The margin of uncertainty in favor of the new theory.
+    - p_bad_theory (float): The probability of success for the existing (bad) theory.
+    - p_good_theory (float): The probability of success for the new (good) theory, 
+      which is improved by the uncertainty margin.
 
-    Methods
-    - experiment(self, n_experiments): Performs an experiment using the new_theory.
+    Methods:
+    - experiment(self, index: int, n_experiments: int) -> tuple[int, int]: 
+      Simulates a series of experiments and returns the number of successes and 
+      total experiments.
     """
 
     def __init__(self, uncertainty: float = 0.1):
+        """
+        Initializes the Bandit model with a given uncertainty margin.
+
+        Args:
+        - uncertainty (float, optional): The uncertainty margin added to the probability
+          of the new theory. Defaults to 0.1.
+        """
         self.uncertainty = uncertainty
         self.p_bad_theory = 0.5
         self.p_good_theory = 0.5 + uncertainty
-        
-    def experiment(self, index, n_experiments: int):
+
+    def experiment(self, theory_index: int, n_experiments: int) -> tuple[int, int]:
         """
-        Performs an experiment using the new_theory.
+        Simulates a set of experiments based on the selected theory.
 
         Args:
-        - n_experiments (int): the number of experiments.
+        - index (int): Indicates which theory to test (0 for bad theory, 1 for good theory).
+        - n_experiments (int): The number of experiments to run.
+
+        Returns:
+        - tuple[int, int]: A tuple containing the number of successful experiments 
+          and the total number of experiments.
+
+        Raises:
+        - ValueError: If the index is not 0 or 1.
         """
-        if index == 0:
+        import numpy.random as rd
+
+        if theory_index == 0:
             n_success = rd.binomial(n_experiments, self.p_bad_theory)
-        if index == 1:
+        elif theory_index == 1:
             n_success = rd.binomial(n_experiments, self.p_good_theory)
+        else:
+            raise ValueError("Index must be 0 (bad theory) or 1 (good theory).")
+
         return n_success, n_experiments
+
 
 
 class BetaAgent:
