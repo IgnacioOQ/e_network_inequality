@@ -81,9 +81,9 @@ class BetaAgent:
       Updates the agent's belief using Bayesian updating based on observed successes and failures.
     """
 
-    def __init__(self, id, Bandit, histories=False):
+    def __init__(self, id, bandit: Bandit, histories=False):
         self.id = id
-        self.Bandit = Bandit
+        self.bandit = bandit
         
         # Initializing Beta Agent: Each theory starts with one success and one failure
         self.alphas_betas = np.array([[1, 1], [1, 1]])
@@ -111,7 +111,7 @@ class BetaAgent:
         max_indices = np.where(self.credences == max_value)[0]
         best_theory_index = np.random.choice(max_indices)
         
-        n_success, n_experiments = self.uncertainty_problem.experiment(best_theory_index, n_experiments)
+        n_success, n_experiments = self.bandit.experiment(best_theory_index, n_experiments)
         n_failures = n_experiments - n_success
         return best_theory_index, n_success, n_failures
         
