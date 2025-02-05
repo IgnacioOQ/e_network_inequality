@@ -2,7 +2,7 @@
 # import tqdm
 # import pandas as pd
 from imports import *  
-from agents import BetaAgent, UncertaintyProblem
+from agents import BetaAgent, Bandit
 
 class Model:
     """
@@ -32,7 +32,6 @@ class Model:
         n_experiments: int,
         # agent_type: str,
         uncertainty: float = None,
-        p_theories: list = None,
         tolerance = 1e-04,
         histories = False,
         *args,
@@ -43,9 +42,9 @@ class Model:
         #print(self.n_agents)
         self.n_experiments = n_experiments
         # else:
-        self.uncertainty_problem = UncertaintyProblem(uncertainty)
+        self.bandit = Bandit(uncertainty)
         self.agents = [
-            BetaAgent(i, self.uncertainty_problem,histories=histories) for i in range(self.n_agents)
+            BetaAgent(i, self.bandit,histories=histories) for i in range(self.n_agents)
         ]
         # self.agent_type = agent_type
         self.n_steps = 0
