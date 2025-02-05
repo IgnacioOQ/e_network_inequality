@@ -101,10 +101,11 @@ class BetaAgent:
         best_theory_index = np.random.choice(max_indices)
         return best_theory_index
         
-    def experiment(self, best_theory_index, n_experiments: int):
-        n_success, n_experiments = self.bandit.experiment(best_theory_index, n_experiments)
+    def experiment(self, n_experiments: int):
+        theory_index = self.greedy_choice()
+        n_success, n_experiments = self.bandit.experiment(theory_index, n_experiments)
         n_failures = n_experiments - n_success
-        return best_theory_index, n_success, n_failures
+        return theory_index, n_success, n_failures
         
     def beta_update(self, theory_index, n_success, n_failures):
         """
