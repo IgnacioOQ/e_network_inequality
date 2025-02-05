@@ -94,23 +94,14 @@ class BetaAgent:
         if self.histories:
             self.credences_history = []
             self.credences_history.append(self.credences)
-        
-    def greedy_experiment(self, n_experiments: int):
-        """
-        Selects the theory with the highest credence (breaking ties randomly) and runs an experiment.
-        
-        Parameters:
-        - n_experiments (int): Number of experiments to perform.
-        
-        Returns:
-        - best_theory_index (int): Index of the selected theory.
-        - n_success (int): Number of successful experiments.
-        - n_failures (int): Number of failed experiments.
-        """
+    
+    def greedy_choice(self):
         max_value = np.max(self.credences)
         max_indices = np.where(self.credences == max_value)[0]
         best_theory_index = np.random.choice(max_indices)
+        return best_theory_index
         
+    def experiment(self, best_theory_index, n_experiments: int):
         n_success, n_experiments = self.bandit.experiment(best_theory_index, n_experiments)
         n_failures = n_experiments - n_success
         return best_theory_index, n_success, n_failures
