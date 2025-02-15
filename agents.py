@@ -98,10 +98,12 @@ class BetaAgent:
         self.sampling_update = sampling_update
         
         # Initializing Beta Agent
-        # samples = np.random.uniform(0, 4, size=2)
-        self.alphas_betas = np.array([[1, 1], [1, 1]])
-        mean = beta.stats(1, 1, moments='m')        
-        self.credences = np.array([mean, mean])
+        prior_T1 = np.random.uniform(0, 4, size=2)
+        prior_T2 = np.random.uniform(0, 4, size=2)
+        self.alphas_betas = np.array([prior_T1, prior_T2])
+        mean_T1 = beta.stats(prior_T1[0], prior_T1[1], moments='m')
+        mean_T2 = beta.stats(prior_T2[0], prior_T2[1], moments='m')        
+        self.credences = np.array([mean_T1, mean_T2])
         
         self.histories = histories
         if self.histories:
