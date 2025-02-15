@@ -104,6 +104,8 @@ class BetaAgent:
         mean_T1 = beta.stats(prior_T1[0], prior_T1[1], moments='m')
         mean_T2 = beta.stats(prior_T2[0], prior_T2[1], moments='m')        
         self.credences = np.array([mean_T1, mean_T2])
+        if self.sampling_update:
+          self.credences = np.array([beta.rvs(prior_T1[0], prior_T1[1], size=1), beta.rvs(prior_T2[0], prior_T2[1], size=1)])
         
         self.histories = histories
         if self.histories:
