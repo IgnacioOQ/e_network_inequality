@@ -93,8 +93,9 @@ class Model:
             if self.variance_stopping:
                 betas_post = np.array([agent.alphas_betas for agent in self.agents])
                 mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
-            else:
-                credences_post = np.array([agent.credences for agent in self.agents])
+
+            # we need the credences post regardless of the variance stopping condition
+            credences_post = np.array([agent.credences for agent in self.agents])
 
             if self.variance_stopping:
                 if stop_condition(mv_prior, mv_post):
@@ -108,7 +109,6 @@ class Model:
                     if not alternative_stop:
                         self.conclusion_alternative_stop = self.conclusion
                     break
-                self.conclusion = true_consensus_condition(credences_post)  # We should set this even if we don't break, right??? - MN
         
         if self.histories:
             self.add_agents_history()
