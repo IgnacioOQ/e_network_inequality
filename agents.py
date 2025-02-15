@@ -160,7 +160,7 @@ class BetaAgent:
         new_credences = self.credences.copy()
         estimate = beta.stats(alpha, beta_param, moments='m')
         if self.sampling_update:
-          estimate = beta.rvs(alpha, beta_param, size=1)
+          estimate = beta.rvs(alpha, beta_param, size=1)[0]
         new_credences[theory_index] = estimate
         self.credences = new_credences
         
