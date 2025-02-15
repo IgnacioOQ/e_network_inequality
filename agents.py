@@ -20,7 +20,7 @@ class Bandit:
       total experiments.
     """
 
-    def __init__(self, uncertainty: float = 0.1):
+    def __init__(self, uncertainty: float = 0.1,sampling=False):
         """
         Initializes the Bandit model with a given uncertainty margin.
 
@@ -31,6 +31,8 @@ class Bandit:
         self.uncertainty = uncertainty
         self.p_bad_theory = 0.5
         self.p_good_theory = 0.5 + uncertainty
+        # this parameter is used if updating is done by sampling
+        self.sampling = sampling
 
     def experiment(self, theory_index: int, n_experiments: int) -> tuple[int, int]:
         """
@@ -151,8 +153,10 @@ class BetaAgent:
         beta_param = self.alphas_betas[theory_index][1]  # Avoid using 'beta' as it conflicts with scipy.stats.beta
         
         new_credences = self.credences.copy()
-        mean = beta.stats(alpha, beta_param, moments='m')
-        new_credences[theory_index] = mean
+        estimate = beta.stats(alpha, beta_param, moments='m')
+        if self.sampling:
+          mean = beta.rvs(alpha, beta_param, size=1)
+        new_credences[theory_index] = estimate
         self.credences = new_credences
         
         if self.histories:
