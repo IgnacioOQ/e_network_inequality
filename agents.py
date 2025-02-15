@@ -97,7 +97,8 @@ class BetaAgent:
         # this parameter is used if updating is done by sampling
         self.sampling_update = sampling_update
         
-        # Initializing Beta Agent: Each theory starts with one success and one failure
+        # Initializing Beta Agent
+        # samples = np.random.uniform(0, 4, size=2)
         self.alphas_betas = np.array([[1, 1], [1, 1]])
         mean = beta.stats(1, 1, moments='m')        
         self.credences = np.array([mean, mean])
