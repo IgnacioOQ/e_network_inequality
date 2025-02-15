@@ -81,16 +81,20 @@ class Model:
         alternative_stop = False
         self.conclusion_alternative_stop = False
         for _ in iterable:
-            # there are redundant computations here, but it's ok for now
-            betas_prior = np.array([agent.alphas_betas for agent in self.agents])
-            mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for prior in betas_prior])
-            credences_prior = np.array([agent.credences for agent in self.agents])
+            # Lots of if elses but oh well
+            if self.variance_stopping:
+                betas_prior = np.array([agent.alphas_betas for agent in self.agents])
+                mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for prior in betas_prior])
+            else:
+                credences_prior = np.array([agent.credences for agent in self.agents])
             
             self.step()
-            # there are redundant computations here, but it's ok for now
-            betas_post = np.array([agent.alphas_betas for agent in self.agents])
-            mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
-            credences_post = np.array([agent.credences for agent in self.agents])
+            
+            if self.variance_stopping:
+                betas_post = np.array([agent.alphas_betas for agent in self.agents])
+                mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
+            else:
+                credences_post = np.array([agent.credences for agent in self.agents])
 
             if self.variance_stopping:
                 if stop_condition(mv_prior, mv_post):
