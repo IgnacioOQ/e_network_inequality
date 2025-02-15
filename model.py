@@ -34,6 +34,7 @@ class Model:
         uncertainty: float = None,
         tolerance = 1e-04,
         histories = False,
+        sampling_update = False,
         *args,
         **kwargs
     ):
@@ -44,7 +45,7 @@ class Model:
         # else:
         self.bandit = Bandit(uncertainty)
         self.agents = [
-            BetaAgent(i, self.bandit,histories=histories) for i in range(self.n_agents)
+            BetaAgent(i, self.bandit,histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
         ]
         # self.agent_type = agent_type
         self.n_steps = 0
@@ -128,7 +129,7 @@ class Model:
     def agents_experiment(self):
         experiments_results = {}
         for agent in self.agents:
-            theory_index, n_success, n_failures = agent.greedy_experiment(self.n_experiments)
+            theory_index, n_success, n_failures = agent.experiment(self.n_experiments)
             experiments_results[agent.id]=[theory_index, n_success, n_failures]
         # print('experiments done')
         return experiments_results

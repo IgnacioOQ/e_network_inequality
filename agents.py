@@ -20,7 +20,7 @@ class Bandit:
       total experiments.
     """
 
-    def __init__(self, uncertainty: float = 0.1,sampling=False):
+    def __init__(self, uncertainty: float = 0.1):
         """
         Initializes the Bandit model with a given uncertainty margin.
 
@@ -31,8 +31,6 @@ class Bandit:
         self.uncertainty = uncertainty
         self.p_bad_theory = 0.5
         self.p_good_theory = 0.5 + uncertainty
-        # this parameter is used if updating is done by sampling
-        self.sampling = sampling
 
     def experiment(self, theory_index: int, n_experiments: int) -> tuple[int, int]:
         """
@@ -85,7 +83,7 @@ class BetaAgent:
       Updates the agent's belief using Bayesian updating based on observed successes and failures.
     """
 
-    def __init__(self, id, bandit, histories=False):
+    def __init__(self, id, bandit, histories=False,sampling_update=False):
         """
         Initializes the BetaAgent with a given ID and an instance of the bandit environment.
         
@@ -96,6 +94,8 @@ class BetaAgent:
         """
         self.id = id
         self.bandit = bandit
+        # this parameter is used if updating is done by sampling
+        self.sampling_update = sampling_update
         
         # Initializing Beta Agent: Each theory starts with one success and one failure
         self.alphas_betas = np.array([[1, 1], [1, 1]])
@@ -154,7 +154,7 @@ class BetaAgent:
         
         new_credences = self.credences.copy()
         estimate = beta.stats(alpha, beta_param, moments='m')
-        if self.sampling:
+        if self.sampling_update:
           estimate = beta.rvs(alpha, beta_param, size=1)
         new_credences[theory_index] = estimate
         self.credences = new_credences
