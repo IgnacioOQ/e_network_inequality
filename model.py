@@ -100,15 +100,18 @@ class Model:
         alternative_stop = False
         self.conclusion_alternative_stop = False
         for _ in iterable:
+            betas_prior = np.array([agent.alphas_betas for agent in self.agents])
+            mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for prior in betas_prior])
+            
             credences_prior = np.array([agent.credences for agent in self.agents])
             self.step()
             credences_post = np.array([agent.credences for agent in self.agents])
-            # if not alternative_stop:
-            #     if alternative_stop_condition(credences_prior, credences_post):
-            #         alternative_stop = True
-            #         self.conclusion_alternative_stop = true_consensus_condition(
-            #             credences_post
-            #         )
+
+            
+            betas_post = np.array([agent.alphas_betas for agent in self.agents])
+            mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
+
+            
             if stop_condition(credences_prior, credences_post):
                 self.conclusion = true_consensus_condition(credences_post)
                 if not alternative_stop:
