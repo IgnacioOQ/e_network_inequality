@@ -35,6 +35,7 @@ class Model:
         tolerance = 1e-04,
         histories = False,
         sampling_update = False,
+        variance_stopping = False,
         *args,
         **kwargs
     ):
@@ -51,6 +52,7 @@ class Model:
         self.n_steps = 0
         self.tolerance = tolerance
         self.histories = histories
+        self.variance_stopping = variance_stopping
         
     def run_simulation(
         self, number_of_steps: int = 10**6, show_bar: bool = False, *args, **kwargs
@@ -61,31 +63,10 @@ class Model:
             number_of_steps (int, optional): Number of steps in the simulation
             (it will end sooner if the stop condition is met). Defaults to 10**6."""
 
-        # Weisberg's stopping condition:
-        # def stop_condition(credences_prior, credences_post) -> bool:
-        #     if np.all(credences_post < 0.5) or np.all(credences_post > 0.99):
-        #         return True
-        #     return False
-
-        # Weisberg's true_consensus condition
-        # def true_consensus_condition(credences: np.array) -> bool:
-        #     return all(credences > 0.99)
-
         def stop_condition(credences_prior, credences_post) -> bool:
             # the tolerance is too tight, originally: rtol=1e-05, atol=1e-08
             return np.allclose(credences_prior, credences_post,rtol=self.tolerance, atol=self.tolerance)
         
-        # # This stop condition is (similar to) what Zollman says in the paper pg. 8
-        # # Namely the process changes if scientists are making the same choice before and after
-        # def stop_condition2(self):
-        #     agents_choices = [agent.choice_history for agent in self.agents]
-        #     length = len(agents_choices[0])
-        #     previous_choices = [hist[length-2] for hist in agents_choices]
-        #     present_choices = [hist[length-1] for hist in agents_choices] # this shouldnt' have worked due to a typo. Did we use this somewhere? Investigate! (MN)
-        #     return np.allclose(np.array(previous_choices), np.array(present_choices))
-        
-        # I am not sure how this true consensus should work
-        # should I look at the second coordinate (the one corresponding to the alternative theory?)
         def true_consensus_condition(credences: np.array) -> float:
             second_coordinates = np.array([credences[1] for pair in credences])
             # Count how many pairs have the second coordinate larger than the first
@@ -100,24 +81,30 @@ class Model:
         alternative_stop = False
         self.conclusion_alternative_stop = False
         for _ in iterable:
+            # there are redundant computations here, but it's ok for now
             betas_prior = np.array([agent.alphas_betas for agent in self.agents])
             mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for prior in betas_prior])
-            
             credences_prior = np.array([agent.credences for agent in self.agents])
-            self.step()
-            credences_post = np.array([agent.credences for agent in self.agents])
-
             
+            self.step()
+            # there are redundant computations here, but it's ok for now
             betas_post = np.array([agent.alphas_betas for agent in self.agents])
             mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
+            credences_post = np.array([agent.credences for agent in self.agents])
 
-            
-            if stop_condition(credences_prior, credences_post):
-                self.conclusion = true_consensus_condition(credences_post)
-                if not alternative_stop:
-                    self.conclusion_alternative_stop = self.conclusion
-                break
-            self.conclusion = true_consensus_condition(credences_post)  # We should set this even if we don't break, right??? - MN
+            if self.variance_stopping:
+                if stop_condition(mv_prior, mv_post):
+                    self.conclusion = true_consensus_condition(credences_post)
+                    if not alternative_stop:
+                        self.conclusion_alternative_stop = self.conclusion
+                    break
+            else:
+                if stop_condition(credences_prior, credences_post):
+                    self.conclusion = true_consensus_condition(credences_post)
+                    if not alternative_stop:
+                        self.conclusion_alternative_stop = self.conclusion
+                    break
+                self.conclusion = true_consensus_condition(credences_post)  # We should set this even if we don't break, right??? - MN
         
         if self.histories:
             self.add_agents_history()
