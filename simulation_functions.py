@@ -61,7 +61,9 @@ def run_simulation_with_params(param_dict, number_of_steps=20000, show_bar=False
 
     result_dict['share_of_correct_agents_at_convergence'] = my_model.conclusion
     result_dict['convergence_step'] = my_model.n_steps # takes note of the last reported step
-
+    result_dict['agents_alphas_betas'] = my_model.agents_alphas_betas
+    result_dict['degree_centrality_vector'] = my_model.degree_centrality_vector
+    
     return result_dict
 
 # Wrapper function for multiprocessing
