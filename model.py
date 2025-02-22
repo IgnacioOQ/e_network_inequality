@@ -86,8 +86,6 @@ class Model:
         if show_bar:
             iterable = tqdm.tqdm(iterable)
 
-        alternative_stop = False
-        self.conclusion_alternative_stop = False
         for _ in iterable:
             # Lots of if elses but oh well
             if self.variance_stopping:
@@ -104,23 +102,19 @@ class Model:
 
             # we need the credences post regardless of the variance stopping condition
             credences_post = np.array([agent.credences for agent in self.agents])
-
+            
             if self.variance_stopping:
                 if stop_condition(mv_prior, mv_post):
-                    self.conclusion = true_consensus_condition(credences_post)
-                    if not alternative_stop:
-                        self.conclusion_alternative_stop = self.conclusion
                     break
             else:
                 if stop_condition(credences_prior, credences_post):
-                    self.conclusion = true_consensus_condition(credences_post)
-                    if not alternative_stop:
-                        self.conclusion_alternative_stop = self.conclusion
                     break
+        
+        # We add the conclusion at the end of the simulation
+        self.conclusion = true_consensus_condition(credences_post)
         
         if self.histories:
             self.add_agents_history()
-            
 
     def step(self):
         """Updates the model with one step, consisting of experiments and updates."""
