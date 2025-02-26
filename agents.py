@@ -47,8 +47,6 @@ class Bandit:
         Raises:
         - ValueError: If the index is not 0 or 1.
         """
-        import numpy.random as rd
-
         if theory_index == 0:
             n_success = rd.binomial(n_experiments, self.p_bad_theory)
         elif theory_index == 1:
@@ -82,7 +80,7 @@ class BetaAgent:
     - beta_update(self, theory_index, n_success, n_failures):
       Updates the agent's belief using Bayesian updating based on observed successes and failures.
     """
-
+    
     def __init__(self, id, bandit, histories=False,sampling_update=False):
         """
         Initializes the BetaAgent with a given ID and an instance of the bandit environment.
