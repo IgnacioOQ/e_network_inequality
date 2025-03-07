@@ -36,11 +36,13 @@ class Model:
         histories = False,
         sampling_update = False,
         variance_stopping = False,
+        directed_network = True,
         *args,
         **kwargs
     ):
         self.network = network
         self.n_agents = len(network.nodes)
+        self.directedness = directed_network
         #print(self.n_agents)
         self.n_experiments = n_experiments
         # else:
@@ -139,7 +141,10 @@ class Model:
             # BUT the directed citation networks have to go from citing to cited
             # namely inverse of the direction of information flow.
             # and in studying gini we need to consider in-degree mostly
-            neighbor_nodes = list(self.network.neighbors(agent.id))
+            if self.directedness:
+                neighbor_nodes = list(self.network.predecessors(agent.id))
+            else:
+                neighbor_nodes = list(self.network.neighbors(agent.id))
             theories_exp_results = np.array([np.array([0,0]),np.array([0,0])])
             results = experiments_results[agent.id]
             theory_index = results[0]

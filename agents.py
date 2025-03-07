@@ -81,7 +81,7 @@ class BetaAgent:
       Updates the agent's belief using Bayesian updating based on observed successes and failures.
     """
     
-    def __init__(self, id, bandit, histories=False,sampling_update=False):
+    def __init__(self, id, bandit, histories=False,sampling_update=False,epsilon=0):
         """
         Initializes the BetaAgent with a given ID and an instance of the bandit environment.
         
@@ -95,6 +95,8 @@ class BetaAgent:
         # this parameter is used if updating is done by sampling
         self.sampling_update = sampling_update
         
+        # epsilon
+        self.epsilon = epsilon
         # Initializing Beta Agent
         prior_T1 = np.random.uniform(0, 4, size=2)
         prior_T2 = np.random.uniform(0, 4, size=2)
@@ -111,7 +113,7 @@ class BetaAgent:
             self.credences_history = []
             self.credences_history.append(self.credences)
     
-    def greedy_choice(self):
+    def egreedy_choice(self):
         """
         Selects the theory with the highest credence.
         If multiple theories have the same maximum credence, a random one is chosen.
@@ -119,10 +121,14 @@ class BetaAgent:
         Returns:
         - best_theory_index (int): The index of the chosen theory.
         """
-        max_value = np.max(self.credences)
-        max_indices = np.where(self.credences == max_value)[0]
-        best_theory_index = np.random.choice(max_indices)
-        return best_theory_index
+        if np.random.rand() < self.epsilon:
+          rd_index = np.random.randint(len(self.credences))
+          return rd_index
+        else:
+          max_value = np.max(self.credences)
+          max_indices = np.where(self.credences == max_value)[0]
+          best_theory_index = np.random.choice(max_indices)
+          return best_theory_index
         
     def experiment(self, n_experiments: int):
         """
@@ -136,7 +142,7 @@ class BetaAgent:
         - n_success (int): The number of successful experiments.
         - n_failures (int): The number of failed experiments.
         """
-        theory_index = self.greedy_choice()
+        theory_index = self.egreedy_choice()
         n_success, n_experiments = self.bandit.experiment(theory_index, n_experiments)
         n_failures = n_experiments - n_success
         return theory_index, n_success, n_failures
