@@ -29,28 +29,25 @@ def barabasi_albert_directed(n, m):
         # Add the new node
         G.add_node(new_node)
 
-        # Calculate the total in-degree of all existing nodes
+        # Calculate the total out-degree of all existing nodes
+        # Notice that here edges go from cited to citing, so we are interested in out-degree
         total_out_degree = sum(dict(G.out_degree()).values())
 
         # Create a list of existing nodes to connect to
         targets = set()
         while len(targets) < m:
             # Preferential attachment: choose a node with probability proportional to its in-degree
-            if total_out_degree == 0:
-                # If total in-degree is zero, connect randomly
-                target = random.choice(list(G.nodes()))
-            else:
-                # Select node based on preferential attachment
-                target = random.choices(
-                    list(G.nodes()),
-                    weights=[G.out_degree(node) + 1 for node in G.nodes()],  # +1 to avoid zero probability
-                    k=1
-                )[0]
+            target = random.choices(
+                list(G.nodes()),
+                weights=[G.out_degree(node) + 1 for node in G.nodes()],  # +1 to avoid zero probability
+                k=1
+            )[0]
 
             # Add the target to the set (ensures unique connections)
             targets.add(target)
 
         # Add directed edges from the new node to the selected targets
+        # edges go from cited to citing, so from target to new_node
         for target in targets:
             G.add_edge(target, new_node)
 

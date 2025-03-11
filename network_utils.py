@@ -3,7 +3,7 @@ from imports import *
 # Plotting functions
 def plot_network_degree_distribution(G, directed=True, title='title'):
     if directed:
-        degrees = np.array([degree for node, degree in G.in_degree()])
+        degrees = np.array([degree for node, degree in G.out_degree()])
     else:
         degrees = np.array([degree for node, degree in G.degree()])
     # Create the histogram with a KDE
@@ -17,7 +17,8 @@ def plot_network_degree_distribution(G, directed=True, title='title'):
 
     # Plot a vertical line at the mean value
     plt.axvline(mean_value, color='b', linestyle='--', linewidth=2)
-    plt.text(mean_value + 0.1, plt.ylim()[1] * 0.9, 'Mean: {:.2f}'.format(mean_value), color='b')
+    plt.text(mean_value + 0.1, plt.ylim()[1] * 0.9, f'Mean: {mean_value}', color='b')
+    # plt.text(mean_value + 0.1, plt.ylim()[1] * 0.9, 'Mean: {:.2f}'.format(mean_value), color='b')
 
     plt.title('Timeline Smooth Histogram for: ' + title)
     plt.xlabel('Degree')
@@ -28,11 +29,11 @@ def plot_network_degree_distribution(G, directed=True, title='title'):
 def plot_loglog(G,directed=True,m=10):
     if directed:
         # Get the in-degree of all nodes
-        in_degrees = [d for _, d in G.in_degree()]
+        out_degrees = [d for _, d in G.out_degree()]
 
         # Compute the histogram
-        max_degree = max(in_degrees)
-        degree_freq = [in_degrees.count(i) for i in range(max_degree + 1)]
+        max_degree = max(out_degrees)
+        degree_freq = [out_degrees.count(i) for i in range(max_degree + 1)]
     else:
         degree_freq = nx.degree_histogram(G)
     degrees = range(len(degree_freq))
@@ -119,7 +120,7 @@ def get_connected_component(G):
 # Network statistics
 def calculate_degree_gini(G, directed = True):
     if directed:
-        degrees = [deg for _, deg in G.in_degree()]
+        degrees = [deg for _, deg in G.out_degree()]
     else:
         degrees = [deg for _, deg in G.degree()]
     # Sort the degrees in ascending order
@@ -136,7 +137,7 @@ def network_statistics(G, directed = True):
 
     # Average degree
     if directed:
-        degrees = [deg for _, deg in G.in_degree()]
+        degrees = [deg for _, deg in G.out_degree()]
     else:
         degrees = [deg for _, deg in G.degree()]
     stats['average_degree'] = sum(degrees) / len(degrees)
@@ -148,7 +149,7 @@ def network_statistics(G, directed = True):
     # Notes on clustering:
     # 1. nx.average_clustering(G) says:
     # "Directed graphs and weight parameter are not yet supported." 
-    # so idk what to do about that.
+    # so idk what to do about that.gin
     # 2. nx.clustering(G) returns a dictionary of clustering coefficients 
     # # for each node, which can be later averaged.
     # stats['approx_average_clustering_coefficient'] = nx.average_clustering(G)
@@ -180,9 +181,9 @@ def network_statistics(G, directed = True):
     #         # stats['diameter'] = nx.diameter(subgraph)
 
     if directed:
-        in_degrees = np.array([d for _, d in G.in_degree()])
+        out_degrees = np.array([d for _, d in G.out_degree()])
         # out_degrees = np.array([d for _, d in graph.out_degree()])
-        in_hist, _ = np.histogram(in_degrees, bins=range(np.max(in_degrees) + 2), density=True)
+        in_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
         # out_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
         in_entropy = -np.sum(in_hist[in_hist > 0] * np.log(in_hist[in_hist > 0]))
         # out_entropy = -np.sum(out_hist[out_hist > 0] * np.log(out_hist[out_hist > 0]))
