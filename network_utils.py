@@ -185,9 +185,9 @@ def network_statistics(G, directed = True):
         # out_degrees = np.array([d for _, d in graph.out_degree()])
         in_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
         # out_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
-        in_entropy = -np.sum(in_hist[in_hist > 0] * np.log(in_hist[in_hist > 0]))
+        out_entropy = -np.sum(in_hist[in_hist > 0] * np.log(in_hist[in_hist > 0]))
         # out_entropy = -np.sum(out_hist[out_hist > 0] * np.log(out_hist[out_hist > 0]))
-        stats['degree_entropy'] = in_entropy
+        stats['degree_entropy'] = out_entropy
     else:
         degrees = np.array([d for _, d in G.degree()])
         hist, _ = np.histogram(degrees, bins=range(np.max(degrees) + 2), density=True)
