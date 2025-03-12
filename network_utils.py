@@ -163,22 +163,39 @@ def network_statistics(G, directed = True):
     # Diamater is a big bottleneck for large graphs,
     # that is why I commented it out.
     # Calculate the diameter (approximate)
-    # if directed:    
-    #     if nx.is_strongly_connected(G):
-    #         stats['diameter'] = nx.diameter(G)
-    #     else:
-    #         stats['diameter'] = len(G.nodes)+1
-    #         # largest_component = max(nx.weakly_connected_components(G), key=len)
-    #         # subgraph = G.subgraph(largest_component)
-    #         # stats['diameter'] = nx.diameter(subgraph)
-    # else:
-    #     if nx.is_connected(G):
-    #         stats['diameter'] = nx.diameter(G)
-    #     else:
-    #         stats['diameter'] = len(G.nodes)+1
-    #         # largest_component = max(nx.connected_components(G), key=len)
-    #         # subgraph = G.subgraph(largest_component)
-    #         # stats['diameter'] = nx.diameter(subgraph)
+    if directed:    
+        if nx.is_strongly_connected(G):
+            stats['diameter'] = nx.diameter(G)
+        else:
+            stats['diameter'] = len(G.nodes)+1
+            # largest_component = max(nx.weakly_connected_components(G), key=len)
+            # subgraph = G.subgraph(largest_component)
+            # stats['diameter'] = nx.diameter(subgraph)
+    else:
+        if nx.is_connected(G):
+            stats['diameter'] = nx.diameter(G)
+        else:
+            stats['diameter'] = len(G.nodes)+1
+            # largest_component = max(nx.connected_components(G), key=len)
+            # subgraph = G.subgraph(largest_component)
+            # stats['diameter'] = nx.diameter(subgraph)
+
+    if directed:    
+        if nx.is_strongly_connected(G):
+            stats['avg_path_length'] = nx.average_shortest_path_length(G)
+        else:
+            stats['avg_path_length'] = len(G.nodes)+1
+            # largest_component = max(nx.weakly_connected_components(G), key=len)
+            # subgraph = G.subgraph(largest_component)
+            # stats['diameter'] = nx.diameter(subgraph)
+    else:
+        if nx.is_connected(G):
+            stats['avg_path_length'] = nx.average_shortest_path_length(G)
+        else:
+            stats['avg_path_length'] = len(G.nodes)+1
+            # largest_component = max(nx.connected_components(G), key=len)
+            # subgraph = G.subgraph(largest_component)
+            # stats['diameter'] = nx.diameter(subgraph)
 
     if directed:
         out_degrees = np.array([d for _, d in G.out_degree()])

@@ -13,6 +13,7 @@ def randomize_network(G, p_rewiring):
     new_edges_set = edges_set.copy()
     nodes = list(G.nodes()).copy()
 
+    # Find which edges to remove
     to_remove_set = set()
     for old_edge in edges:
         if random.random() < p_rewiring:  # p probability to rewire an edge
