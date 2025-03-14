@@ -51,6 +51,8 @@ class Bandit:
         """
         if self.seeded:
           np.random.seed(self.seed)
+        else:
+          np.random.seed(None)
         if theory_index == 0:
             n_success = np.random.binomial(n_experiments, self.p_bad_theory)
         elif theory_index == 1:
@@ -102,6 +104,8 @@ class BetaAgent:
         self.seed = seed
         if self.seeded:
           np.random.seed(self.seed)
+        else:
+          np.random.seed(None)
         # epsilon
         self.epsilon = epsilon
         # Initializing Beta Agent
@@ -114,6 +118,8 @@ class BetaAgent:
         if self.sampling_update:
           if self.seeded:
             np.random.seed(self.seed)
+          else:
+            np.random.seed(None)
           self.credences = np.array([np.random.beta(prior_T1[0], prior_T1[1], size=1)[0], 
                                      np.random.beta(prior_T2[0], prior_T2[1], size=1)[0]])
         
@@ -132,12 +138,12 @@ class BetaAgent:
         """
         if self.seeded:
             np.random.seed(self.seed)
+        else:
+            np.random.seed(None)
         if np.random.rand() < self.epsilon:
-          # np.random.seed(self.seed)
           rd_index = np.random.randint(len(self.credences))
           return rd_index
         else:
-          # np.random.seed(self.seed)
           max_value = np.max(self.credences)
           max_indices = np.where(self.credences == max_value)[0]
           np.random.seed(self.seed)
@@ -156,7 +162,6 @@ class BetaAgent:
         - n_success (int): The number of successful experiments.
         - n_failures (int): The number of failed experiments.
         """
-        # np.random.seed(self.seed)
         theory_index = self.egreedy_choice()
         n_success, n_experiments = self.bandit.experiment(theory_index, n_experiments)
         n_failures = n_experiments - n_success
@@ -173,6 +178,8 @@ class BetaAgent:
         """
         if self.seeded:
             np.random.seed(self.seed)
+        else:
+            np.random.seed(None)
         self.alphas_betas[theory_index][0] += n_success
         self.alphas_betas[theory_index][1] += n_failures
         
@@ -182,6 +189,10 @@ class BetaAgent:
         new_credences = self.credences.copy()
         estimate = beta.stats(alpha, beta_param, moments='m')
         if self.sampling_update:
+          if self.seeded:
+            np.random.seed(self.seed)
+          else:
+            np.random.seed(None)
           estimate = np.random.beta(alpha, beta_param, size=1)[0]
         new_credences[theory_index] = estimate
         self.credences = new_credences

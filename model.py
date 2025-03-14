@@ -38,6 +38,8 @@ class Model:
         variance_stopping = False,
         directed_network = True,
         seed=np.random.randint(0, 2**32 - 1),
+        bandit_seeded=False,
+        agent_seeded=False,
         *args,
         **kwargs
     ):
@@ -48,9 +50,10 @@ class Model:
         self.n_experiments = n_experiments
         # else:
         self.seed = seed
-        self.bandit = Bandit(self.seed,uncertainty)
+        self.bandit = Bandit(self.seed,seeded=bandit_seeded,uncertainty=uncertainty)
         self.agents = [
-            BetaAgent(i, self.bandit,seed=self.seed,histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
+            BetaAgent(i, self.bandit,seed=self.seed,seeded=agent_seeded,
+                      histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
         ]
         self.init_agents_alphas_betas= [agent.alphas_betas for agent in self.agents]
         # agent.id is the name of the node in the network
