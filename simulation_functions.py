@@ -20,7 +20,7 @@ def generate_parameters(_,G=G_default):
     n_experiments = rd.randint(1, 16)
 
     # now we pick a random number
-    p_rewiring = rd.rand()*0.5
+    p_rewiring = rd.rand()
 
     # Do randomization
     randomized_network = randomize_network(G, p_rewiring=p_rewiring)
