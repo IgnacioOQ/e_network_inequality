@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.random as rd
+# rd = np.random.default_rng()
 from scipy.stats import beta
 import tqdm
 import pickle
