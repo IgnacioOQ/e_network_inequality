@@ -215,3 +215,26 @@ def network_statistics(G, directed = True):
 
     return stats
 
+def scatter_plot(df, target_variable="share_of_correct_agents_at_convergence"):
+     # Select numerical columns excluding unique ID and target variable
+    numerical_columns = df.select_dtypes(include=["number"]).columns.tolist()
+    numerical_columns.remove(target_variable)  # Remove target variable from independent variables
+
+    # Generate scatter plots for each numerical column against the target variable
+    num_plots = len(numerical_columns)
+    fig, axes = plt.subplots(nrows=(num_plots + 1) // 2, ncols=2, figsize=(10, num_plots * 2))
+    axes = axes.flatten()
+
+    for i, column in enumerate(numerical_columns):
+        axes[i].scatter(df[column], df[target_variable], alpha=0.5)
+        axes[i].set_xlabel(column)
+        axes[i].set_ylabel(target_variable)
+        axes[i].set_title(f"{column} vs {target_variable}")
+        axes[i].grid(True)
+
+    # Hide any unused subplots
+    for j in range(i + 1, len(axes)):
+        fig.delaxes(axes[j])
+
+    plt.tight_layout()
+    plt.show()
