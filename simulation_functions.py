@@ -52,7 +52,7 @@ def run_simulation_with_params(param_dict, number_of_steps=20000, show_bar=False
     my_model = Model(my_network, n_experiments=param_dict['n_experiments'],
                      uncertainty=param_dict['uncertainty'],
                  histories=True,sampling_update=False,variance_stopping = True,directed_network = True,
-                 seed=420,bandit_seeded=False, agent_seeded=False, agent_class=BetaAgent)
+                 seed=420,seeded=False, agent_class=BetaAgent)
     # Run the simulation with predefined steps and show_bar option
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
