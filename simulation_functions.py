@@ -13,14 +13,14 @@ def generate_parameters(_,G=G_default):
     # I am not sure what the three lines below are for
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
     random.seed(process_seed)
-    np.random.seed(process_seed)
+    rd.seed(process_seed)
 
     # Now what all simulations share
-    uncertainty = random.uniform(.0007, .0025)
-    n_experiments = random.randint(1, 15)
+    uncertainty = rd.uniform(.0007, .0025)
+    n_experiments = rd.randint(1, 16)
 
     # now we pick a random number
-    p_rewiring = np.random.rand()*0.5
+    p_rewiring = rd.rand()*0.5
 
     # Do randomization
     randomized_network = randomize_network(G, p_rewiring=p_rewiring)
@@ -45,14 +45,14 @@ if test:
     params = generate_parameters('test',G_default)
     print(params)
 
-def run_simulation_with_params(param_dict, number_of_steps=20000, show_bar=False):
+def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_steps=20000, show_bar=False):
     # Extract the network directly since it's already a NetworkX graph object
     my_network = param_dict['network']
     # Other parameters are directly extracted from the dictionary
     my_model = Model(my_network, n_experiments=param_dict['n_experiments'],
                      uncertainty=param_dict['uncertainty'],
                  histories=True,sampling_update=False,variance_stopping = True,directed_network = True,
-                 seed=420,seeded=False, agent_class=BetaAgent)
+                 seed=seed,seeded=seeded, agent_class=BetaAgent)
     # Run the simulation with predefined steps and show_bar option
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
@@ -69,5 +69,6 @@ def run_simulation_with_params(param_dict, number_of_steps=20000, show_bar=False
     return result_dict
 
 # Wrapper function for multiprocessing
-def run_simulation_wrapper(param_dict, number_of_steps=5000):
-    return run_simulation_with_params(param_dict, number_of_steps=number_of_steps, show_bar=False)
+def run_simulation_wrapper(param_dict, seed=420,seeded=False, number_of_steps=5000):
+    return run_simulation_with_params(param_dict, number_of_steps=number_of_steps, 
+                                      seed=seed,seeded=seeded,show_bar=False)
