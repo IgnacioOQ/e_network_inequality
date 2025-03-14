@@ -12,5 +12,5 @@ import uuid
 import os
 from multiprocessing import Pool, cpu_count
 import unittest
-
+import dill
 # import graph_tool.all as gt
