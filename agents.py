@@ -20,7 +20,7 @@ class Bandit:
       total experiments.
     """
 
-    def __init__(self, seed, uncertainty: float = 0.1):
+    def __init__(self, seed, seeded=False,uncertainty: float = 0.1):
         """
         Initializes the Bandit model with a given uncertainty margin.
 
@@ -31,6 +31,7 @@ class Bandit:
         self.uncertainty = uncertainty
         self.p_bad_theory = 0.5
         self.p_good_theory = 0.5 + uncertainty
+        self.seeded = seeded
         self.seed = seed
 
     def experiment(self, theory_index: int, n_experiments: int) -> tuple[int, int]:
@@ -48,7 +49,8 @@ class Bandit:
         Raises:
         - ValueError: If the index is not 0 or 1.
         """
-        np.random.seed(self.seed)
+        if self.seeded:
+          np.random.seed(self.seed)
         if theory_index == 0:
             n_success = np.random.binomial(n_experiments, self.p_bad_theory)
         elif theory_index == 1:
@@ -83,7 +85,7 @@ class BetaAgent:
       Updates the agent's belief using Bayesian updating based on observed successes and failures.
     """
     
-    def __init__(self, id, bandit, seed,histories=False,sampling_update=False,epsilon=0):
+    def __init__(self, id, bandit, seed,seeded=False,histories=False,sampling_update=False,epsilon=0):
         """
         Initializes the BetaAgent with a given ID and an instance of the bandit environment.
         
@@ -96,9 +98,10 @@ class BetaAgent:
         self.bandit = bandit
         # this parameter is used if updating is done by sampling
         self.sampling_update = sampling_update
-        
+        self.seeded = seeded
         self.seed = seed
-        np.random.seed(self.seed)
+        if self.seeded:
+          np.random.seed(self.seed)
         # epsilon
         self.epsilon = epsilon
         # Initializing Beta Agent
@@ -109,7 +112,8 @@ class BetaAgent:
         mean_T2 = beta.stats(prior_T2[0], prior_T2[1], moments='m')        
         self.credences = np.array([mean_T1, mean_T2])
         if self.sampling_update:
-          np.random.seed(self.seed)
+          if self.seeded:
+            np.random.seed(self.seed)
           self.credences = np.array([np.random.beta(prior_T1[0], prior_T1[1], size=1)[0], 
                                      np.random.beta(prior_T2[0], prior_T2[1], size=1)[0]])
         
@@ -126,7 +130,8 @@ class BetaAgent:
         Returns:
         - best_theory_index (int): The index of the chosen theory.
         """
-        np.random.seed(self.seed)
+        if self.seeded:
+            np.random.seed(self.seed)
         if np.random.rand() < self.epsilon:
           # np.random.seed(self.seed)
           rd_index = np.random.randint(len(self.credences))
@@ -166,7 +171,8 @@ class BetaAgent:
         - n_success (int): Number of successful experiments.
         - n_failures (int): Number of failed experiments.
         """
-        np.random.seed(self.seed)
+        if self.seeded:
+            np.random.seed(self.seed)
         self.alphas_betas[theory_index][0] += n_success
         self.alphas_betas[theory_index][1] += n_failures
         
