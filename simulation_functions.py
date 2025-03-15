@@ -16,7 +16,7 @@ def generate_parameters(_,G=G_default):
     rd.seed(process_seed)
 
     # Now what all simulations share
-    uncertainty = rd.uniform(.000001, .007)
+    uncertainty = rd.uniform(.000001, .01)
     n_experiments = rd.randint(1, 21)
 
     # now we pick a random number
@@ -52,7 +52,7 @@ def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_step
     # Other parameters are directly extracted from the dictionary
     my_model = Model(my_network, n_experiments=param_dict['n_experiments'],
                     uncertainty=param_dict['uncertainty'],
-                    histories=False,sampling_update=True,variance_stopping = False,directed_network = True,
+                    histories=False,sampling_update=False,variance_stopping = False,directed_network = True,
                     seed=seed,seeded=seeded, agent_class=BetaAgent)
     # Run the simulation with predefined steps and show_bar option
 
@@ -70,6 +70,6 @@ def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_step
     return result_dict
 
 # Wrapper function for multiprocessing
-def run_simulation_wrapper(param_dict, seed=420,seeded=False, number_of_steps=10000):
+def run_simulation_wrapper(param_dict, seed=420,seeded=False, number_of_steps=20000):
     return run_simulation_with_params(param_dict, number_of_steps=number_of_steps,
                                       seed=seed,seeded=seeded,show_bar=False)
