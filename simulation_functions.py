@@ -16,8 +16,8 @@ def generate_parameters(_,G=G_default):
     rd.seed(process_seed)
 
     # Now what all simulations share
-    uncertainty = rd.uniform(.0007, .0025)
-    n_experiments = rd.randint(1, 16)
+    uncertainty = rd.uniform(.0001, .01)
+    n_experiments = rd.randint(1, 31)
 
     # now we pick a random number
     p_rewiring = rd.rand()
@@ -45,13 +45,14 @@ if test:
     params = generate_parameters('test',G_default)
     print(params)
 
+
 def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_steps=20000, show_bar=False):
     # Extract the network directly since it's already a NetworkX graph object
     my_network = param_dict['network']
     # Other parameters are directly extracted from the dictionary
     my_model = Model(my_network, n_experiments=param_dict['n_experiments'],
                     uncertainty=param_dict['uncertainty'],
-                    histories=False,sampling_update=True,variance_stopping = True,directed_network = True,
+                    histories=False,sampling_update=True,variance_stopping = False,directed_network = True,
                     seed=seed,seeded=seeded, agent_class=BetaAgent)
     # Run the simulation with predefined steps and show_bar option
 
