@@ -48,7 +48,7 @@ class Model:
         #print(self.n_agents)
         self.n_experiments = n_experiments
         # else:
-        self.seed = seed
+        # self.seed = seed
         if seeded:
             rd.seed(seed)
         self.bandit = Bandit(uncertainty)
@@ -84,8 +84,7 @@ class Model:
             return np.allclose(credences_prior, credences_post,rtol=self.tolerance, atol=self.tolerance)
         
         def true_consensus_condition(credences: np.array) -> float:
-            second_coordinates = np.array([credences[1] for pair in credences])
-            # Count how many pairs have the second coordinate larger than the first
+            # Count how many pairs have the second coordinate larger than the first (second coordinate is the second theory)
             counts = np.sum([pair[1] > pair[0] for pair in credences])
             return counts/len(credences) #(second_coordinates > 0.5).mean()
 
@@ -98,7 +97,8 @@ class Model:
             # Lots of if elses but oh well
             if self.variance_stopping:
                 betas_prior = np.array([agent.alphas_betas for agent in self.agents])
-                mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for prior in betas_prior])
+                # mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for prior in betas_prior])
+                mv_prior = np.array([[beta.stats(prior[0][0], prior[0][1], moments='mv'),beta.stats(prior[1][0], prior[1][1], moments='mv')] for prior in betas_prior])
             else:
                 credences_prior = np.array([agent.credences for agent in self.agents])
             
@@ -106,7 +106,8 @@ class Model:
             
             if self.variance_stopping:
                 betas_post = np.array([agent.alphas_betas for agent in self.agents])
-                mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
+                # mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
+                mv_post = np.array([[beta.stats(post[0][0], post[0][1], moments='mv'),beta.stats(post[1][0], post[1][1], moments='mv')] for post in betas_post])
 
             # we need the credences post regardless of the variance stopping condition
             credences_post = np.array([agent.credences for agent in self.agents])
@@ -152,6 +153,7 @@ class Model:
             else:
                 neighbor_nodes = list(self.network.neighbors(agent.id))
             theories_exp_results = np.array([np.array([0,0]),np.array([0,0])])
+            # for reference: experiments_results[agent.id]=[theory_index, n_success, n_failures]
             results = experiments_results[agent.id]
             theory_index = results[0]
             theories_exp_results[theory_index][0]+=results[1]

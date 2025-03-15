@@ -50,9 +50,9 @@ def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_step
     my_network = param_dict['network']
     # Other parameters are directly extracted from the dictionary
     my_model = Model(my_network, n_experiments=param_dict['n_experiments'],
-                     uncertainty=param_dict['uncertainty'],
-                 histories=False,sampling_update=False,variance_stopping = False,directed_network = True,
-                 seed=seed,seeded=seeded, agent_class=BetaAgent)
+                    uncertainty=param_dict['uncertainty'],
+                    histories=False,sampling_update=False,variance_stopping = True,directed_network = True,
+                    seed=seed,seeded=seeded, agent_class=BetaAgent)
     # Run the simulation with predefined steps and show_bar option
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
