@@ -45,13 +45,13 @@ if test:
     params = generate_parameters('test',G_default)
     print(params)
 
-def run_simulation_with_params(param_dict, seed=420,seeded=False, sampling_update=False,number_of_steps=20000, show_bar=False):
+def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_steps=20000, show_bar=False):
     # Extract the network directly since it's already a NetworkX graph object
     my_network = param_dict['network']
     # Other parameters are directly extracted from the dictionary
     my_model = Model(my_network, n_experiments=param_dict['n_experiments'],
                     uncertainty=param_dict['uncertainty'],
-                    histories=False,sampling_update=sampling_update,variance_stopping = True,directed_network = True,
+                    histories=False,sampling_update=True,variance_stopping = True,directed_network = True,
                     seed=seed,seeded=seeded, agent_class=BetaAgent)
     # Run the simulation with predefined steps and show_bar option
 
@@ -69,6 +69,6 @@ def run_simulation_with_params(param_dict, seed=420,seeded=False, sampling_updat
     return result_dict
 
 # Wrapper function for multiprocessing
-def run_simulation_wrapper(param_dict, seed=420,seeded=False, sampling_update=True,number_of_steps=5000):
-    return run_simulation_with_params(param_dict, number_of_steps=number_of_steps,sampling_update=sampling_update, 
+def run_simulation_wrapper(param_dict, seed=420,seeded=False, number_of_steps=5000):
+    return run_simulation_with_params(param_dict, number_of_steps=number_of_steps,
                                       seed=seed,seeded=seeded,show_bar=False)
