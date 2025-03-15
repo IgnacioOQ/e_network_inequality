@@ -16,8 +16,8 @@ def generate_parameters(_,G=G_default):
     rd.seed(process_seed)
 
     # Now what all simulations share
-    uncertainty = rd.uniform(.0001, .01)
-    n_experiments = rd.randint(1, 31)
+    uncertainty = rd.uniform(.000001, .007)
+    n_experiments = rd.randint(1, 21)
 
     # now we pick a random number
     p_rewiring = rd.rand()
@@ -70,6 +70,6 @@ def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_step
     return result_dict
 
 # Wrapper function for multiprocessing
-def run_simulation_wrapper(param_dict, seed=420,seeded=False, number_of_steps=5000):
+def run_simulation_wrapper(param_dict, seed=420,seeded=False, number_of_steps=10000):
     return run_simulation_with_params(param_dict, number_of_steps=number_of_steps,
                                       seed=seed,seeded=seeded,show_bar=False)
