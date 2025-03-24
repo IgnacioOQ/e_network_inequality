@@ -40,7 +40,7 @@ def generate_parameters(_,G=G_default):
 
     return params
 
-def generate_parameters_fixed(simulation_index, base_seed, G=G_default, uncertainty=0.005, n_experiments=20):
+def generate_parameters_fixed(simulation_index, base_seed, G, uncertainty=0.005, n_experiments=20):
     # Unique seed PER SIMULATION (not process!)
     seed = base_seed + simulation_index
     
