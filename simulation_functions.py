@@ -8,11 +8,9 @@ from network_generation import *
 G_default = barabasi_albert_directed(100,5)
 
 def generate_parameters(_,G=G_default):
-
     unique_id =  uuid.uuid4().hex
     # I am not sure what the three lines below are for
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
-    random.seed(process_seed)
     rd.seed(process_seed)
 
     # Now what all simulations share
@@ -41,13 +39,9 @@ def generate_parameters(_,G=G_default):
     return params
 
 def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):#,p_rewiring=0):
-
     unique_id =  uuid.uuid4().hex
     # I am not sure what the three lines below are for
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
-    # process_id = os.getpid()
-    # seed = process_seed + process_id
-    # random.seed(process_seed)
     rd.seed(process_seed)
 
     # Do randomization
@@ -69,13 +63,17 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):
     return params
 
 def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_steps=20000, show_bar=False):
+    
+    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
+    # rd.seed(process_seed)
+    
     # Extract the network directly since it's already a NetworkX graph object
     my_network = param_dict['network']
     # Other parameters are directly extracted from the dictionary
     my_model = Model(my_network, n_experiments=param_dict['n_experiments'],
                     uncertainty=param_dict['uncertainty'],
                     histories=False,sampling_update=False,variance_stopping = False,directed_network = True,
-                    seed=seed,seeded=seeded, agent_class=BetaAgent)
+                    seed=process_seed,seeded=True, agent_class=BetaAgent)
     # Run the simulation with predefined steps and show_bar option
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
