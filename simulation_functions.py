@@ -40,7 +40,7 @@ def generate_parameters(_,G=G_default):
 
     return params
 
-def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20,p_rewiring=0):
+def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20)#,p_rewiring=0):
 
     unique_id =  uuid.uuid4().hex
     # I am not sure what the three lines below are for
@@ -49,18 +49,18 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20,p
     rd.seed(process_seed)
 
     # Do randomization
-    randomized_network = randomize_network(G, p_rewiring=p_rewiring)
+    # randomized_network = randomize_network(G, p_rewiring=p_rewiring)
 
     params = {
         'randomized': True,
         "unique_id": unique_id,
-        "n_agents": int(len(randomized_network.nodes)),
-        "network": randomized_network,
+        "n_agents": int(len(G.nodes)),
+        "network": G,
         "uncertainty": float(uncertainty),
         "n_experiments": int(n_experiments),
         "p_rewiring": float(p_rewiring),
     }
-    stats = network_statistics(randomized_network)
+    stats = network_statistics(G)
     for stat in stats.keys():
      params[stat] = stats[stat]
 
