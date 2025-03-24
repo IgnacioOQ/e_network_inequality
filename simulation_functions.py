@@ -58,7 +58,7 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):
         "network": G,
         "uncertainty": float(uncertainty),
         "n_experiments": int(n_experiments),
-        "p_rewiring": float(p_rewiring),
+        # "p_rewiring": float(p_rewiring),
     }
     stats = network_statistics(G)
     for stat in stats.keys():
