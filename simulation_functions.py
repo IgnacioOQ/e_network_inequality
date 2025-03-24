@@ -45,8 +45,10 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):
     unique_id =  uuid.uuid4().hex
     # I am not sure what the three lines below are for
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
-    random.seed(process_seed)
-    rd.seed(process_seed)
+    process_id = os.getpid()
+    seed = process_seed + process_id
+    # random.seed(process_seed)
+    rd.seed(seed)
 
     # Do randomization
     # randomized_network = randomize_network(G, p_rewiring=p_rewiring)
