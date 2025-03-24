@@ -40,18 +40,16 @@ def generate_parameters(_,G=G_default):
 
     return params
 
-def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):#,p_rewiring=0):
-
-    unique_id =  uuid.uuid4().hex
-    # I am not sure what the three lines below are for
-    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
-    process_id = os.getpid()
-    seed = process_seed + process_id
-    # random.seed(process_seed)
+def generate_parameters_fixed(simulation_index, base_seed, G=G_default, uncertainty=0.005, n_experiments=20):
+    # Unique seed PER SIMULATION (not process!)
+    seed = base_seed + simulation_index
+    
+    # Set seeds for every simulation
+    random.seed(seed)
+    np.random.seed(seed)
     rd.seed(seed)
-
-    # Do randomization
-    # randomized_network = randomize_network(G, p_rewiring=p_rewiring)
+    
+    unique_id = uuid.uuid4().hex  # Optional: still random UUID
 
     params = {
         'randomized': True,
@@ -60,11 +58,12 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):
         "network": G,
         "uncertainty": float(uncertainty),
         "n_experiments": int(n_experiments),
-        # "p_rewiring": float(p_rewiring),
+        "seed": seed,
     }
+
     stats = network_statistics(G)
     for stat in stats.keys():
-     params[stat] = stats[stat]
+        params[stat] = stats[stat]
 
     return params
 
