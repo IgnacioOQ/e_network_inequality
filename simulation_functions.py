@@ -62,8 +62,10 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):
 
     return params
 
-def generate_parameters_aggregate(_,G=G_default,uncertainty=0.005,n_experiments=20,p_rewiring=0):
+def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20,p_rewiring=0):
     unique_id =  uuid.uuid4().hex
+    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
+    rd.seed(process_seed)
     # I am not sure what the three lines below are for
     params = {
         'randomized': True,
