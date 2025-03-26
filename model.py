@@ -56,13 +56,16 @@ class Model:
             BetaAgent(i, self.bandit,
                       histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
         ]
-        self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent in self.agents]
+        self.init_agents_alphas_betas= 'here goes the list of initial alphas and betas'
+        # self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent in self.agents]
+        
         # agent.id is the name of the node in the network
         # Compute degree centrality
-        degree_centrality_dict = nx.degree_centrality(self.network)
-        # Convert to a NumPy array (vector)
-        degree_centrality_vector = np.array(list(degree_centrality_dict.values()))  
-        self.degree_centrality_vector = degree_centrality_vector
+        # degree_centrality_dict = nx.degree_centrality(self.network)
+        # # Convert to a NumPy array (vector)
+        # degree_centrality_vector = np.array(list(degree_centrality_dict.values()))  
+        # self.degree_centrality_vector = degree_centrality_vector
+        self.degree_centrality_vector = 'here goes the degree centrality vector'
         
         # self.agent_type = agent_type
         self.n_steps = 0
