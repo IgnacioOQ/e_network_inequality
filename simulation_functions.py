@@ -113,8 +113,3 @@ def run_simulation_with_params(param_dict, tolerance = 5*1e-03,seed=420,seeded=F
         result_dict['sim_index'] = param_dict['sim_index']
     
     return result_dict
-
-# Wrapper function for multiprocessing
-def run_simulation_wrapper(param_dict, seed=420,seeded=False, number_of_steps=20000):
-    return run_simulation_with_params(param_dict, number_of_steps=number_of_steps,
-                                      seed=seed,seeded=seeded,show_bar=False)
