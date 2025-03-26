@@ -221,15 +221,11 @@ def scatter_plot(df, target_variable="share_of_correct_agents_at_convergence"):
     numerical_columns.remove(target_variable)  # Remove target variable from independent variables
 
     # Generate scatter plots for each numerical column against the target variable
-    columns_of_interest = ['share_of_correct_agents_at_convergence','convergence_step','uncertainty', 'n_experiments', 'p_rewiring',
-       'average_degree', 'degree_gini_coefficient',
-       'approx_average_clustering_coefficient', 'diameter', 'avg_path_length',
-       'degree_entropy']
-    num_plots = len(columns_of_interest)#len(numerical_columns)
+    num_plots = len(numerical_columns)
     fig, axes = plt.subplots(nrows=(num_plots + 1) // 2, ncols=2, figsize=(10, num_plots * 2))
     axes = axes.flatten()
 
-    for i, column in enumerate(columns_of_interest):#enumerate(numerical_columns):
+    for i, column in enumerate(numerical_columns):
         axes[i].scatter(df[column], df[target_variable], alpha=0.5)
         axes[i].set_xlabel(column)
         axes[i].set_ylabel(target_variable)
