@@ -62,6 +62,30 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):
 
     return params
 
+def generate_parameters_aggregate(_,G=G_default,uncertainty=0.005,n_experiments=20,p_rewiring=0):
+    unique_id =  uuid.uuid4().hex
+    # I am not sure what the three lines below are for
+    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
+    rd.seed(process_seed)
+
+    # Do randomization
+    # randomized_network = randomize_network(G, p_rewiring=p_rewiring)
+
+    params = {
+        'randomized': True,
+        "unique_id": unique_id,
+        "n_agents": int(len(G.nodes)),
+        "network": G,
+        "uncertainty": float(uncertainty),
+        "n_experiments": int(n_experiments),
+        "p_rewiring": float(p_rewiring),
+    }
+    stats = network_statistics(G)
+    for stat in stats.keys():
+     params[stat] = stats[stat]
+
+    return params
+
 def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_steps=20000, show_bar=False):
     
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
