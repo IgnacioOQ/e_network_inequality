@@ -32,7 +32,7 @@ class Model:
         n_experiments: int,
         # agent_type: str,
         uncertainty: float = None,
-        tolerance = 95*1e-05,
+        tolerance = 95*1e-06,
         histories = False,
         sampling_update = False,
         variance_stopping = False,
