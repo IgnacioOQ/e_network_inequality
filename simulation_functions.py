@@ -107,6 +107,11 @@ def run_simulation_with_params(param_dict, seed=420,seeded=False, number_of_step
     result_dict['init_agents_alphas_betas'] = my_model.init_agents_alphas_betas
     result_dict['degree_centrality_vector'] = my_model.degree_centrality_vector
     
+    if 'group_id' in param_dict:
+        result_dict['group_id'] = param_dict['group_id']
+    if 'sim_index' in param_dict:    
+        result_dict['sim_index'] = param_dict['sim_index']
+    
     return result_dict
 
 # Wrapper function for multiprocessing
