@@ -15,7 +15,7 @@ def generate_parameters(_,G=G_default):
 
     # Now what all simulations share
     uncertainty = rd.uniform(.000001, .01)
-    n_experiments = rd.randint(10, 1000)
+    n_experiments = rd.randint(1000, 10000)
 
     # now we pick a random number
     p_rewiring = rd.rand()
