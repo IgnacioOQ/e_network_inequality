@@ -14,7 +14,7 @@ def generate_parameters(_,G=G_default):
     rd.seed(process_seed)
 
     # Now what all simulations share
-    uncertainty = rd.uniform(.000001, .002)
+    uncertainty = rd.uniform(.000001, .001)
     n_experiments = rd.randint(1000, 10000)
 
     # now we pick a random number
