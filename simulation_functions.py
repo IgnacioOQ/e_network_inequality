@@ -15,7 +15,7 @@ def generate_parameters(_,G=G_default):
 
     # Now what all simulations share
     uncertainty = rd.uniform(.000001, .01)
-    n_experiments = rd.randint(1, 21)
+    n_experiments = rd.randint(10, 1000)
 
     # now we pick a random number
     p_rewiring = rd.rand()
@@ -38,7 +38,7 @@ def generate_parameters(_,G=G_default):
 
     return params
 
-def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=20):#,p_rewiring=0):
+def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=50):#,p_rewiring=0):
     unique_id =  uuid.uuid4().hex
     # I am not sure what the three lines below are for
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
