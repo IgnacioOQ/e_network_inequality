@@ -131,6 +131,37 @@ def calculate_degree_gini(G, directed = True):
 
     return gini
 
+def find_reachability_dominator_set(G):
+    """
+    Finds a minimal reachability dominator set in a directed graph G.
+
+    Parameters:
+        G (nx.DiGraph): A directed graph.
+
+    Returns:
+        set: A set of nodes A such that every node in G is reachable from some node in A.
+    """
+    # Step 1: Compute strongly connected components
+    sccs = list(nx.strongly_connected_components(G))
+
+    # Step 2: Build the condensation graph
+    C = nx.condensation(G, sccs)
+
+    # Step 3: Find source SCCs (no incoming edges)
+    source_sccs = [node for node in C.nodes if C.in_degree(node) == 0]
+
+    # Step 4: Pick one representative node from each source SCC
+    reachability_dominator_set = set()
+    scc_list = C.graph['mapping']  # maps node -> scc index
+    inverse_scc_map = {}
+    for node, scc_id in scc_list.items():
+        inverse_scc_map.setdefault(scc_id, []).append(node)
+
+    for source_scc in source_sccs:
+        representative = inverse_scc_map[source_scc][0]  # pick one node from this SCC
+        reachability_dominator_set.add(representative)
+
+    return len(reachability_dominator_set), len(reachability_dominator_set)/len(G.nodes())
 
 def network_statistics(G, directed = True):
     stats = {}
@@ -212,7 +243,8 @@ def network_statistics(G, directed = True):
         stats['degree_entropy'] = entropy
 
     # Add additional metrics as needed here, e.g., centrality measures
-
+    stats['reachability_dominator_set_size'] = find_reachability_dominator_set(G)[0]
+    stats['reachability_dominator_set_ratio'] = find_reachability_dominator_set(G)[1]
     return stats
 
 def scatter_plot(df, target_variable="share_of_correct_agents_at_convergence"):
