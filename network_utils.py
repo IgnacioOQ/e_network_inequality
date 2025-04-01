@@ -161,7 +161,7 @@ def find_reachability_dominator_set(G):
         representative = inverse_scc_map[source_scc][0]  # pick one node from this SCC
         reachability_dominator_set.add(representative)
 
-    return len(reachability_dominator_set), len(reachability_dominator_set)/len(G.nodes())
+    return len(reachability_dominator_set), len(reachability_dominator_set)/len(G.nodes), len(C.nodes), len(C.nodes)/len(G.nodes)
 
 def network_statistics(G, directed = True):
     stats = {}
@@ -218,9 +218,8 @@ def network_statistics(G, directed = True):
     # Add additional metrics as needed here, e.g., centrality measures
     stats['reachability_dominator_set_size'] = find_reachability_dominator_set(G)[0]
     stats['reachability_dominator_set_ratio'] = find_reachability_dominator_set(G)[1]
-    H = nx.condensation(G)
-    stats['condensation_graph_size'] = len(H.nodes)
-    stats['condensation_graph_ratio'] = len(H.nodes)/len(G.nodes)
+    stats['condensation_graph_size'] = find_reachability_dominator_set(G)[2]
+    stats['condensation_graph_ratio'] = find_reachability_dominator_set(G)[3]
     return stats
 
 def scatter_plot(df, target_variable="share_of_correct_agents_at_convergence"):
