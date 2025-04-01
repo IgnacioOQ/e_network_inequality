@@ -161,7 +161,7 @@ def find_reachability_dominator_set(G):
         representative = inverse_scc_map[source_scc][0]  # pick one node from this SCC
         reachability_dominator_set.add(representative)
 
-    return len(reachability_dominator_set), len(reachability_dominator_set)/len(G.nodes), len(C.nodes), len(C.nodes)/len(G.nodes)
+    return len(reachability_dominator_set), len(reachability_dominator_set)/len(G), len(C), len(C)/len(G)
 
 def network_statistics(G, directed = True):
     stats = {}
