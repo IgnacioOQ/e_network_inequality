@@ -220,7 +220,7 @@ def network_statistics(G, directed = True):
     stats['reachability_dominator_set_ratio'] = find_reachability_dominator_set(G)[1]
     H = nx.condensation(G)
     stats['condensation_graph_size'] = len(H.nodes)
-    stats['condensation_graph_ratio'] = len(G.nodes)/len(H.nodes)
+    stats['condensation_graph_ratio'] = len(H.nodes)/len(G.nodes)
     return stats
 
 def scatter_plot(df, target_variable="share_of_correct_agents_at_convergence"):
