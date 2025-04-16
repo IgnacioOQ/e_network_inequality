@@ -10,7 +10,7 @@ G_default = barabasi_albert_directed(100,5)
 def generate_parameters(_,G=G_default):
     unique_id =  uuid.uuid4().hex
     # I am not sure what the three lines below are for
-    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
+    process_seed = int.from_bytes(os.urandom(8), byteorder='little')
     rd.seed(process_seed)
 
     # Now what all simulations share
@@ -41,7 +41,7 @@ def generate_parameters(_,G=G_default):
 def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=50):#,p_rewiring=0):
     unique_id =  uuid.uuid4().hex
     # I am not sure what the three lines below are for
-    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
+    process_seed = int.from_bytes(os.urandom(8), byteorder='little')
     rd.seed(process_seed)
 
     # Do randomization
@@ -64,7 +64,7 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=50):
 
 def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20,p_rewiring=0):
     unique_id =  uuid.uuid4().hex
-    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
+    process_seed = int.from_bytes(os.urandom(8), byteorder='little')
     rd.seed(process_seed)
     # I am not sure what the three lines below are for
     params = {
@@ -84,7 +84,7 @@ def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20
 
 def run_simulation_with_params(param_dict, tolerance = 5*1e-03,seed=420,seeded=False, number_of_steps=20000, show_bar=False):
     
-    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
+    process_seed = int.from_bytes(os.urandom(8), byteorder='little')
     rd.seed(process_seed)
     
     # Extract the network directly since it's already a NetworkX graph object
