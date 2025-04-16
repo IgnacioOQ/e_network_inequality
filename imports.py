@@ -15,4 +15,6 @@ from multiprocessing import Pool, cpu_count
 import unittest
 import dill
 import copy
+import hashlib
+
 # import graph_tool.all as gt
