@@ -86,8 +86,10 @@ def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20
 
 def run_simulation_with_params(param_dict, tolerance = 5*1e-03,seed=420,seeded=False, number_of_steps=20000, show_bar=False):
     
-    process_seed = int.from_bytes(os.urandom(8), byteorder='little')
-    rd.seed(process_seed)
+    entropy = os.urandom(64)
+    digest = hashlib.sha256(entropy).digest()
+    process_seed = int.from_bytes(digest[:4], 'little')  # First 4 bytes = 32 bits
+    random.seed(process_seed)
     
     # Extract the network directly since it's already a NetworkX graph object
     my_network = param_dict['network']
