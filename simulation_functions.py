@@ -64,8 +64,8 @@ def generate_parameters_fixed(_,G=G_default,uncertainty=0.005,n_experiments=50):
 
 def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20,p_rewiring=0):
     unique_id =  uuid.uuid4().hex
-    process_seed = int.from_bytes(os.urandom(4), byteorder='little')
-    rd.seed(process_seed)
+    # process_seed = int.from_bytes(os.urandom(4), byteorder='little')
+    # rd.seed(process_seed)
     # I am not sure what the three lines below are for
     params = {
         'randomized': True,
@@ -75,6 +75,7 @@ def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20
         "uncertainty": float(uncertainty),
         "n_experiments": int(n_experiments),
         "p_rewiring": float(p_rewiring),
+        # "parameterization_seed": process_seed,
     }
     stats = network_statistics(G)
     for stat in stats.keys():
