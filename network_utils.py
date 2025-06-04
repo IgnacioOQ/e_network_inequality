@@ -1,5 +1,7 @@
+
 from imports import *  
 
+# # Plotting Functions
 # Plotting functions
 def plot_network_degree_distribution(G, directed=True, title='title'):
     if directed:
@@ -25,7 +27,7 @@ def plot_network_degree_distribution(G, directed=True, title='title'):
     plt.ylabel('Count')
     plt.xticks(fontsize=8,rotation=20)
     plt.show()
-    
+
 def plot_loglog(G,directed=True,m=10):
     if directed:
         # Get the in-degree of all nodes
@@ -43,79 +45,31 @@ def plot_loglog(G,directed=True,m=10):
     plt.ylabel('Frequency')
     plt.title('Log-Log plot of the degree distribution')
 
+def scatter_plot(df, target_variable="share_of_correct_agents_at_convergence"):
+    # Select numerical columns excluding unique ID and target variable
+    numerical_columns = df.select_dtypes(include=["number"]).columns.tolist()
+    numerical_columns.remove(target_variable)  # Remove target variable from independent variables
 
-# Cleaning Functions
-def remove_duplicate_nodes_directed(G, consider='both'):
-    """
-    Remove duplicate nodes in a directed graph based on neighbors.
+    # Generate scatter plots for each numerical column against the target variable
+    num_plots = len(numerical_columns)
+    fig, axes = plt.subplots(nrows=(num_plots + 1) // 2, ncols=2, figsize=(10, num_plots * 2))
+    axes = axes.flatten()
 
-    Parameters:
-    - G: The directed graph (DiGraph).
-    - consider: 'both', 'outgoing', or 'incoming' to specify which neighbors to consider for duplication.
-    """
-    # Dictionary to map neighbor sets to a representative node
-    neighbor_dict = {}
+    for i, column in enumerate(numerical_columns):
+        axes[i].scatter(df[column], df[target_variable], alpha=0.5)
+        axes[i].set_xlabel(column)
+        axes[i].set_ylabel(target_variable)
+        axes[i].set_title(f"{column} vs {target_variable}")
+        axes[i].grid(True)
 
-    for node in list(G.nodes):
-        if consider == 'outgoing':
-            # Use only outgoing neighbors
-            neighbors = frozenset(G.successors(node))
-        elif consider == 'incoming':
-            # Use only incoming neighbors
-            neighbors = frozenset(G.predecessors(node))
-        else:
-            # Use both incoming and outgoing neighbors as a single set
-            outgoing_neighbors = frozenset(G.successors(node))
-            incoming_neighbors = frozenset(G.predecessors(node))
-            # Union of incoming and outgoing neighbors
-            neighbors = incoming_neighbors.union(outgoing_neighbors)
-        if neighbors in neighbor_dict:
-            # Remove the current node if it's a duplicate
-            G.remove_node(node)
-        else:
-            # Keep the node as a representative for this neighbor configuration
-            neighbor_dict[neighbors] = node
+    # Hide any unused subplots
+    for j in range(i + 1, len(axes)):
+        fig.delaxes(axes[j])
 
-    return G
+    plt.tight_layout()
+    plt.show()
 
-def remove_duplicate_nodes_undirected(G, consider='both'):
-    """
-    Remove duplicate nodes in a directed graph based on neighbors.
-
-    Parameters:
-    - G: The directed graph (DiGraph).
-    - consider: 'both', 'outgoing', or 'incoming' to specify which neighbors to consider for duplication.
-    """
-    # Dictionary to map neighbor sets to a representative node
-    neighbor_dict = {}
-
-    for node in list(G.nodes):
-        if consider == 'outgoing':
-            # Use only outgoing neighbors
-            neighbors = frozenset(G.successors(node))
-        elif consider == 'incoming':
-            # Use only incoming neighbors
-            neighbors = frozenset(G.predecessors(node))
-        else:
-            # Use both incoming and outgoing neighbors as a single set
-            outgoing_neighbors = frozenset(G.successors(node))
-            incoming_neighbors = frozenset(G.predecessors(node))
-            # Union of incoming and outgoing neighbors
-            neighbors = incoming_neighbors.union(outgoing_neighbors)
-        if neighbors in neighbor_dict:
-            # Remove the current node if it's a duplicate
-            G.remove_node(node)
-        else:
-            # Keep the node as a representative for this neighbor configuration
-            neighbor_dict[neighbors] = node
-
-    return G
-
-def get_connected_component(G):
-  # Extract largest component:
-  largest_cc = max(nx.weakly_connected_components(G), key=len)
-#   G = G.subgraph(largest_cc)
-  return G.subgraph(largest_cc)
+# # Network Statistics
 
 # Network statistics
 def calculate_degree_gini(G, directed = True):
@@ -222,26 +176,484 @@ def network_statistics(G, directed = True):
     stats['condensation_graph_ratio'] = find_reachability_dominator_set(G)[3]
     return stats
 
-def scatter_plot(df, target_variable="share_of_correct_agents_at_convergence"):
-     # Select numerical columns excluding unique ID and target variable
-    numerical_columns = df.select_dtypes(include=["number"]).columns.tolist()
-    numerical_columns.remove(target_variable)  # Remove target variable from independent variables
 
-    # Generate scatter plots for each numerical column against the target variable
-    num_plots = len(numerical_columns)
-    fig, axes = plt.subplots(nrows=(num_plots + 1) // 2, ncols=2, figsize=(10, num_plots * 2))
-    axes = axes.flatten()
+# # Variation Methods
 
-    for i, column in enumerate(numerical_columns):
-        axes[i].scatter(df[column], df[target_variable], alpha=0.5)
-        axes[i].set_xlabel(column)
-        axes[i].set_ylabel(target_variable)
-        axes[i].set_title(f"{column} vs {target_variable}")
-        axes[i].grid(True)
+# ## Helper Functions
 
-    # Hide any unused subplots
-    for j in range(i + 1, len(axes)):
-        fig.delaxes(axes[j])
+def get_triangles(net: nx.DiGraph):
+    """Return the list of all triangles in a directed graph G."""
+    triangles = []
+    for clique in nx.enumerate_all_cliques(net.to_undirected()):
+        if len(clique) <= 3:
+            if len(clique) == 3:
+                triangles.append(clique)
+        else:
+            return triangles
+    return triangles
 
-    plt.tight_layout()
-    plt.show()
+# ## Randomization
+
+def randomize_network(G, p_rewiring):
+    # Check if the graph is directed
+    is_directed = G.is_directed()
+
+    # Get edges and nodes
+    edges = list(G.edges()).copy()
+    random.shuffle(edges)
+    edges_set = set(edges)
+    new_edges_set = edges_set.copy()
+    nodes = list(G.nodes()).copy()
+
+    # Find which edges to remove
+    to_remove_set = set()
+    for old_edge in edges:
+        if random.random() < p_rewiring:  # p probability to rewire an edge
+            to_remove_set.add(old_edge)
+            new_edges_set.remove(old_edge)
+
+    # Generate a new edges
+    for edge in to_remove_set:
+        new_edge = (random.choice(nodes), random.choice(nodes))
+        if not is_directed:
+            new_edge = tuple(sorted(new_edge))  # Ensure (u, v) == (v, u) for undirected graphs
+
+        # Avoid duplicate edges and self-loops
+        while (new_edge in new_edges_set) or (new_edge[0] == new_edge[1]):
+            new_edge = (random.choice(nodes), random.choice(nodes))
+            if not is_directed:
+                new_edge = tuple(sorted(new_edge))
+
+        new_edges_set.add(new_edge)
+
+    # Create a new graph with updated edges
+    G_new = G.copy()
+    G_new.remove_edges_from(to_remove_set)
+    G_new.add_edges_from(new_edges_set)
+
+    return G_new
+
+# ## Equalize
+
+def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
+    """
+    Equalize the network by rewiring n random edges.
+    """
+    equalized_net = copy.deepcopy(net)
+    triangles = get_triangles(net)
+    rewired_triangles = random.sample(triangles, n)
+
+    for triangle in rewired_triangles:
+        edge = triangle[-2:]  # Take the last two nodes as the edge to be rewired
+        # Remove edge
+        if equalized_net.has_edge(*edge):
+            equalized_net.remove_edge(*edge)
+        elif equalized_net.has_edge(edge[1], edge[0]):
+            equalized_net.remove_edge(edge[1], edge[0]) 
+        else:
+            continue
+
+        # Add new edge to create a new triangle that passes by the first node
+        node = triangle[0] 
+        neighbors = list(net.predecessors(node)) + list(net.successors(node))
+
+        sources_sample = random.choices(neighbors, k=10)
+        targets_sample = random.choices(neighbors, k=10)
+        edge_sample = [
+            (source, target) 
+            for source in sources_sample 
+            for target in targets_sample 
+            if source != target and not equalized_net.has_edge(source, target)]
+        new_edge = random.choice(edge_sample) # Throws an error if no edges are available
+        equalized_net.add_edge(*new_edge)
+    return equalized_net
+
+# ## Densify
+
+def densify_network(net: nx.DiGraph, n_edges: int) -> nx.DiGraph:
+    # Create a copy of the original network
+    densified_net = copy.deepcopy(net)
+
+    # Get the degree distribution
+    in_degrees = dict(net.in_degree())
+    out_degrees = dict(net.out_degree())
+    multiplier = 10
+    targets = random.choices(
+        list(in_degrees.keys()), 
+        weights=list(in_degrees.values()), 
+        k=multiplier*n_edges
+    )
+    sources = random.choices(
+        list(out_degrees.keys()), 
+        weights=out_degrees.values(), 
+        k=multiplier*n_edges
+    )
+
+    edges_new = list(set(zip(sources, targets))) 
+    edges_new = [edge for edge in edges_new if edge[0] != edge[1]]  
+    edges_new = [edge for edge in edges_new if not edge in net.edges()]
+    edges_new = edges_new[:n_edges] 
+
+    densified_net.add_edges_from(edges_new)
+    return densified_net
+
+def densify_semi_fancy(
+    net: nx.DiGraph, n_edges: int, p_increase_clustering: float, target_degree_dist: str = "original",
+) -> nx.DiGraph:
+    """
+    Densifies a directed network by adding new edges, balancing between increasing 
+    ing
+    and preserving a target degree distribution.
+
+    Parameters
+    ----------
+    net : nx.DiGraph
+        The original directed network to densify.
+    n_edges : int
+        The number of new edges to add.
+    p_increase_clustering : float
+        Probability (between 0 and 1) that a new edge is added to increase clustering
+        (i.e., create new triangles). Otherwise, new edges are added based on the 
+        target degree distribution.
+    target_degree_dist : str, optional
+        The target degree distribution for new edges.
+        "original" uses the original network's degree distribution,
+        "uniform" assigns equal probability to all nodes. Default is "original".
+
+    Returns
+    -------
+    nx.DiGraph
+        A new directed network with additional edges.
+    """
+
+    # Create a copy of the original network
+    net_new = copy.deepcopy(net)
+
+    if target_degree_dist == "original":
+        # Use the original degree distribution
+        out_degrees = dict(net.out_degree())
+        in_degrees = dict(net.in_degree())
+    if target_degree_dist == "uniform":
+        out_degrees = {node: 1 for node in net.nodes()}
+        in_degrees = {node: 1 for node in net.nodes()}
+
+    # Add edges in neighborhoods
+    n_edges_added = 0
+    edges_added_clustering = 0
+    edges_added_degree_dist = 0
+    while n_edges_added < n_edges:
+        if random.random() < p_increase_clustering:
+            # Add new edge to increase clustering
+            possible_edges = []
+            while possible_edges == []:
+                node = random.choice(list(net.nodes()))
+                neighbors = list(net.predecessors(node)) + list(net.successors(node))
+                out_degrees_neighbors = {node: out_degrees[node] for node in neighbors}
+                in_degrees_neighbors = {node: in_degrees[node] for node in neighbors}
+                out_weights = out_degrees_neighbors.values()
+                if all(out_weights) == 0:
+                    out_weights = np.ones(len(out_degrees_neighbors.keys()))
+
+                in_weights = in_degrees_neighbors.values()
+                if all(in_weights) == 0:
+                    in_weights = np.ones(len(in_degrees_neighbors.keys()))
+
+                sources = random.choices(list(out_degrees_neighbors.keys()), weights=out_weights, k=10)
+                targets = random.choices(list(in_degrees_neighbors.keys()), weights=in_weights, k=10)
+                possible_edges = [
+                    (source, target) for source in sources for target in targets
+                    if source != target and not net_new.in_edges(source, target)
+                ]
+                if possible_edges != []:
+                    new_edge = random.choice(possible_edges)
+                    n_edges_added += 1
+                    net_new.add_edge(*new_edge)
+                    edges_added_clustering += 1
+        else:
+            # Add new edge based on target degree distribution
+            edge_sample = []
+            while edge_sample == []:
+                sources_sample = random.choices(list(out_degrees.keys()), weights=out_degrees.values(), k=10)
+                targets_sample = random.choices(list(in_degrees.keys()), weights=in_degrees.values(), k=10)
+                edge_sample = [
+                    (source, target) 
+                    for source in sources_sample 
+                    for target in targets_sample 
+                    if source != target and not net_new.has_edge(source, target)]
+                if edge_sample != []:
+                    new_edge = random.choice(edge_sample) # Throws an error if no edges are available
+                    n_edges_added += 1
+                    net_new.add_edge(*new_edge)
+                    edges_added_degree_dist += 1
+        # print(f"{n_edges_added=:,} edges added")
+    print(f"{edges_added_clustering:,} edges added to increase clustering")
+    print(f"{edges_added_degree_dist:,} edges added based on {target_degree_dist} degree distribution")
+    return net_new
+
+def densify_fancy(
+    net: nx.DiGraph, n_edges: int, target_degree_dist: str = "original", target_clustering: float = None,
+) -> nx.DiGraph:
+    """
+    Densifies a directed network by adding new edges to increase its density, 
+    while optionally targeting a specific degree distribution and clustering coefficient.
+    Priority is given to targeting the specified clustering coefficient.
+
+    Parameters
+    ----------
+    net : nx.DiGraph
+        The original directed network to densify.
+    n_edges : int
+        The number of edges to add.
+    target_degree_dist : str, optional
+        The target degree distribution for new edges. 
+        "original" preserves the original degree distribution, 
+        "uniform" assigns equal probability to all nodes. Default is "original".
+    target_clustering : float, optional
+        The desired average clustering coefficient. If None, uses the original network's clustering.
+
+    Returns
+    -------
+    nx.DiGraph
+        A new directed network with increased density and optionally modified clustering/degree distribution.
+    """
+
+    # Create a copy of the original network
+    net_new = copy.deepcopy(net)
+
+    if target_clustering is None:
+        target_clustering = nx.average_clustering(net)
+    if target_degree_dist == "original":
+        # Use the original degree distribution
+        out_degrees = dict(net.out_degree())
+        in_degrees = dict(net.in_degree())
+    if target_degree_dist == "uniform":
+        out_degrees = {node: 1 for node in net.nodes()}
+        in_degrees = {node: 1 for node in net.nodes()}
+
+    # Add edges in neighborhoods
+    n_edges_added = 0
+    edges_added_clustering = 0
+    edges_added_degree_dist = 0
+    new_clustering = nx.average_clustering(net_new)
+    while n_edges_added < n_edges:
+        if new_clustering < target_clustering:
+            # Add new edge to increase clustering
+            node = random.choice(list(net.nodes()))
+            neighbors = list(net.predecessors(node)) + list(net.successors(node))
+            out_degrees_neighbors = {node: out_degrees[node] for node in neighbors}
+            in_degrees_neighbors = {node: in_degrees[node] for node in neighbors}
+            out_weights = out_degrees_neighbors.values()
+            if all(out_weights) == 0:
+                out_weights = np.ones(len(out_degrees_neighbors.keys()))
+            in_weights = in_degrees_neighbors.values()
+
+            if all(in_weights) == 0:
+                in_weights = np.ones(len(in_degrees_neighbors.keys()))
+
+            sources = random.choices(list(out_degrees_neighbors.keys()), weights=out_weights, k=10)
+            targets = random.choices(list(in_degrees_neighbors.keys()), weights=in_weights, k=10)
+            possible_edges = [
+                (source, target) for source in sources for target in targets
+                if source != target and not net_new.in_edges(source, target)
+            ]
+            if possible_edges != []:
+                new_edge = random.choice(possible_edges)
+                n_edges_added += 1
+                net_new.add_edge(*new_edge)
+                new_clustering = nx.average_clustering(net_new)
+                edges_added_clustering += 1
+        else:
+            # Add new edge based on target degree distribution
+            sources_sample = random.choices(list(out_degrees.keys()), weights=out_degrees.values(), k=10)
+            targets_sample = random.choices(list(in_degrees.keys()), weights=in_degrees.values(), k=10)
+            edge_sample = [
+                (source, target) 
+                for source in sources_sample 
+                for target in targets_sample 
+                if source != target and not net_new.has_edge(source, target)]
+            if edge_sample != []:
+                new_edge = random.choice(edge_sample) # Throws an error if no edges are available
+                n_edges_added += 1
+                net_new.add_edge(*new_edge)
+                new_clustering = nx.average_clustering(net_new)
+                edges_added_degree_dist += 1
+        print(f"{n_edges_added=:,} edges added")
+    print(f"{edges_added_clustering:,} edges added to increase clustering")
+    print(f"{edges_added_degree_dist:,} edges added based on {target_degree_dist} degree distribution")
+    return net_new
+
+def densify_fancy_speed_up(
+    net: nx.DiGraph, n_edges: int, target_degree_dist: str = "original", target_average_clustering: float = None,
+) -> nx.DiGraph:
+    """
+    Densifies a directed network by adding new edges to increase its density, 
+    while optionally targeting a specific degree distribution and clustering coefficient.
+    Priority is given to targeting the specified clustering coefficient.
+
+    Parameters
+    ----------
+    net : nx.DiGraph
+        The original directed network to densify.
+    n_edges : int
+        The number of edges to add.
+    target_degree_dist : str, optional
+        The target degree distribution for new edges. 
+        "original" preserves the original degree distribution, 
+        "uniform" assigns equal probability to all nodes. Default is "original".
+    target_clustering : float, optional
+        The desired average clustering coefficient. If None, uses the original network's clustering.
+
+    Returns
+    -------
+    nx.DiGraph
+        A new directed network with increased density and optionally modified clustering/degree distribution.
+    """
+
+    # Create a copy of the original network
+    net_new = copy.deepcopy(net)
+
+    if target_average_clustering is None:
+        target_average_clustering = nx.average_clustering(net)
+    if target_degree_dist == "original":
+        # Use the original degree distribution
+        out_degrees = dict(net.out_degree())
+        in_degrees = dict(net.in_degree())
+    if target_degree_dist == "uniform":
+        out_degrees = {node: 1 for node in net.nodes()}
+        in_degrees = {node: 1 for node in net.nodes()}
+    clustering_dict: dict = nx.clustering(net_new)
+
+    # Add edges in neighborhoods
+    n_edges_added = 0
+    edges_added_clustering = 0
+    edges_added_degree_dist = 0
+    new_average_clustering = np.average(list(clustering_dict.values()))
+    while n_edges_added < n_edges:
+        if new_average_clustering < target_average_clustering:
+            # Add new edge to increase clustering
+            node = random.choice(list(net.nodes()))
+            neighbors = list(net.predecessors(node)) + list(net.successors(node))
+            out_degrees_neighbors = {node: out_degrees[node] for node in neighbors}
+            in_degrees_neighbors = {node: in_degrees[node] for node in neighbors}
+            out_weights = out_degrees_neighbors.values()
+            if all(out_weights) == 0:
+                out_weights = np.ones(len(out_degrees_neighbors.keys()))
+            in_weights = in_degrees_neighbors.values()
+
+            if all(in_weights) == 0:
+                in_weights = np.ones(len(in_degrees_neighbors.keys()))
+
+            sources = random.choices(list(out_degrees_neighbors.keys()), weights=out_weights, k=10)
+            targets = random.choices(list(in_degrees_neighbors.keys()), weights=in_weights, k=10)
+            possible_edges = [
+                (source, target) for source in sources for target in targets
+                if source != target and not net_new.in_edges(source, target)
+            ]
+            if possible_edges != []:
+                new_edge = random.choice(possible_edges)
+                n_edges_added += 1
+                net_new.add_edge(*new_edge)
+                neighborhood_0 = list(net_new.predecessors(new_edge[0])) + list(net_new.successors(new_edge[0]))
+                neighborhood_1 = list(net_new.predecessors(new_edge[1])) + list(net_new.successors(new_edge[1]))
+                affected_nodes = [new_edge[0], new_edge[1]] + list(set(neighborhood_0).intersection(set(neighborhood_1)))
+                for node in affected_nodes:
+                    clustering_dict[node] = nx.clustering(net_new, node)
+                new_average_clustering = np.average(list(clustering_dict.values()))
+                edges_added_clustering += 1
+        else:
+            # Add new edge based on target degree distribution
+            sources_sample = random.choices(list(out_degrees.keys()), weights=out_degrees.values(), k=10)
+            targets_sample = random.choices(list(in_degrees.keys()), weights=in_degrees.values(), k=10)
+            edge_sample = [
+                (source, target) 
+                for source in sources_sample 
+                for target in targets_sample 
+                if source != target and not net_new.has_edge(source, target)]
+            if edge_sample != []:
+                new_edge = random.choice(edge_sample) # Throws an error if no edges are available
+                n_edges_added += 1
+                net_new.add_edge(*new_edge)
+                neighborhood_0 = list(net_new.predecessors(new_edge[0])) + list(net_new.successors(new_edge[0]))
+                neighborhood_1 = list(net_new.predecessors(new_edge[1])) + list(net_new.successors(new_edge[1]))
+                affected_nodes = [new_edge[0], new_edge[1]] + list(set(neighborhood_0).intersection(set(neighborhood_1)))
+                for node in affected_nodes:
+                    clustering_dict[node] = nx.clustering(net_new, node)
+                new_average_clustering = np.average(list(clustering_dict.values()))
+                edges_added_degree_dist += 1
+        # print(f"{n_edges_added=:,} edges added")
+    print(f"{edges_added_clustering:,} edges added to increase clustering")
+    print(f"{edges_added_degree_dist:,} edges added based on {target_degree_dist} degree distribution")
+    return net_new
+
+# ## Cluster
+
+def decluster(net: nx.DiGraph, n_triangles: int) -> nx.DiGraph:
+    """
+    Decluster the network by rewiring n_triangles random triangles.
+    """
+    decluster_net = copy.deepcopy(net)
+    triangles = get_triangles(net)
+    rewired_triangles = random.sample(triangles, n_triangles)
+    rewired_edges = [
+        (source, target) 
+        for (source, target, _) in rewired_triangles
+    ] # Warning: triangles are based on undirected graph!
+
+    for edge in rewired_edges:
+        # Remove edge
+        if decluster_net.has_edge(*edge):
+            decluster_net.remove_edge(*edge)
+        elif decluster_net.has_edge(edge[1], edge[0]):
+            decluster_net.remove_edge(edge[1], edge[0]) 
+        else:
+            continue
+
+        # Add new edge based on out- and in-degree distribution
+        out_degrees = dict(net.out_degree())
+        in_degrees = dict(net.in_degree())
+        sources_sample = random.choices(list(out_degrees.keys()), weights=out_degrees.values(), k=10)
+        targets_sample = random.choices(list(in_degrees.keys()), weights=in_degrees.values(), k=10)
+        edge_sample = [
+            (source, target) 
+            for source in sources_sample 
+            for target in targets_sample 
+            if source != target and not decluster_net.has_edge(source, target)]
+        new_edge = random.choice(edge_sample) # Throws an error if no edges are available
+        decluster_net.add_edge(*new_edge)
+    return decluster_net
+
+def cluster_network(net: nx.DiGraph, n: int) -> nx.DiGraph:
+    # Create a copy of the original network
+    cluster_net = copy.deepcopy(net)
+        
+    
+    # Add edges based on the degree distribution
+    n_edges_to_add = n
+    print(f"{n_edges_to_add=:,}")
+
+    # Add edges in neighborhoods
+    edges_new = []
+    while len(edges_new) < n_edges_to_add:
+        node = random.choice(list(net.nodes()))
+        neighbors = list(net.predecessors(node)) + list(net.successors(node))
+        out_degrees_neighbors = dict(net.out_degree(neighbors))
+        in_degrees_neighbors = dict(net.in_degree(neighbors))
+        out_weights = out_degrees_neighbors.values()
+        if all(out_weights) == 0:
+            out_weights = np.ones(len(out_degrees_neighbors.keys()))
+        in_weights = in_degrees_neighbors.values()
+    
+        if all(in_weights) == 0:
+            in_weights = np.ones(len(in_degrees_neighbors.keys()))
+        
+        sources = random.choices(list(out_degrees_neighbors.keys()), weights=out_weights, k=10)
+        targets = random.choices(list(in_degrees_neighbors.keys()), weights=in_weights, k=10)
+        possible_edges = [
+            (source, target) for source in sources for target in targets
+            if source != target and not (source, target) in edges_new and not net.in_edges(source, target)
+        ]
+        if possible_edges != []:
+            edges_new.append(random.choice(possible_edges))
+    cluster_net.add_edges_from(edges_new)
+    
+    return cluster_net
