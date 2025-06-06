@@ -2,7 +2,7 @@ from imports import *
 from agents import BetaAgent
 from model import Model
 from network_utils import *
-from network_randomization import *
+# from network_randomization import *
 from network_generation import *
 
 G_default = barabasi_albert_directed(100,5)
