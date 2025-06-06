@@ -631,7 +631,7 @@ def cluster_network(net: nx.DiGraph, n: int) -> nx.DiGraph:
     
     # Add edges based on the degree distribution
     n_edges_to_add = n
-    print(f"{n_edges_to_add=:,}")
+    # print(f"{n_edges_to_add=:,}")
 
     # Add edges in neighborhoods
     edges_new = []
