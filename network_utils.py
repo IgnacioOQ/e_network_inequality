@@ -176,7 +176,6 @@ def network_statistics(G, directed = True):
     stats['condensation_graph_ratio'] = find_reachability_dominator_set(G)[3]
     return stats
 
-
 # # Variation Methods
 # ## Helper Functions
 
@@ -193,7 +192,7 @@ def get_triangles(net: nx.DiGraph):
 
 # ## Randomization
 
-def randomize_network(G, p_rewiring):
+def randomize_network(G, n_edges: int):
     # Check if the graph is directed
     is_directed = G.is_directed()
 
@@ -205,11 +204,8 @@ def randomize_network(G, p_rewiring):
     nodes = list(G.nodes()).copy()
 
     # Find which edges to remove
-    to_remove_set = set()
-    for old_edge in edges:
-        if random.random() < p_rewiring:  # p probability to rewire an edge
-            to_remove_set.add(old_edge)
-            new_edges_set.remove(old_edge)
+    to_remove_set = set(random.sample(edges, k=n_edges))
+    new_edges_set.difference(to_remove_set)
 
     # Generate a new edges
     for edge in to_remove_set:
@@ -233,7 +229,6 @@ def randomize_network(G, p_rewiring):
     return G_new
 
 # ## Equalize
-
 def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
     """
     Equalize the network by rewiring n random edges.
@@ -269,7 +264,6 @@ def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
     return equalized_net
 
 # ## Densify
-
 def densify_fancy_speed_up(
     net: nx.DiGraph, n_edges: int, target_degree_dist: str = "original", target_average_clustering: float = None,
 ) -> nx.DiGraph:
