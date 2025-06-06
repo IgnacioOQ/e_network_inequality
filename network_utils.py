@@ -252,8 +252,8 @@ def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
         node = triangle[0] 
         neighbors = list(net.predecessors(node)) + list(net.successors(node))
         #I: I understand k=10 neighbors so that there are enough options to choose from,
-        sources_sample = random.choices(neighbors, k=10)
-        targets_sample = random.choices(neighbors, k=10)
+        sources_sample = random.choices(neighbors, k=20)
+        targets_sample = random.choices(neighbors, k=20)
         edge_sample = [
             (source, target) 
             for source in sources_sample 
