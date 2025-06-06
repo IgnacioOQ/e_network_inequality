@@ -265,7 +265,9 @@ def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
 
 # ## Densify
 def densify_fancy_speed_up(
-    net: nx.DiGraph, n_edges: int, target_degree_dist: str = "original", target_average_clustering: float = None,
+    net: nx.DiGraph, n_edges: int, target_degree_dist: str = "original", 
+    target_average_clustering: float = None,
+    keep_density_fixed = False,
 ) -> nx.DiGraph:
     """
     Densifies a directed network by adding new edges to increase its density, 
@@ -303,6 +305,11 @@ def densify_fancy_speed_up(
     if target_degree_dist == "uniform":
         out_degrees = {node: 1 for node in net.nodes()}
         in_degrees = {node: 1 for node in net.nodes()}
+        
+    if keep_density_fixed:
+        edges_to_remove = random.sample(net_new.edges(), n_edges)
+        net_new.remove_edges_from(edges_to_remove)
+        
     clustering_dict: dict = nx.clustering(net_new)
 
     # Add edges in neighborhoods
