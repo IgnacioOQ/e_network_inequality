@@ -189,7 +189,7 @@ def get_triangles(net: nx.DiGraph):
             if len(clique) == 3:
                 triangles.append(clique)
         else:
-            return triangles
+            return triangles 
     return triangles
 
 # ## Randomization
@@ -246,6 +246,7 @@ def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
     for triangle in rewired_triangles:
         edge = triangle[-2:]  # Take the last two nodes as the edge to be rewired
         # Remove edge
+        #I: What is the difference between the two conditions?
         if equalized_net.has_edge(*edge):
             equalized_net.remove_edge(*edge)
         elif equalized_net.has_edge(edge[1], edge[0]):
@@ -256,7 +257,7 @@ def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
         # Add new edge to create a new triangle that passes by the first node
         node = triangle[0] 
         neighbors = list(net.predecessors(node)) + list(net.successors(node))
-
+        #I: I understand k=10 neighbors so that there are enough options to choose from,
         sources_sample = random.choices(neighbors, k=10)
         targets_sample = random.choices(neighbors, k=10)
         edge_sample = [
@@ -275,6 +276,8 @@ def densify_network(net: nx.DiGraph, n_edges: int) -> nx.DiGraph:
     densified_net = copy.deepcopy(net)
 
     # Get the degree distribution
+    #I: I like this idea of using the in- and out-degree distribution to sample new edges
+    #I: It will slightly change the degree distribution in the direction of inequality, but not too much
     in_degrees = dict(net.in_degree())
     out_degrees = dict(net.out_degree())
     multiplier = 10
@@ -607,7 +610,7 @@ def decluster(net: nx.DiGraph, n_triangles: int) -> nx.DiGraph:
             decluster_net.remove_edge(edge[1], edge[0]) 
         else:
             continue
-
+        # I: I like this but maybe the new edge generates a new cluster?
         # Add new edge based on out- and in-degree distribution
         out_degrees = dict(net.out_degree())
         in_degrees = dict(net.in_degree())
@@ -624,8 +627,7 @@ def decluster(net: nx.DiGraph, n_triangles: int) -> nx.DiGraph:
 
 def cluster_network(net: nx.DiGraph, n: int) -> nx.DiGraph:
     # Create a copy of the original network
-    cluster_net = copy.deepcopy(net)
-        
+    cluster_net = copy.deepcopy(net)     
     
     # Add edges based on the degree distribution
     n_edges_to_add = n
@@ -633,6 +635,8 @@ def cluster_network(net: nx.DiGraph, n: int) -> nx.DiGraph:
 
     # Add edges in neighborhoods
     edges_new = []
+    # I: wouldn't it be better to add one edge per random chosen node?
+    # I: this way we can ensure that the new edges are not making a single node too 'cliqued'
     while len(edges_new) < n_edges_to_add:
         node = random.choice(list(net.nodes()))
         neighbors = list(net.predecessors(node)) + list(net.successors(node))
