@@ -178,7 +178,6 @@ def network_statistics(G, directed = True):
 
 
 # # Variation Methods
-
 # ## Helper Functions
 
 def get_triangles(net: nx.DiGraph):
@@ -270,220 +269,6 @@ def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
     return equalized_net
 
 # ## Densify
-
-def densify_network(net: nx.DiGraph, n_edges: int) -> nx.DiGraph:
-    # Create a copy of the original network
-    densified_net = copy.deepcopy(net)
-
-    # Get the degree distribution
-    #I: I like this idea of using the in- and out-degree distribution to sample new edges
-    #I: It will slightly change the degree distribution in the direction of inequality, but not too much
-    in_degrees = dict(net.in_degree())
-    out_degrees = dict(net.out_degree())
-    multiplier = 10
-    targets = random.choices(
-        list(in_degrees.keys()), 
-        weights=list(in_degrees.values()), 
-        k=multiplier*n_edges
-    )
-    sources = random.choices(
-        list(out_degrees.keys()), 
-        weights=out_degrees.values(), 
-        k=multiplier*n_edges
-    )
-
-    edges_new = list(set(zip(sources, targets))) 
-    edges_new = [edge for edge in edges_new if edge[0] != edge[1]]  
-    edges_new = [edge for edge in edges_new if not edge in net.edges()]
-    edges_new = edges_new[:n_edges] 
-
-    densified_net.add_edges_from(edges_new)
-    return densified_net
-
-def densify_semi_fancy(
-    net: nx.DiGraph, n_edges: int, p_increase_clustering: float, target_degree_dist: str = "original",
-) -> nx.DiGraph:
-    """
-    Densifies a directed network by adding new edges, balancing between increasing 
-    ing
-    and preserving a target degree distribution.
-
-    Parameters
-    ----------
-    net : nx.DiGraph
-        The original directed network to densify.
-    n_edges : int
-        The number of new edges to add.
-    p_increase_clustering : float
-        Probability (between 0 and 1) that a new edge is added to increase clustering
-        (i.e., create new triangles). Otherwise, new edges are added based on the 
-        target degree distribution.
-    target_degree_dist : str, optional
-        The target degree distribution for new edges.
-        "original" uses the original network's degree distribution,
-        "uniform" assigns equal probability to all nodes. Default is "original".
-
-    Returns
-    -------
-    nx.DiGraph
-        A new directed network with additional edges.
-    """
-
-    # Create a copy of the original network
-    net_new = copy.deepcopy(net)
-
-    if target_degree_dist == "original":
-        # Use the original degree distribution
-        out_degrees = dict(net.out_degree())
-        in_degrees = dict(net.in_degree())
-    if target_degree_dist == "uniform":
-        out_degrees = {node: 1 for node in net.nodes()}
-        in_degrees = {node: 1 for node in net.nodes()}
-
-    # Add edges in neighborhoods
-    n_edges_added = 0
-    edges_added_clustering = 0
-    edges_added_degree_dist = 0
-    while n_edges_added < n_edges:
-        if random.random() < p_increase_clustering:
-            # Add new edge to increase clustering
-            possible_edges = []
-            while possible_edges == []:
-                node = random.choice(list(net.nodes()))
-                neighbors = list(net.predecessors(node)) + list(net.successors(node))
-                out_degrees_neighbors = {node: out_degrees[node] for node in neighbors}
-                in_degrees_neighbors = {node: in_degrees[node] for node in neighbors}
-                out_weights = out_degrees_neighbors.values()
-                if all(out_weights) == 0:
-                    out_weights = np.ones(len(out_degrees_neighbors.keys()))
-
-                in_weights = in_degrees_neighbors.values()
-                if all(in_weights) == 0:
-                    in_weights = np.ones(len(in_degrees_neighbors.keys()))
-
-                sources = random.choices(list(out_degrees_neighbors.keys()), weights=out_weights, k=10)
-                targets = random.choices(list(in_degrees_neighbors.keys()), weights=in_weights, k=10)
-                possible_edges = [
-                    (source, target) for source in sources for target in targets
-                    if source != target and not net_new.in_edges(source, target)
-                ]
-                if possible_edges != []:
-                    new_edge = random.choice(possible_edges)
-                    n_edges_added += 1
-                    net_new.add_edge(*new_edge)
-                    edges_added_clustering += 1
-        else:
-            # Add new edge based on target degree distribution
-            edge_sample = []
-            while edge_sample == []:
-                sources_sample = random.choices(list(out_degrees.keys()), weights=out_degrees.values(), k=10)
-                targets_sample = random.choices(list(in_degrees.keys()), weights=in_degrees.values(), k=10)
-                edge_sample = [
-                    (source, target) 
-                    for source in sources_sample 
-                    for target in targets_sample 
-                    if source != target and not net_new.has_edge(source, target)]
-                if edge_sample != []:
-                    new_edge = random.choice(edge_sample) # Throws an error if no edges are available
-                    n_edges_added += 1
-                    net_new.add_edge(*new_edge)
-                    edges_added_degree_dist += 1
-        # print(f"{n_edges_added=:,} edges added")
-    print(f"{edges_added_clustering:,} edges added to increase clustering")
-    print(f"{edges_added_degree_dist:,} edges added based on {target_degree_dist} degree distribution")
-    return net_new
-
-def densify_fancy(
-    net: nx.DiGraph, n_edges: int, target_degree_dist: str = "original", target_clustering: float = None,
-) -> nx.DiGraph:
-    """
-    Densifies a directed network by adding new edges to increase its density, 
-    while optionally targeting a specific degree distribution and clustering coefficient.
-    Priority is given to targeting the specified clustering coefficient.
-
-    Parameters
-    ----------
-    net : nx.DiGraph
-        The original directed network to densify.
-    n_edges : int
-        The number of edges to add.
-    target_degree_dist : str, optional
-        The target degree distribution for new edges. 
-        "original" preserves the original degree distribution, 
-        "uniform" assigns equal probability to all nodes. Default is "original".
-    target_clustering : float, optional
-        The desired average clustering coefficient. If None, uses the original network's clustering.
-
-    Returns
-    -------
-    nx.DiGraph
-        A new directed network with increased density and optionally modified clustering/degree distribution.
-    """
-
-    # Create a copy of the original network
-    net_new = copy.deepcopy(net)
-
-    if target_clustering is None:
-        target_clustering = nx.average_clustering(net)
-    if target_degree_dist == "original":
-        # Use the original degree distribution
-        out_degrees = dict(net.out_degree())
-        in_degrees = dict(net.in_degree())
-    if target_degree_dist == "uniform":
-        out_degrees = {node: 1 for node in net.nodes()}
-        in_degrees = {node: 1 for node in net.nodes()}
-
-    # Add edges in neighborhoods
-    n_edges_added = 0
-    edges_added_clustering = 0
-    edges_added_degree_dist = 0
-    new_clustering = nx.average_clustering(net_new)
-    while n_edges_added < n_edges:
-        if new_clustering < target_clustering:
-            # Add new edge to increase clustering
-            node = random.choice(list(net.nodes()))
-            neighbors = list(net.predecessors(node)) + list(net.successors(node))
-            out_degrees_neighbors = {node: out_degrees[node] for node in neighbors}
-            in_degrees_neighbors = {node: in_degrees[node] for node in neighbors}
-            out_weights = out_degrees_neighbors.values()
-            if all(out_weights) == 0:
-                out_weights = np.ones(len(out_degrees_neighbors.keys()))
-            in_weights = in_degrees_neighbors.values()
-
-            if all(in_weights) == 0:
-                in_weights = np.ones(len(in_degrees_neighbors.keys()))
-
-            sources = random.choices(list(out_degrees_neighbors.keys()), weights=out_weights, k=10)
-            targets = random.choices(list(in_degrees_neighbors.keys()), weights=in_weights, k=10)
-            possible_edges = [
-                (source, target) for source in sources for target in targets
-                if source != target and not net_new.in_edges(source, target)
-            ]
-            if possible_edges != []:
-                new_edge = random.choice(possible_edges)
-                n_edges_added += 1
-                net_new.add_edge(*new_edge)
-                new_clustering = nx.average_clustering(net_new)
-                edges_added_clustering += 1
-        else:
-            # Add new edge based on target degree distribution
-            sources_sample = random.choices(list(out_degrees.keys()), weights=out_degrees.values(), k=10)
-            targets_sample = random.choices(list(in_degrees.keys()), weights=in_degrees.values(), k=10)
-            edge_sample = [
-                (source, target) 
-                for source in sources_sample 
-                for target in targets_sample 
-                if source != target and not net_new.has_edge(source, target)]
-            if edge_sample != []:
-                new_edge = random.choice(edge_sample) # Throws an error if no edges are available
-                n_edges_added += 1
-                net_new.add_edge(*new_edge)
-                new_clustering = nx.average_clustering(net_new)
-                edges_added_degree_dist += 1
-        print(f"{n_edges_added=:,} edges added")
-    print(f"{edges_added_clustering:,} edges added to increase clustering")
-    print(f"{edges_added_degree_dist:,} edges added based on {target_degree_dist} degree distribution")
-    return net_new
 
 def densify_fancy_speed_up(
     net: nx.DiGraph, n_edges: int, target_degree_dist: str = "original", target_average_clustering: float = None,
@@ -584,12 +369,11 @@ def densify_fancy_speed_up(
                 new_average_clustering = np.average(list(clustering_dict.values()))
                 edges_added_degree_dist += 1
         # print(f"{n_edges_added=:,} edges added")
-    print(f"{edges_added_clustering:,} edges added to increase clustering")
-    print(f"{edges_added_degree_dist:,} edges added based on {target_degree_dist} degree distribution")
+    # print(f"{edges_added_clustering:,} edges added to increase clustering")
+    # print(f"{edges_added_degree_dist:,} edges added based on {target_degree_dist} degree distribution")
     return net_new
 
 # ## Cluster
-
 def decluster(net: nx.DiGraph, n_triangles: int) -> nx.DiGraph:
     """
     Decluster the network by rewiring n_triangles random triangles.
