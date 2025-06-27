@@ -197,11 +197,11 @@ def randomize_network(G, n_edges: int):
     is_directed = G.is_directed()
 
     # Get edges and nodes
-    edges = list(G.edges()).copy()
+    edges = copy.deepcopy(list(G.edges()))
     random.shuffle(edges)
     edges_set = set(edges)
-    new_edges_set = edges_set.copy()
-    nodes = list(G.nodes()).copy()
+    new_edges_set = copy.deepcopy(edges_set)
+    nodes = copy.deepcopy(list(G.nodes()))
 
     # Find which edges to remove
     to_remove_set = set(random.sample(edges, k=n_edges))
@@ -222,7 +222,7 @@ def randomize_network(G, n_edges: int):
         new_edges_set.add(new_edge)
 
     # Create a new graph with updated edges
-    G_new = G.copy()
+    G_new = copy.deepcopy(G)
     G_new.remove_edges_from(to_remove_set)
     G_new.add_edges_from(new_edges_set)
 
