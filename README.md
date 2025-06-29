@@ -24,8 +24,10 @@ This means that the directed networks we are going to use are inverse of the dir
 
 3. Simulations
 
-- TBU
-- Simulations will be done on Google Colab to make use of parallelization. So I will just put the notebook here.
+- simulation_functions.py defines the simulation function, to parallelize in Google Colab.
+- The relevant Colab Notebook is this one: https://drive.google.com/file/d/1Af7uPiSDVF7s-ytO0fP4rIySoJVZIkoL/view?usp=sharing
+  - There there are parallel simulations for Generated Networks, Perceptron, and Peptic Ulcer.
+  - Several variations can be done from the Google Colab, changing uncertainty of the problem, number of experiments, etc.
 
 4. Results Analysis
 
