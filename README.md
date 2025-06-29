@@ -19,12 +19,13 @@ This means that the directed networks we are going to use are inverse of the dir
 - network_generation.py defines the generative models that we are going to use. We need to continue working on this.
 - network_randomization.py is a single file containing the network randomization function that is at the core of our project.
 - getting_citations_networks.ipynb (still unclean) is a self contained notebook that we used to generate the empirical networks used for the study.
-- Both the (clean) peptic ulcer and the perceptron networks are in the repository.
+- Both the (clean) peptic ulcer and the perceptron networks are in the empirical_networks directory.
 - network_testing.ipynb tests the functions defined here.
 
 3. Simulations
 
 - simulation_functions.py defines the simulation function, to parallelize in Google Colab.
+- There is a simulation testing file for sanity.
 - The relevant Colab Notebook is this one: https://drive.google.com/file/d/1Af7uPiSDVF7s-ytO0fP4rIySoJVZIkoL/view?usp=sharing
   - There there are parallel simulations for Generated Networks, Perceptron, and Peptic Ulcer.
   - Several variations can be done from the Google Colab, changing uncertainty of the problem, number of experiments, etc.
