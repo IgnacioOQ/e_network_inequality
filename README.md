@@ -11,7 +11,7 @@ This means that the directed networks we are going to use are inverse of the dir
 
 2. Networks
 
-- network_utils.py where the plotting functions, as well as some cleaning functions and the network statistic functions are defined.
+- network_utils.py where all the functions corresponding to networks are defined: cleaning functions, plotting functions, and variation functions (randomization, equalize, densify).
   - Since we want to make it compatible with both directed and undirected most functions have a "directed" input parameter set as default as True.
   - Since we constructed the networks inverse to the direction of flow, the relevant degree (for gini, entropy, etc.) is the in_degree.
   - Since some network properties might not be defined, there are some ad-hoc definitions to deal with this.
