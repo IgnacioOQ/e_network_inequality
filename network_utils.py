@@ -490,10 +490,17 @@ def densify_fancy_speed_up(
     else:
         raise ValueError("target_degree_dist must be 'original' or 'uniform'")
         
-    if keep_density_fixed:
-        edges_to_remove = random.sample(net_new.edges(), n_edges)
-        net_new.remove_edges_from(edges_to_remove)
+    # if keep_density_fixed:
+    #     edges_to_remove = random.sample(net_new.edges(), n_edges)
+    #     net_new.remove_edges_from(edges_to_remove)
         
+    if keep_density_fixed:
+        # Ensure there are enough edges to remove and the number to remove is not negative
+        num_edges_to_remove = min(n_edges, net_new.number_of_edges())
+        if num_edges_to_remove > 0:
+            edges_to_remove = random.sample(list(net_new.edges()), num_edges_to_remove)
+            net_new.remove_edges_from(edges_to_remove)
+            
     clustering_dict: dict = nx.clustering(net_new)
 
     # Add edges in neighborhoods
