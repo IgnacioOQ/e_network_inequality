@@ -3,7 +3,10 @@ from imports import *
 
 # # Plotting Functions
 # Plotting functions
-def plot_network_degree_distribution(G, directed=True, title='title'):
+def plot_network_degree_distribution(G, directed=True):
+    # Compute density
+    density = nx.density(G)
+    print(f"Density of the network: {density}")
     if directed:
         degrees = np.array([degree for node, degree in G.out_degree()])
     else:
@@ -19,10 +22,10 @@ def plot_network_degree_distribution(G, directed=True, title='title'):
 
     # Plot a vertical line at the mean value
     plt.axvline(mean_value, color='b', linestyle='--', linewidth=2)
-    plt.text(mean_value + 0.1, plt.ylim()[1] * 0.9, f'Mean: {mean_value}', color='b')
+    plt.text(mean_value + 0.1, plt.ylim()[1] * 0.9, f'Mean: {mean_value:.3f}', color='b')
     # plt.text(mean_value + 0.1, plt.ylim()[1] * 0.9, 'Mean: {:.2f}'.format(mean_value), color='b')
 
-    plt.title('Timeline Smooth Histogram for: ' + title)
+    plt.title('Network Out-Degree Distribution')
     plt.xlabel('Degree')
     plt.ylabel('Count')
     plt.xticks(fontsize=8,rotation=20)
@@ -39,11 +42,12 @@ def plot_loglog(G,directed=True,m=10):
     else:
         degree_freq = nx.degree_histogram(G)
     degrees = range(len(degree_freq))
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(8, 6))
     plt.loglog(degrees[m:], degree_freq[m:],'go-')
     plt.xlabel('Degree')
     plt.ylabel('Frequency')
-    plt.title('Log-Log plot of the degree distribution')
+    plt.xticks(fontsize=8,rotation=20)
+    plt.title('Network Out-Degree Distribution Log-Log Plot')
 
 def scatter_plot(df, target_variable="share_of_correct_agents_at_convergence"):
     # Select numerical columns excluding unique ID and target variable
@@ -193,40 +197,73 @@ def get_triangles(net: nx.DiGraph):
 # ## Randomization
 
 def randomize_network(G, n_edges: int):
-    # Check if the graph is directed
     is_directed = G.is_directed()
 
-    # Get edges and nodes
-    edges = copy.deepcopy(list(G.edges()))
+    nodes = list(G.nodes())
+
+    # Canonicalize existing edges if undirected
+    raw_edges = list(G.edges())
+    edges = raw_edges if is_directed else [tuple(sorted(e)) for e in raw_edges]
+
     random.shuffle(edges)
-    edges_set = set(edges)
-    new_edges_set = copy.deepcopy(edges_set)
-    nodes = copy.deepcopy(list(G.nodes()))
+    new_edges_set = set(edges)
 
-    # Find which edges to remove
+    # Choose edges to remove (already canonicalized if undirected)
     to_remove_set = set(random.sample(edges, k=n_edges))
-    new_edges_set.difference(to_remove_set)
+    new_edges_set.difference_update(to_remove_set)  # <- fixes issue #1 and #2
 
-    # Generate a new edges
-    for edge in to_remove_set:
-        new_edge = (random.choice(nodes), random.choice(nodes))
+    # Generate replacement edges (simple rejection is fine for sparse graphs)
+    for _ in to_remove_set:
+        u, v = random.choice(nodes), random.choice(nodes)
         if not is_directed:
-            new_edge = tuple(sorted(new_edge))  # Ensure (u, v) == (v, u) for undirected graphs
-
-        # Avoid duplicate edges and self-loops
-        while (new_edge in new_edges_set) or (new_edge[0] == new_edge[1]):
-            new_edge = (random.choice(nodes), random.choice(nodes))
+            u, v = sorted((u, v))
+        while (u == v) or ((u, v) in new_edges_set):
+            u, v = random.choice(nodes), random.choice(nodes)
             if not is_directed:
-                new_edge = tuple(sorted(new_edge))
+                u, v = sorted((u, v))
+        new_edges_set.add((u, v))
 
-        new_edges_set.add(new_edge)
-
-    # Create a new graph with updated edges
+    # Rebuild the edge set on a copy
     G_new = copy.deepcopy(G)
-    G_new.remove_edges_from(to_remove_set)
+    G_new.clear_edges()
     G_new.add_edges_from(new_edges_set)
-
     return G_new
+
+# def randomize_network(G, n_edges: int):
+#     # Check if the graph is directed
+#     is_directed = G.is_directed()
+
+#     # Get edges and nodes
+#     edges = copy.deepcopy(list(G.edges()))
+#     random.shuffle(edges)
+#     edges_set = set(edges)
+#     new_edges_set = copy.deepcopy(edges_set)
+#     nodes = copy.deepcopy(list(G.nodes()))
+
+#     # Find which edges to remove
+#     to_remove_set = set(random.sample(edges, k=n_edges))
+#     new_edges_set.difference_update(to_remove_set)
+
+#     # Generate a new edges
+#     for edge in to_remove_set:
+#         new_edge = (random.choice(nodes), random.choice(nodes))
+#         if not is_directed:
+#             new_edge = tuple(sorted(new_edge))  # Ensure (u, v) == (v, u) for undirected graphs
+
+#         # Avoid duplicate edges and self-loops
+#         while (new_edge in new_edges_set) or (new_edge[0] == new_edge[1]):
+#             new_edge = (random.choice(nodes), random.choice(nodes))
+#             if not is_directed:
+#                 new_edge = tuple(sorted(new_edge))
+
+#         new_edges_set.add(new_edge)
+
+#     # Create a new graph with updated edges
+#     G_new = copy.deepcopy(G)
+#     G_new.remove_edges_from(to_remove_set)
+#     G_new.add_edges_from(new_edges_set)
+
+#     return G_new
 
 # ## Equalize
 def equalize(net: nx.DiGraph, n: int) -> nx.DiGraph:
