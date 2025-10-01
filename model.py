@@ -57,8 +57,8 @@ class Model:
         #               histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
         # ]
         self.nodes = list(network.nodes)
-        self.agents = {u: BetaAgent(u, self.bandit, histories=histories, sampling_update=sampling_update)
-          for u in self.nodes}
+        self.agents = [BetaAgent(u, self.bandit, histories=histories, sampling_update=sampling_update)
+          for u in self.nodes]
 
         self.init_agents_alphas_betas= 'here goes the list of initial alphas and betas'
         # self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent in self.agents]
@@ -203,6 +203,7 @@ class Model:
         self.agent_histories = [agent.credences_history for agent in self.agents]
         #agent_choices = [agent.choice_history for agent in self.agents]
         #self.agents_choices = pd.DataFrame(agent_choices)
+
 
 
 
