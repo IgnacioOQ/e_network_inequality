@@ -124,7 +124,30 @@ class Model:
         
         # We add the conclusion at the end of the simulation
         self.conclusion = true_consensus_condition(credences_post)
-        
+
+        # # Adding this metric to test influence of root nodes
+        # # 1. Identify root nodes
+        # root_nodes = {node for node, in_degree in self.network.in_degree() if in_degree == 0}
+        # if not root_nodes:
+        #     return 0.0
+        # # 2. Calculate PageRank to use as influence weights
+        # pagerank_scores = nx.pagerank(G)
+        # truthful_influence_sum = 0.0
+        # total_root_influence_sum = 0.0
+        # # 3. Loop through only the root nodes to calculate the weighted proportion
+        # for node in root_nodes:
+        #     influence_score = pagerank_scores.get(node, 0)
+        #     total_root_influence_sum += influence_score
+        #     # Check if the root node is "lucky"
+        #     if ('credences' in G.nodes[node] and 
+        #         G.nodes[node]['credences'][1] > G.nodes[node]['credences'][0]):
+        #         truthful_influence_sum += influence_score
+        # # 4. Avoid division by zero if root nodes have no influence
+        # if total_root_influence_sum == 0:
+        #     return 0.0
+        # self.rootnode_influence = truthful_influence_sum / total_root_influence_sum
+
+        # Next thing
         if self.histories:
             self.add_agents_history()
 
@@ -176,3 +199,4 @@ class Model:
         self.agent_histories = [agent.credences_history for agent in self.agents]
         #agent_choices = [agent.choice_history for agent in self.agents]
         #self.agents_choices = pd.DataFrame(agent_choices)
+
