@@ -110,6 +110,8 @@ def run_simulation_with_params(param_dict, tolerance = 5*1e-03,seed=420,seeded=F
     result_dict['simulation_seed'] = process_seed
     result_dict['rootnode_influence_pagerank'] = my_model.rootnode_influence_pagerank
     result_dict['rootnode_influence_degree'] = my_model.rootnode_influence_degree
+    result_dict['rootnode_influence_reach'] = my_model.rootnode_influence_reach
+    result_dict['proportion_reached_by_truth'] = my_model.proportion_reached_by_truth
     if 'group_id' in param_dict:
         result_dict['group_id'] = param_dict['group_id']
     if 'sim_index' in param_dict:    
