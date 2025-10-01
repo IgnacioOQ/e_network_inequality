@@ -133,27 +133,38 @@ class Model:
         self.conclusion = true_consensus_condition(credences_post)
 
         # Adding this metric to test influence of root nodes
-        # 1. Identify root nodes
+
+        # 1. Identify root nodes in the ORIGINAL network
         root_nodes = [node for node, in_degree in self.network.in_degree() if in_degree == 0]
         if not root_nodes:
             return 0.0
-        # 2. Calculate PageRank to use as influence weights
-        pagerank_scores = nx.pagerank(self.network)
+
+        # 2. Create the reversed network to calculate influence
+        reversed_network = self.network.reverse(copy=True)
+
+        # 3. Calculate PageRank on the reversed network to use as influence weights
+        # This now correctly measures outgoing influence
+        pagerank_scores = nx.pagerank(reversed_network)
+
         truthful_influence_sum = 0.0
         total_root_influence_sum = 0.0
-        # 3. Loop through only the root nodes to calculate the weighted proportion
+
+        # 4. Loop through only the root nodes to calculate the weighted proportion
         for node in root_nodes:
             influence_score = pagerank_scores.get(node, 0)
             total_root_influence_sum += influence_score
-            # Check if the root node is "lucky" --> this needs more work retrieving the agents from the network  (below it goes from agents to network)
+            
+            # Check if the root node is "truthful" (your logic)
             agent_index = self.id_to_index_map[node]
             agent = self.agents[agent_index]
             credences = agent.credences
-            if credences[1]>credences[0]:
+            if credences[1] > credences[0]:
                 truthful_influence_sum += influence_score
-        # 4. Avoid division by zero if root nodes have no influence
+                
+        # 5. Avoid division by zero
         if total_root_influence_sum == 0:
-            return 0.0
+            self.rootnode_influence = 0.0
+
         self.rootnode_influence = truthful_influence_sum / total_root_influence_sum
 
         # Next thing
