@@ -44,7 +44,7 @@ class Model:
     ):
         self.network = network
         self.n_agents = len(network.nodes)
-        self.directedness = directed_network
+        self.directedness = isinstance(network, nx.DiGraph) # network.is_directed()#directed_network
         #print(self.n_agents)
         self.n_experiments = n_experiments
         # else:
@@ -56,10 +56,13 @@ class Model:
         #     BetaAgent(i, self.bandit,
         #               histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
         # ]
-        self.nodes = list(network.nodes)
+        self.nodes = list(self.network.nodes)
         self.agents = [BetaAgent(u, self.bandit, histories=histories, sampling_update=sampling_update)
           for u in self.nodes]
+        # Assuming self.nodes is a list like ['id1', 'id2', 'id3', ...]
+        self.id_to_index_map = {u: index for index, u in enumerate(self.nodes)}
 
+        # self.id_to_index_map will be: {'id1': 0, 'id2': 1, 'id3': 2, ...}
         self.init_agents_alphas_betas= 'here goes the list of initial alphas and betas'
         # self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent in self.agents]
         
@@ -129,27 +132,29 @@ class Model:
         # We add the conclusion at the end of the simulation
         self.conclusion = true_consensus_condition(credences_post)
 
-        # # Adding this metric to test influence of root nodes
-        # # 1. Identify root nodes
-        # root_nodes = {node for node, in_degree in self.network.in_degree() if in_degree == 0}
-        # if not root_nodes:
-        #     return 0.0
-        # # 2. Calculate PageRank to use as influence weights
-        # pagerank_scores = nx.pagerank(G)
-        # truthful_influence_sum = 0.0
-        # total_root_influence_sum = 0.0
-        # # 3. Loop through only the root nodes to calculate the weighted proportion
-        # for node in root_nodes:
-        #     influence_score = pagerank_scores.get(node, 0)
-        #     total_root_influence_sum += influence_score
-        #     # Check if the root node is "lucky" --> this needs more work retrieving the agents from the network  (below it goes from agents to network)
-        #     if ('credences' in G.nodes[node] and 
-        #         G.nodes[node]['credences'][1] > G.nodes[node]['credences'][0]):
-        #         truthful_influence_sum += influence_score
-        # # 4. Avoid division by zero if root nodes have no influence
-        # if total_root_influence_sum == 0:
-        #     return 0.0
-        # self.rootnode_influence = truthful_influence_sum / total_root_influence_sum
+        # Adding this metric to test influence of root nodes
+        # 1. Identify root nodes
+        root_nodes = [node for node, in_degree in self.network.in_degree() if in_degree == 0]
+        if not root_nodes:
+            return 0.0
+        # 2. Calculate PageRank to use as influence weights
+        pagerank_scores = nx.pagerank(self.network)
+        truthful_influence_sum = 0.0
+        total_root_influence_sum = 0.0
+        # 3. Loop through only the root nodes to calculate the weighted proportion
+        for node in root_nodes:
+            influence_score = pagerank_scores.get(node, 0)
+            total_root_influence_sum += influence_score
+            # Check if the root node is "lucky" --> this needs more work retrieving the agents from the network  (below it goes from agents to network)
+            agent_index = self.id_to_index_map[node]
+            agent = self.agents[agent_index]
+            credences = agent.credences
+            if credences[1]>credences[0]:
+                truthful_influence_sum += influence_score
+        # 4. Avoid division by zero if root nodes have no influence
+        if total_root_influence_sum == 0:
+            return 0.0
+        self.rootnode_influence = truthful_influence_sum / total_root_influence_sum
 
         # Next thing
         if self.histories:
