@@ -135,52 +135,55 @@ class Model:
         # Adding this metric to test influence of root nodes
         # 1. Identify root nodes in the ORIGINAL network
         root_nodes = [node for node, in_degree in self.network.in_degree() if in_degree == 0]
-
         # 2. Check if there are any root nodes to analyze
         if not root_nodes:
             self.rootnode_influence_pagerank = 0.0
             self.rootnode_influence_degree = 0.0
+            self.rootnode_influence_reach = 0.0
+            self.proportion_reached_by_truth = 0.0 # New metric
         else:
-            # --- Metric 1: PageRank-Weighted Influence (your original logic) ---
+            # --- Metric Initialization ---
+            truthful_pagerank_sum, total_pagerank_sum = 0.0, 0.0
+            truthful_degree_sum, total_degree_sum = 0.0, 0.0
+            truthful_reach_sum, total_reach_sum = 0.0, 0.0
+            truthful_root_nodes = set() # Store truthful roots for the new metric
+            # --- Pre-computation ---
             reversed_network = self.network.reverse(copy=True)
             pagerank_scores = nx.pagerank(reversed_network)
-            
-            truthful_pagerank_sum = 0.0
-            total_pagerank_sum = 0.0
-
-            # --- Metric 2: Degree-Weighted Influence (new, simpler metric) ---
-            truthful_degree_sum = 0.0
-            total_degree_sum = 0.0
-
-            # 3. Loop through root nodes to get their influence scores
+            # 3. Loop through root nodes to gather data
             for node in root_nodes:
-                # Check the agent's belief state
+                # Check the agent's belief state once
                 agent_index = self.id_to_index_map[node]
                 agent = self.agents[agent_index]
                 is_truthful = agent.credences[1] > agent.credences[0]
-                
-                # Calculate for PageRank
+                if is_truthful:
+                    truthful_root_nodes.add(node)
+                # Calculate for existing metrics
                 pagerank_score = pagerank_scores.get(node, 0)
+                degree_score = self.network.out_degree(node)
+                reach_score = 1 + len(nx.descendants(self.network, node))
                 total_pagerank_sum += pagerank_score
+                total_degree_sum += degree_score
+                total_reach_sum += reach_score
                 if is_truthful:
                     truthful_pagerank_sum += pagerank_score
-                    
-                # Calculate for Out-Degree
-                degree_score = self.network.out_degree(node)
-                total_degree_sum += degree_score
-                if is_truthful:
                     truthful_degree_sum += degree_score
-                    
-            # 4. Safely calculate and store the final metrics
-            if total_pagerank_sum > 0:
-                self.rootnode_influence_pagerank = truthful_pagerank_sum / total_pagerank_sum
+                    truthful_reach_sum += reach_score
+            # 4. Safely calculate and store the final INFLUENCE metrics
+            self.rootnode_influence_pagerank = truthful_pagerank_sum / total_pagerank_sum if total_pagerank_sum > 0 else 0.0
+            self.rootnode_influence_degree = truthful_degree_sum / total_degree_sum if total_degree_sum > 0 else 0.0
+            self.rootnode_influence_reach = truthful_reach_sum / total_reach_sum if total_reach_sum > 0 else 0.0
+            # --- 5. Calculate the new COLLECTIVE REACH metric ---
+            total_nodes = self.network.number_of_nodes()
+            if total_nodes > 0:
+                # Find the union of all nodes reachable by any truthful root
+                collective_reach_set = set()
+                for node in truthful_root_nodes:
+                    collective_reach_set.add(node) # Include the root itself
+                    collective_reach_set.update(nx.descendants(self.network, node))
+                self.proportion_reached_by_truth = len(collective_reach_set) / total_nodes
             else:
-                self.rootnode_influence_pagerank = 0.0
-                
-            if total_degree_sum > 0:
-                self.rootnode_influence_degree = truthful_degree_sum / total_degree_sum
-            else:
-                self.rootnode_influence_degree = 0.0
+                self.proportion_reached_by_truth = 0.0
 
         # Next thing
         if self.histories:
