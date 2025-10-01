@@ -108,6 +108,7 @@ def run_simulation_with_params(param_dict, tolerance = 5*1e-03,seed=420,seeded=F
     result_dict['init_agents_alphas_betas'] = my_model.init_agents_alphas_betas
     result_dict['degree_centrality_vector'] = my_model.degree_centrality_vector
     result_dict['simulation_seed'] = process_seed
+    result_dict['final_credences'] = my_model.rootnode_influence
     if 'group_id' in param_dict:
         result_dict['group_id'] = param_dict['group_id']
     if 'sim_index' in param_dict:    
