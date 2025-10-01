@@ -138,7 +138,7 @@ class Model:
         # for node in root_nodes:
         #     influence_score = pagerank_scores.get(node, 0)
         #     total_root_influence_sum += influence_score
-        #     # Check if the root node is "lucky"
+        #     # Check if the root node is "lucky" --> this needs more work retrieving the agents from the network  (below it goes from agents to network)
         #     if ('credences' in G.nodes[node] and 
         #         G.nodes[node]['credences'][1] > G.nodes[node]['credences'][0]):
         #         truthful_influence_sum += influence_score
@@ -199,4 +199,5 @@ class Model:
         self.agent_histories = [agent.credences_history for agent in self.agents]
         #agent_choices = [agent.choice_history for agent in self.agents]
         #self.agents_choices = pd.DataFrame(agent_choices)
+
 
