@@ -135,34 +135,52 @@ class Model:
         # Adding this metric to test influence of root nodes
         # 1. Identify root nodes in the ORIGINAL network
         root_nodes = [node for node, in_degree in self.network.in_degree() if in_degree == 0]
+
         # 2. Check if there are any root nodes to analyze
         if not root_nodes:
-            self.rootnode_influence = 0.0
+            self.rootnode_influence_pagerank = 0.0
+            self.rootnode_influence_degree = 0.0
         else:
-            # 3. Create the reversed network and calculate PageRank
+            # --- Metric 1: PageRank-Weighted Influence (your original logic) ---
             reversed_network = self.network.reverse(copy=True)
             pagerank_scores = nx.pagerank(reversed_network)
+            
+            truthful_pagerank_sum = 0.0
+            total_pagerank_sum = 0.0
 
-            truthful_influence_sum = 0.0
-            total_root_influence_sum = 0.0
+            # --- Metric 2: Degree-Weighted Influence (new, simpler metric) ---
+            truthful_degree_sum = 0.0
+            total_degree_sum = 0.0
 
-            # 4. Loop through root nodes to get their influence scores
+            # 3. Loop through root nodes to get their influence scores
             for node in root_nodes:
-                influence_score = pagerank_scores.get(node, 0)
-                total_root_influence_sum += influence_score
-                
-                # Check if the root node is "truthful" (your logic)
+                # Check the agent's belief state
                 agent_index = self.id_to_index_map[node]
                 agent = self.agents[agent_index]
-                credences = agent.credences
-                if credences[1] > credences[0]:
-                    truthful_influence_sum += influence_score
+                is_truthful = agent.credences[1] > agent.credences[0]
+                
+                # Calculate for PageRank
+                pagerank_score = pagerank_scores.get(node, 0)
+                total_pagerank_sum += pagerank_score
+                if is_truthful:
+                    truthful_pagerank_sum += pagerank_score
                     
-            # 5. Safely calculate the final metric
-            if total_root_influence_sum > 0:
-                self.rootnode_influence = truthful_influence_sum / total_root_influence_sum
+                # Calculate for Out-Degree
+                degree_score = self.network.out_degree(node)
+                total_degree_sum += degree_score
+                if is_truthful:
+                    truthful_degree_sum += degree_score
+                    
+            # 4. Safely calculate and store the final metrics
+            if total_pagerank_sum > 0:
+                self.rootnode_influence_pagerank = truthful_pagerank_sum / total_pagerank_sum
             else:
-                self.rootnode_influence = 0.0
+                self.rootnode_influence_pagerank = 0.0
+                
+            if total_degree_sum > 0:
+                self.rootnode_influence_degree = truthful_degree_sum / total_degree_sum
+            else:
+                self.rootnode_influence_degree = 0.0
 
         # Next thing
         if self.histories:
