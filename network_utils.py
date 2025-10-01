@@ -142,42 +142,43 @@ def network_statistics(G, directed = True):
     average_clustering = sum(clustering_values.values()) / len(clustering_values)
     stats['approx_average_clustering_coefficient'] = average_clustering
 
-    if directed:    
-        if nx.is_strongly_connected(G):
-            stats['avg_path_length'] = nx.average_shortest_path_length(G)
-        else:
-            stats['avg_path_length'] = len(G.nodes)+1
-            # largest_component = max(nx.weakly_connected_components(G), key=len)
-            # subgraph = G.subgraph(largest_component)
-            # stats['diameter'] = nx.diameter(subgraph)
-    else:
-        if nx.is_connected(G):
-            stats['avg_path_length'] = nx.average_shortest_path_length(G)
-        else:
-            stats['avg_path_length'] = len(G.nodes)+1
-            # largest_component = max(nx.connected_components(G), key=len)
-            # subgraph = G.subgraph(largest_component)
-            # stats['diameter'] = nx.diameter(subgraph)
+    # commenting out unnecesary metrics to speed up computation
+    # if directed:    
+    #     if nx.is_strongly_connected(G):
+    #         stats['avg_path_length'] = nx.average_shortest_path_length(G)
+    #     else:
+    #         stats['avg_path_length'] = len(G.nodes)+1
+    #         # largest_component = max(nx.weakly_connected_components(G), key=len)
+    #         # subgraph = G.subgraph(largest_component)
+    #         # stats['diameter'] = nx.diameter(subgraph)
+    # else:
+    #     if nx.is_connected(G):
+    #         stats['avg_path_length'] = nx.average_shortest_path_length(G)
+    #     else:
+    #         stats['avg_path_length'] = len(G.nodes)+1
+    #         # largest_component = max(nx.connected_components(G), key=len)
+    #         # subgraph = G.subgraph(largest_component)
+    #         # stats['diameter'] = nx.diameter(subgraph)
 
-    if directed:
-        out_degrees = np.array([d for _, d in G.out_degree()])
-        # out_degrees = np.array([d for _, d in graph.out_degree()])
-        in_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
-        # out_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
-        out_entropy = -np.sum(in_hist[in_hist > 0] * np.log(in_hist[in_hist > 0]))
-        # out_entropy = -np.sum(out_hist[out_hist > 0] * np.log(out_hist[out_hist > 0]))
-        stats['degree_entropy'] = out_entropy
-    else:
-        degrees = np.array([d for _, d in G.degree()])
-        hist, _ = np.histogram(degrees, bins=range(np.max(degrees) + 2), density=True)
-        entropy = -np.sum(hist[hist > 0] * np.log(hist[hist > 0]))
-        stats['degree_entropy'] = entropy
+    # if directed:
+    #     out_degrees = np.array([d for _, d in G.out_degree()])
+    #     # out_degrees = np.array([d for _, d in graph.out_degree()])
+    #     in_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
+    #     # out_hist, _ = np.histogram(out_degrees, bins=range(np.max(out_degrees) + 2), density=True)
+    #     out_entropy = -np.sum(in_hist[in_hist > 0] * np.log(in_hist[in_hist > 0]))
+    #     # out_entropy = -np.sum(out_hist[out_hist > 0] * np.log(out_hist[out_hist > 0]))
+    #     stats['degree_entropy'] = out_entropy
+    # else:
+    #     degrees = np.array([d for _, d in G.degree()])
+    #     hist, _ = np.histogram(degrees, bins=range(np.max(degrees) + 2), density=True)
+    #     entropy = -np.sum(hist[hist > 0] * np.log(hist[hist > 0]))
+    #     stats['degree_entropy'] = entropy
 
-    # Add additional metrics as needed here, e.g., centrality measures
-    stats['reachability_dominator_set_size'] = find_reachability_dominator_set(G)[0]
-    stats['reachability_dominator_set_ratio'] = find_reachability_dominator_set(G)[1]
-    stats['condensation_graph_size'] = find_reachability_dominator_set(G)[2]
-    stats['condensation_graph_ratio'] = find_reachability_dominator_set(G)[3]
+    # # Add additional metrics as needed here, e.g., centrality measures
+    # stats['reachability_dominator_set_size'] = find_reachability_dominator_set(G)[0]
+    # stats['reachability_dominator_set_ratio'] = find_reachability_dominator_set(G)[1]
+    # stats['condensation_graph_size'] = find_reachability_dominator_set(G)[2]
+    # stats['condensation_graph_ratio'] = find_reachability_dominator_set(G)[3]
     return stats
 
 # # Variation Methods
