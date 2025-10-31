@@ -36,6 +36,7 @@ class Model:
         histories = False,
         sampling_update = False,
         variance_stopping = False,
+        tstep_stopping = False,
         directed_network = True,
         seed=np.random.randint(0, 2**32 - 1),
         seeded=False,
@@ -79,6 +80,7 @@ class Model:
         self.tolerance = tolerance
         self.histories = histories
         self.variance_stopping = variance_stopping
+        self.tstep_stopping = tstep_stopping
         
     def run_simulation(
         self, number_of_steps: int = 10**6, show_bar: bool = False, *args, **kwargs
@@ -126,7 +128,7 @@ class Model:
                 if stop_condition(mv_prior, mv_post):
                     break
             else:
-                if stop_condition(credences_prior, credences_post):
+                if not self.tstep_stopping and stop_condition(credences_prior, credences_post):
                     break
         
         # We add the conclusion at the end of the simulation
