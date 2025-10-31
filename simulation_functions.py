@@ -84,12 +84,12 @@ def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20
     return params
 
 def run_simulation_with_params(param_dict, tolerance = 5*1e-03, tstep_stopping=False,
-                               seed=420,seeded=False, number_of_steps=20000, show_bar=False):
+                               seed=420,seeded=False, number_of_steps=10000, show_bar=False):
     
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
     rd.seed(process_seed)
     
-    # Extract the network directly since it's already a NetworkX graph object
+    # Extract the network directly since it's already a NetworkX graph objsect
     my_network = param_dict['network']
     # Other parameters are directly extracted from the dictionary
     my_model = Model(my_network, n_experiments=param_dict['n_experiments'],
