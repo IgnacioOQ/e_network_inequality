@@ -16,5 +16,5 @@ import unittest
 import dill
 import copy
 import hashlib
-
+import scipy.linalg
 # import graph_tool.all as gt
