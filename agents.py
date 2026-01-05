@@ -168,3 +168,37 @@ class BetaAgent:
         if self.histories:
             self.credences_history.append(new_credences)
 
+class BayesAgent:
+    def __init__(self, id, bandit):
+        self.id = id
+        self.bandit = bandit
+        self.credences = rd.uniform(0, 1)
+
+    def choice(self):
+        if self.credences > 0.5:
+            return good_theory_id
+        return bad_theory_id
+
+    def experiment(self, n_experiments: int):
+        if self.choice() == bad_theory_id:
+            return bad_theory_id, 0, 0
+
+        n_success, n_experiments = self.bandit.experiment(good_theory_id, n_experiments)
+        n_failures = n_experiments - n_success
+        return good_theory_id, n_success, n_failures
+
+    def update(self, theory_index, n_success, n_failures):
+        if theory_index != good_theory_id:
+            pass
+        else:
+            uncertainty = self.bandit.uncertainty
+            self.credences = 1 / (
+                1
+                + (1 - self.credences)
+                * (
+                    ((0.5 - uncertainty) / (0.5 + uncertainty))
+                    ** (n_success - n_failures)
+                )
+                / self.credences
+            )
+
