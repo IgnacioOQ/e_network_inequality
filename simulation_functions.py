@@ -1,5 +1,5 @@
 from imports import *
-from agents import BetaAgent
+from agents import BetaAgent, BayesAgent
 from model import Model
 from network_utils import *
 # from network_randomization import *
@@ -84,7 +84,8 @@ def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20
     return params
 
 def run_simulation_with_params(param_dict, tolerance = 5*1e-03, tstep_stopping=False,
-                               seed=420,seeded=False, number_of_steps=10000, show_bar=False):
+                               seed=420,seeded=False, number_of_steps=10000, show_bar=False, 
+                               agent_class=BayesAgent):
     
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
     rd.seed(process_seed)
@@ -96,7 +97,7 @@ def run_simulation_with_params(param_dict, tolerance = 5*1e-03, tstep_stopping=F
                     uncertainty=param_dict['uncertainty'],tolerance = tolerance,
                     histories=False,sampling_update=False,variance_stopping = False,
                     tstep_stopping = tstep_stopping,directed_network = True,
-                    seed=420,seeded=False, agent_class=BetaAgent)
+                    seed=420,seeded=False, agent_class=BayesAgent)
     # Run the simulation with predefined steps and show_bar option
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
