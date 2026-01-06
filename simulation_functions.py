@@ -97,7 +97,7 @@ def run_simulation_with_params(param_dict, tolerance = 5*1e-03, tstep_stopping=T
                     uncertainty=param_dict['uncertainty'],tolerance = tolerance,
                     histories=False,sampling_update=False,variance_stopping = False,
                     tstep_stopping = tstep_stopping,directed_network = True,
-                    seed=420,seeded=False, agent_type=agent_type)
+                    seed=seed,seeded=False, agent_type=agent_type)
     # Run the simulation with predefined steps and show_bar option
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
