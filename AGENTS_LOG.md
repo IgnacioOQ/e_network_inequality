@@ -60,3 +60,12 @@ When submitting changes, please use the following structure:
     *   Created `AGENTS.md` with project context and rules.
     *   Created `AI_AGENTS/` directory for sub-agent context.
     *   Documented development rules (immutability, consistency).
+
+### [2026-01-06] - Sync with Main & Environment Setup (Jules)
+*   **Task:** Update branch with code from `main`, add `requirements.txt`, and preserve local documentation/tests.
+*   **Actions:**
+    *   Synced all tracked files from `main` (commit `583ddb1`) to the current branch.
+    *   Restored local `unit_tests.py` to preserve test logic, but updated it to call `agent.update()` instead of `agent.beta_update()` to match the `main` codebase.
+    *   Created `requirements.txt` with project dependencies.
+    *   Verified simulations: `basic_model_testing.ipynb` (timed out but ran) and `run_simulations_test.ipynb` (failed due to missing `network_randomization.py` in `main`).
+    *   Verified unit tests: `python -m unittest unit_tests.py` passed.

@@ -1,22 +1,26 @@
 # import numpy as np
 # import numpy.random as rd
 # from scipy.stats import beta
-from imports import *  
+from imports import *
+
+bad_theory_id: int = 0
+good_theory_id: int = 1
+
 
 class Bandit:
     """
-    A model representing the problem of theory choice, where a new theory is compared 
+    A model representing the problem of theory choice, where a new theory is compared
     to an existing one with an added margin of uncertainty.
 
     Attributes:
     - uncertainty (float): The margin of uncertainty in favor of the new theory.
     - p_bad_theory (float): The probability of success for the existing (bad) theory.
-    - p_good_theory (float): The probability of success for the new (good) theory, 
+    - p_good_theory (float): The probability of success for the new (good) theory,
       which is improved by the uncertainty margin.
 
     Methods:
-    - experiment(self, index: int, n_experiments: int) -> tuple[int, int]: 
-      Simulates a series of experiments and returns the number of successes and 
+    - experiment(self, index: int, n_experiments: int) -> tuple[int, int]:
+      Simulates a series of experiments and returns the number of successes and
       total experiments.
     """
 
@@ -41,14 +45,16 @@ class Bandit:
         - n_experiments (int): The number of experiments to run.
 
         Returns:
-        - tuple[int, int]: A tuple containing the number of successful experiments 
+        - tuple[int, int]: A tuple containing the number of successful experiments
           and the total number of experiments.
 
         Raises:
         - ValueError: If the index is not 0 or 1.
         """
         if theory_index == 0:
-            n_success = rd.binomial(n_experiments, self.p_bad_theory) #np.random.binomial(n_experiments, self.p_bad_theory) #
+            n_success = rd.binomial(
+                n_experiments, self.p_bad_theory
+            )  # np.random.binomial(n_experiments, self.p_bad_theory) #
         elif theory_index == 1:
             n_success = rd.binomial(n_experiments, self.p_good_theory)
         else:
@@ -56,10 +62,11 @@ class Bandit:
 
         return n_success, n_experiments
 
+
 class BetaAgent:
     """
     An agent in a network epistemology playground using Bayesian updating.
-    
+
     Attributes:
     - id (int): Unique identifier for the agent.
     - bandit (Bandit): An instance representing the environment providing experiments.
@@ -67,7 +74,7 @@ class BetaAgent:
     - credences (np.ndarray): The agent's belief in each theory, initialized as the mean of beta distributions.
     - histories (bool): Whether to store the history of credences.
     - credences_history (list): A list storing past credences if histories are enabled.
-    
+
     Methods:
     - __init__(self, id, bandit: Bandit, histories=False):
       Initializes the agent with given ID and an instance of the bandit environment.
@@ -78,11 +85,11 @@ class BetaAgent:
     - beta_update(self, theory_index, n_success, n_failures):
       Updates the agent's belief using Bayesian updating based on observed successes and failures.
     """
-    
-    def __init__(self, id, bandit, histories=False,sampling_update=False,epsilon=0):
+
+    def __init__(self, id, bandit, histories=False, sampling_update=False, epsilon=0):
         """
         Initializes the BetaAgent with a given ID and an instance of the bandit environment.
-        
+
         Parameters:
         - id (int): Unique identifier for the agent.
         - bandit (Bandit): An instance of the bandit problem environment.
@@ -97,42 +104,46 @@ class BetaAgent:
         prior_T1 = rd.uniform(0, 4, size=2)
         prior_T2 = rd.uniform(0, 4, size=2)
         self.alphas_betas = np.array([prior_T1, prior_T2])
-        mean_T1 = beta.stats(prior_T1[0], prior_T1[1], moments='m')
-        mean_T2 = beta.stats(prior_T2[0], prior_T2[1], moments='m')        
+        mean_T1 = beta.stats(prior_T1[0], prior_T1[1], moments="m")
+        mean_T2 = beta.stats(prior_T2[0], prior_T2[1], moments="m")
         self.credences = np.array([mean_T1, mean_T2])
         if self.sampling_update:
-          self.credences = np.array([rd.beta(prior_T1[0], prior_T1[1], size=1)[0], 
-                                     rd.beta(prior_T2[0], prior_T2[1], size=1)[0]])
-        
+            self.credences = np.array(
+                [
+                    rd.beta(prior_T1[0], prior_T1[1], size=1)[0],
+                    rd.beta(prior_T2[0], prior_T2[1], size=1)[0],
+                ]
+            )
+
         self.histories = histories
         if self.histories:
             self.credences_history = []
             self.credences_history.append(self.credences)
-    
+
     def egreedy_choice(self):
         """
         Selects the theory with the highest credence.
         If multiple theories have the same maximum credence, a random one is chosen.
-        
+
         Returns:
         - best_theory_index (int): The index of the chosen theory.
         """
         if rd.rand() < self.epsilon:
-          rd_index = rd.randint(len(self.credences))
-          return rd_index
+            rd_index = rd.randint(len(self.credences))
+            return rd_index
         else:
-          max_value = np.max(self.credences)
-          max_indices = np.where(self.credences == max_value)[0]
-          best_theory_index = rd.choice(max_indices)
-          return best_theory_index
-        
+            max_value = np.max(self.credences)
+            max_indices = np.where(self.credences == max_value)[0]
+            best_theory_index = rd.choice(max_indices)
+            return best_theory_index
+
     def experiment(self, n_experiments: int):
         """
         Runs an experiment on the selected theory.
-        
+
         Parameters:
         - n_experiments (int): Number of experiments to perform.
-        
+
         Returns:
         - theory_index (int): The index of the selected theory.
         - n_success (int): The number of successful experiments.
@@ -142,11 +153,11 @@ class BetaAgent:
         n_success, n_experiments = self.bandit.experiment(theory_index, n_experiments)
         n_failures = n_experiments - n_success
         return theory_index, n_success, n_failures
-        
-    def beta_update(self, theory_index, n_success, n_failures):
+
+    def update(self, theory_index, n_success, n_failures):
         """
         Updates the agent's belief using Bayesian updating based on observed successes and failures.
-        
+
         Parameters:
         - theory_index (int): Index of the theory being updated.
         - n_success (int): Number of successful experiments.
@@ -154,22 +165,26 @@ class BetaAgent:
         """
         self.alphas_betas[theory_index][0] += n_success
         self.alphas_betas[theory_index][1] += n_failures
-        
+
         alpha = self.alphas_betas[theory_index][0]
-        beta_param = self.alphas_betas[theory_index][1]  # Avoid using 'beta' as it conflicts with scipy.stats.beta
-        
+        beta_param = self.alphas_betas[theory_index][
+            1
+        ]  # Avoid using 'beta' as it conflicts with scipy.stats.beta
+
         new_credences = self.credences.copy()
-        estimate = beta.stats(alpha, beta_param, moments='m')
+        estimate = beta.stats(alpha, beta_param, moments="m")
         if self.sampling_update:
-          estimate = rd.beta(alpha, beta_param, size=1)[0]
+            estimate = rd.beta(alpha, beta_param, size=1)[0]
         new_credences[theory_index] = estimate
         self.credences = new_credences
-        
+
         if self.histories:
             self.credences_history.append(new_credences)
 
+
 class BayesAgent:
-    def __init__(self, id, bandit):
+    def __init__(self, id, bandit, histories=False, sampling_update=False, epsilon=0):
+        # Notice that histories, sampling_update and epsilon are not used in BayesAgent
         self.id = id
         self.bandit = bandit
         self.credences = rd.uniform(0, 1)
@@ -201,4 +216,3 @@ class BayesAgent:
                 )
                 / self.credences
             )
-
