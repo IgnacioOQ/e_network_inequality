@@ -164,14 +164,14 @@ class Model:
                 # Calculate for existing metrics
                 # pagerank_score = pagerank_scores.get(node, 0)
                 # degree_score = self.network.out_degree(node)
-                reach_score = 1 + len(nx.descendants(self.network, node))
+                # reach_score = 1 + len(nx.descendants(self.network, node))
                 # total_pagerank_sum += pagerank_score
                 # total_degree_sum += degree_score
-                total_reach_sum += reach_score
-                if is_truthful:
+                # total_reach_sum += reach_score
+                # if is_truthful:
                     # truthful_pagerank_sum += pagerank_score
                     # truthful_degree_sum += degree_score
-                    truthful_reach_sum += reach_score
+                    # truthful_reach_sum += reach_score
             # 4. Safely calculate and store the final INFLUENCE metrics
             # self.rootnode_influence_pagerank = truthful_pagerank_sum / total_pagerank_sum if total_pagerank_sum > 0 else 0.0
             # self.rootnode_influence_degree = truthful_degree_sum / total_degree_sum if total_degree_sum > 0 else 0.0
