@@ -4,7 +4,7 @@
 **Goal:** Drastically improve the performance of the simulation by "linearizing" or "vectorizing" the logic—replacing explicit Python loops (iterating over agent objects) with efficient NumPy matrix operations.
 
 ## Core Constraints (Strict)
-1.  **Immutable Legacy Code:** You **MUST NOT** modify `model.py` or `agents.py`. These files are the "ground truth" reference implementation.
+1.  **Immutable Legacy Code:** You **MUST NOT** modify `model.py`, `agents.py`, or `simulation_functions.py`. These files are the "ground truth" reference implementation.
 2.  **New Implementation:** You will create new files, likely `vectorized_model.py` (and `vectorized_agents.py` if necessary).
 3.  **Equivalence:** The vectorized implementation must produce statistically equivalent results to the original model when given the same random seed (allowing for minor floating-point differences).
 
@@ -49,7 +49,7 @@ Instead of iterating `network.predecessors(agent.id)`, use the Adjacency Matrix.
     *   Initialize `Model` and `VectorizedModel` with the same `seed`.
     *   Run 1 step.
     *   Assert `Model.agents[i].credences` $\approx$ `VectorizedModel.credences[i]`.
-2.  **Integration Test:** Run `basic_model_testing.ipynb` using your new class to ensure visual and statistical behavior matches the baseline.
+2.  **Integration Test:** Run `basic_model_testing.ipynb` AND `run_simulations_test.ipynb` using your new class to ensure visual and statistical behavior matches the baseline.
 3.  **Benchmark:** Prove the speedup! Log the time difference between the loop-based and vectorized approaches.
 
 ## Checklist
@@ -58,4 +58,5 @@ Instead of iterating `network.predecessors(agent.id)`, use the Adjacency Matrix.
 - [ ] Implement global state matrices.
 - [ ] Implement matrix-based update logic.
 - [ ] Verify against `model.py` with a shared seed.
+- [ ] Run visual verification notebooks (`basic_model_testing.ipynb`, `run_simulations_test.ipynb`).
 - [ ] Log results in `AGENTS_LOG.md`.

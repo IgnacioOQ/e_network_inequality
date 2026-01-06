@@ -10,7 +10,7 @@ This project is a simulation framework for agent-based models on various network
 *   **Run Tests:** `python -m unittest unit_tests.py`
 
 ## Development Rules & Constraints
-1.  **Immutable Core Files:** Do not modify `agents.py` or `model.py`.
+1.  **Immutable Core Files:** Do not modify `agents.py`, `model.py`, or `simulation_functions.py`.
     *   If you need to change the logic of an agent or the model, you must create a **new version** (e.g., a subclass or a new file) rather than modifying the existing classes in place.
 2.  **Consistency:** Ensure any modifications or new additions remain as consistent as possible with the logic and structure of the `main` branch.
 
@@ -26,9 +26,11 @@ This project is a simulation framework for agent-based models on various network
     *   **Action:** Agents should explicitly run a formatter (e.g., `black .` or `black <file>`) or a linter to verify compliance. Do not blindly rely on the hook; ensure the final output is clean.
 
 *   **Visual Verification (Notebook):**
-    *   **Rule:** Every agent that performs a significant intervention or modifies the codebase **MUST** run the `basic_model_testing.ipynb` notebook.
+    *   **Rule:** Every agent that performs a significant intervention or modifies the codebase **MUST** run the following notebooks:
+        1.  `basic_model_testing.ipynb`
+        2.  `run_simulations_test.ipynb`
     *   **Rationale:** Visual inspection of the output (plots, dataframes) is required to verify correct simulation behavior.
-    *   **Action:** Execute the notebook and inspect the results. Do not rely solely on headless unit tests.
+    *   **Action:** Execute the notebooks and inspect the results. Do not rely solely on headless unit tests.
 
 *   **Logging Changes:**
     *   **Rule:** Every agent that performs a significant intervention or modifies the codebase **MUST** update the `AGENTS_LOG.md` file.
@@ -49,5 +51,6 @@ This project is a simulation framework for agent-based models on various network
 ## Key Files
 *   `agents.py`: Defines `Bandit`, `BetaAgent`, and `BayesAgent`.
 *   `model.py`: Defines the `Model` class which manages the simulation loop, agent interactions, and graph updates.
+*   `simulation_functions.py`: Defines the wrapper functions for running parallel simulations.
 *   `unit_tests.py`: Contains unit tests for the agents. Note that tests must account for random initialization.
 *   `network_utils.py`: Helper functions for network manipulation.
