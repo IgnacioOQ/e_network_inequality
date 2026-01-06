@@ -25,6 +25,11 @@ This project is a simulation framework for agent-based models on various network
     *   **Rule:** Despite the automatic hook, agents must **manually double-check** that the code is correctly formatted and syntactically valid before submitting.
     *   **Action:** Agents should explicitly run a formatter (e.g., `black .` or `black <file>`) or a linter to verify compliance. Do not blindly rely on the hook; ensure the final output is clean.
 
+*   **Visual Verification (Notebook):**
+    *   **Rule:** Every agent that performs a significant intervention or modifies the codebase **MUST** run the `basic_model_testing.ipynb` notebook.
+    *   **Rationale:** Visual inspection of the output (plots, dataframes) is required to verify correct simulation behavior.
+    *   **Action:** Execute the notebook and inspect the results. Do not rely solely on headless unit tests.
+
 *   **Logging Changes:**
     *   **Rule:** Every agent that performs a significant intervention or modifies the codebase **MUST** update the `AGENTS_LOG.md` file.
     *   **Action:** Append a new entry under the "Intervention History" section summarizing the task, the changes made, and the date.
