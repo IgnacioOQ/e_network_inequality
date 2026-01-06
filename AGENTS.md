@@ -36,6 +36,10 @@ This project is a simulation framework for agent-based models on various network
     *   **Rule:** Every agent that performs a significant intervention or modifies the codebase **MUST** update the `AGENTS_LOG.md` file.
     *   **Action:** Append a new entry under the "Intervention History" section summarizing the task, the changes made, and the date.
 
+*   **Branch Management:**
+    *   **Rule:** All changes must be pushed to the `ai-agents-branch`.
+    *   **Constraint:** Do **NOT** create new branches unless explicitly requested by the user. Always work on and submit to `ai-agents-branch`.
+
 ## Key Architecture & Logic
 
 ### 1. Directed Graphs & Information Flow

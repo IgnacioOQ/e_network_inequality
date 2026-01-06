@@ -3,6 +3,9 @@
 # from scipy.stats import beta
 from imports import *  
 
+bad_theory_id: int = 0
+good_theory_id: int = 1
+
 class Bandit:
     """
     A model representing the problem of theory choice, where a new theory is compared 
@@ -143,7 +146,7 @@ class BetaAgent:
         n_failures = n_experiments - n_success
         return theory_index, n_success, n_failures
         
-    def beta_update(self, theory_index, n_success, n_failures):
+    def update(self, theory_index, n_success, n_failures):
         """
         Updates the agent's belief using Bayesian updating based on observed successes and failures.
         
@@ -169,7 +172,8 @@ class BetaAgent:
             self.credences_history.append(new_credences)
 
 class BayesAgent:
-    def __init__(self, id, bandit):
+    def __init__(self, id, bandit,histories=False,sampling_update=False,epsilon=0):
+      # Notice that histories, sampling_update and epsilon are not used in BayesAgent
         self.id = id
         self.bandit = bandit
         self.credences = rd.uniform(0, 1)
