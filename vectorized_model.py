@@ -54,7 +54,11 @@ class VectorizedModel:
         # This ensures the seed produces the exact same initial state.
 
         self.alphas_betas = np.zeros((self.n_agents, 2, 2))
-        self.credences = np.zeros((self.n_agents, 2))
+        self.credences = (
+            np.zeros((self.n_agents, 2))
+            if agent_type == "beta"
+            else np.zeros(self.n_agents)
+        )
 
         if self.agent_type == "beta":
             for i in range(self.n_agents):
@@ -76,17 +80,9 @@ class VectorizedModel:
                     self.credences[i] = np.array([mean_T1, mean_T2])
 
         elif self.agent_type == "bayes":
+            self.credences = np.zeros(self.n_agents)
             for i in range(self.n_agents):
-                self.credences[i] = rd.uniform(
-                    0, 1
-                )  # Note: BayesAgent credences is scalar (float), but using array for consistency?
-                # Wait, BayesAgent credences is a scalar float.
-                # But model.conclusion uses credences[1] > credences[0] for beta, and credences > 0.99 for bayes.
-                # Let's keep it consistent. VectorizedModel for Bayes might store shape (N,).
-                pass
-            # For now, implementing BETA primarily.
-            # If agent_type is bayes, we might need a different structure or just error out if strictly linearizing Beta.
-            # Instructions focused on Beta.
+                self.credences[i] = rd.uniform(0, 1)
 
         # History
         if self.histories:
@@ -125,36 +121,69 @@ class VectorizedModel:
         # Vectorized choice
         # Random numbers for epsilon check
 
-        # Generating choices
-        # if rd.rand() < self.epsilon: ...
-        # Vectorized:
-        rand_epsilon = rd.rand(self.n_agents)
-        explore_mask = rand_epsilon < self.epsilon
-        exploit_mask = ~explore_mask
-
         theory_indices = np.zeros(self.n_agents, dtype=int)
 
-        # Explore: Random choice
-        if np.any(explore_mask):
-            theory_indices[explore_mask] = rd.randint(0, 2, size=np.sum(explore_mask))
+        if self.agent_type == "beta":
+            rand_epsilon = rd.rand(self.n_agents)
+            explore_mask = rand_epsilon < self.epsilon
+            exploit_mask = ~explore_mask
 
-        # Exploit: Best credence
-        # Break ties randomly? Original: rd.choice(max_indices).
-        # np.argmax always takes the first one.
-        # To break ties randomly in vector: add small random noise?
-        # Or simpler:
-        if np.any(exploit_mask):
-            # credences shape (N, 2).
-            # To handle ties properly vectorized is hard.
-            # But floating point equality is rare unless initialized same.
-            # Standard argmax:
-            theory_indices[exploit_mask] = np.argmax(
-                self.credences[exploit_mask], axis=1
-            )
+            # Explore: Random choice
+            if np.any(explore_mask):
+                theory_indices[explore_mask] = rd.randint(
+                    0, 2, size=np.sum(explore_mask)
+                )
+
+            # Exploit: Best credence
+            # Break ties randomly? Original: rd.choice(max_indices).
+            # np.argmax always takes the first one.
+            # To break ties randomly in vector: add small random noise?
+            # Or simpler:
+            if np.any(exploit_mask):
+                # credences shape (N, 2).
+                # To handle ties properly vectorized is hard.
+                # But floating point equality is rare unless initialized same.
+                # Standard argmax:
+                theory_indices[exploit_mask] = np.argmax(
+                    self.credences[exploit_mask], axis=1
+                )
+
+        elif self.agent_type == "bayes":
+            # Bayes Agent Choice: if cred > 0.5 -> 1 (Good), else 0 (Bad)
+            # self.credences is shape (N,)
+            theory_indices = (self.credences > 0.5).astype(int)
 
         # 2. Run Experiments
-        n_success, n_total = self.bandit.experiment(theory_indices, self.n_experiments)
-        n_failures = n_total - n_success
+        # BayesAgent logic in agents.py: if choice is 0, return 0,0,0.
+        # VectorizedBandit.experiment returns n_success, n_total.
+        # We need to mask out agents who chose 0.
+        # But wait, agents.py BayesAgent.experiment:
+        # if choice() == 0: return 0, 0, 0 (index, success, failure)
+        # VectorizedBandit returns results based on index.
+        # If index is 0 (Bad), p_bad = 0.5. It runs experiment.
+        # But BayesAgent DOES NOT run experiment if choice is 0.
+        # So for Bayes, we must set success/failure to 0 if choice is 0.
+
+        if self.agent_type == "bayes":
+            # Only run experiments for those who chose 1
+            # But VectorizedBandit runs for all.
+            # We can run for all and then mask.
+            n_success, n_total = self.bandit.experiment(
+                theory_indices, self.n_experiments
+            )
+            n_failures = n_total - n_success
+
+            # Mask
+            mask_0 = theory_indices == 0
+            n_success[mask_0] = 0
+            n_failures[mask_0] = 0
+            # n_total[mask_0] = 0 # Not strictly needed but cleaner
+
+        else:  # Beta
+            n_success, n_total = self.bandit.experiment(
+                theory_indices, self.n_experiments
+            )
+            n_failures = n_total - n_success
 
         # Store results for update
         # experiments_results: matrix of shape (N, 2, 2) -> (success, failure) for theory 0 and 1?
@@ -205,34 +234,75 @@ class VectorizedModel:
         total_success = agg_success + outcome_success
         total_failure = agg_failure + outcome_failure
 
-        # Update Alphas/Betas
-        # self.alphas_betas shape (N, 2, 2) -> (Agent, Theory, Param)
-        # Param 0 is alpha, Param 1 is beta.
+        if self.agent_type == "beta":
+            # Update Alphas/Betas
+            # self.alphas_betas shape (N, 2, 2) -> (Agent, Theory, Param)
+            # Param 0 is alpha, Param 1 is beta.
 
-        # total_success is (N, 2).
-        self.alphas_betas[:, :, 0] += total_success
-        self.alphas_betas[:, :, 1] += total_failure
+            # total_success is (N, 2).
+            self.alphas_betas[:, :, 0] += total_success
+            self.alphas_betas[:, :, 1] += total_failure
 
-        # Update Credences
-        # New means.
-        # alpha = self.alphas_betas[:, :, 0]
-        # beta_param = self.alphas_betas[:, :, 1]
+            # Update Credences
+            # New means.
+            # alpha = self.alphas_betas[:, :, 0]
+            # beta_param = self.alphas_betas[:, :, 1]
 
-        # Estimate = alpha / (alpha + beta) (Mean)
-        # Or sampling.
+            # Estimate = alpha / (alpha + beta) (Mean)
+            # Or sampling.
 
-        if self.sampling_update:
-            # Vectorized sampling from beta?
-            # np.random.beta(a, b) works with arrays.
-            self.credences = rd.beta(
-                self.alphas_betas[:, :, 0], self.alphas_betas[:, :, 1]
-            )
-        else:
-            # Mean
-            # beta.stats(moment='m') is basically a / (a+b) for beta dist.
-            a = self.alphas_betas[:, :, 0]
-            b = self.alphas_betas[:, :, 1]
-            self.credences = a / (a + b)
+            if self.sampling_update:
+                # Vectorized sampling from beta?
+                # np.random.beta(a, b) works with arrays.
+                self.credences = rd.beta(
+                    self.alphas_betas[:, :, 0], self.alphas_betas[:, :, 1]
+                )
+            else:
+                # Mean
+                # beta.stats(moment='m') is basically a / (a+b) for beta dist.
+                a = self.alphas_betas[:, :, 0]
+                b = self.alphas_betas[:, :, 1]
+                self.credences = a / (a + b)
+
+        elif self.agent_type == "bayes":
+            # Bayes Update Logic
+            # Only update if Evidence for Theory 1 is present.
+            # Wait, agents.py says: if theory_index != good_theory_id: pass.
+            # This refers to the theory index OF THE AGENT providing the evidence?
+            # No, 'update(theory_index, n_s, n_f)' means "Update belief given evidence for theory_index".
+            # In agents_update (model.py), it calls update(0, ...) then update(1, ...).
+            # So BayesAgent ignores evidence for Theory 0.
+            # It only updates for Theory 1.
+
+            # Evidence for Theory 1:
+            S1 = total_success[:, 1]
+            F1 = total_failure[:, 1]
+
+            # Bayes formula:
+            # new_C = 1 / (1 + (1-C)/C * L^k)
+            # k = S - F
+            # L = (0.5 - u) / (0.5 + u)
+
+            uncertainty = (
+                self.bandit.uncertainty
+            )  # Assuming all agents share uncertainty (Model param)
+            L = (0.5 - uncertainty) / (0.5 + uncertainty)
+            k = S1 - F1
+
+            # We only update if k != 0? Or always?
+            # If S1=0, F1=0, k=0. L^0 = 1.
+            # new_C = 1 / (1 + (1-C)/C * 1) = 1 / (1 + 1/C - 1) = 1/(1/C) = C.
+            # So no change if no evidence. Correct.
+
+            # Avoid division by zero if C is 0 or 1.
+            # C is in (0, 1) initially (uniform).
+            # It might reach boundaries.
+            # Clip C to epsilon?
+            epsilon = 1e-9
+            C = np.clip(self.credences, epsilon, 1 - epsilon)
+
+            term = ((1 - C) / C) * (L**k)
+            self.credences = 1 / (1 + term)
 
         if self.histories:
             for i in range(self.n_agents):
@@ -246,13 +316,21 @@ class VectorizedModel:
         def stop_condition():
             # Original: np.allclose(prior, post) with tolerance.
             # But here just return False or implement check.
+            if self.agent_type == "bayes":
+                # Bayes stop: all credences <= 0.5 or > 0.99
+                return np.all((self.credences <= 0.5) | (self.credences > 0.99))
             return False
 
         def determine_conclusion():
-            # self.credences is (N, 2).
-            # counts = pair[1] > pair[0]
-            counts = np.sum(self.credences[:, 1] > self.credences[:, 0])
-            return counts / self.n_agents
+            if self.agent_type == "beta":
+                # self.credences is (N, 2).
+                # counts = pair[1] > pair[0]
+                counts = np.sum(self.credences[:, 1] > self.credences[:, 0])
+                return counts / self.n_agents
+            elif self.agent_type == "bayes":
+                # Bayes: count > 0.99
+                counts = np.sum(self.credences > 0.99)
+                return counts / self.n_agents
 
         def determine_conclusion_core():
             # in_degree > 1.
@@ -268,9 +346,14 @@ class VectorizedModel:
             if np.sum(core_mask) == 0:
                 return 0.0
 
-            core_credences = self.credences[core_mask]
-            counts = np.sum(core_credences[:, 1] > core_credences[:, 0])
-            return counts / len(core_credences)
+            if self.agent_type == "beta":
+                core_credences = self.credences[core_mask]
+                counts = np.sum(core_credences[:, 1] > core_credences[:, 0])
+                return counts / len(core_credences)
+            elif self.agent_type == "bayes":
+                core_credences = self.credences[core_mask]
+                counts = np.sum(core_credences > 0.99)
+                return counts / len(core_credences)
 
         iterable = range(number_of_steps)
         if show_bar:
@@ -293,8 +376,12 @@ class VectorizedModel:
             self.proportion_reached_by_truth = 0.0
         else:
             # Truthful roots
-            # indices where root_mask is True AND credence[1] > credence[0]
-            truthful_mask = root_mask & (self.credences[:, 1] > self.credences[:, 0])
+            if self.agent_type == "beta":
+                is_truthful = self.credences[:, 1] > self.credences[:, 0]
+            elif self.agent_type == "bayes":
+                is_truthful = self.credences > 0.5
+
+            truthful_mask = root_mask & is_truthful
             truthful_roots = np.where(truthful_mask)[0]
 
             if len(truthful_roots) > 0:
