@@ -70,13 +70,6 @@ When submitting changes, please use the following structure:
     *   Verified simulations: `basic_model_testing.ipynb` (timed out but ran) and `run_simulations_test.ipynb` (failed due to missing `network_randomization.py` in `main`).
     *   Verified unit tests: `python -m unittest unit_tests.py` passed.
 
-### [2026-01-06] - History Merge Fix (Jules)
-*   **Task:** Resolve "unrelated histories" between `main` and `ai-agents-branch`.
-*   **Actions:**
-    *   Performed `git merge origin/main --allow-unrelated-histories` into `ai-agents-branch` to unify git history.
-    *   Resolved conflicts by enforcing `origin/main` versions for core code files (`agents.py`, `model.py`, etc.) and preserving local versions for configuration and tests (`unit_tests.py`, `AGENTS.md`, `requirements.txt`).
-    *   Verified unit tests passed after merge.
-
 ### [2026-01-06] - Linearization / Vectorization (Jules)
 *   **Task:** Create vectorized implementation of the simulation to improve performance.
 *   **Actions:**
