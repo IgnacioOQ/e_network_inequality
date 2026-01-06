@@ -36,7 +36,7 @@ class Model:
         histories = False,
         sampling_update = False,
         variance_stopping = False,
-        tstep_stopping = False,
+        tstep_stopping = True,
         directed_network = True,
         seed=np.random.randint(0, 2**32 - 1),
         seeded=False,
