@@ -238,7 +238,12 @@ class Model:
                 # Check the agent's belief state once
                 agent_index = self.id_to_index_map[node]
                 agent = self.agents[agent_index]
-                is_truthful = agent.credences[1] > agent.credences[0]
+                if self.agent_type == "beta":
+                    is_truthful = agent.credences[1] > agent.credences[0]
+                elif self.agent_type == "bayes":
+                    is_truthful = agent.credences > 0.5
+                else:
+                    raise ValueError("Agent type not recognized.")
                 if is_truthful:
                     truthful_root_nodes.add(node)
             # --- 5. Calculate the new COLLECTIVE REACH metric ---
