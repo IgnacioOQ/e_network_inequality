@@ -14,6 +14,13 @@ This project is a simulation framework for agent-based models on various network
     *   If you need to change the logic of an agent or the model, you must create a **new version** (e.g., a subclass or a new file) rather than modifying the existing classes in place.
 2.  **Consistency:** Ensure any modifications or new additions remain as consistent as possible with the logic and structure of the `main` branch.
 
+## Workflow & Tooling
+*   **PostToolUse Hook (Code Formatting):**
+    *   **Context:** A "hook" is configured to run automatically after specific events.
+    *   **The Event:** "PostToolUse" triggers immediately after an agent uses a tool to modify a file (e.g., writing code or applying an edit).
+    *   **The Action:** The system automatically runs a code formatter ("beautifier") on the modified file.
+    *   **Implication:** Agents do not need to manually format code for spacing or style compliance; the hook ensures consistency automatically.
+
 ## Key Architecture & Logic
 
 ### 1. Directed Graphs & Information Flow
