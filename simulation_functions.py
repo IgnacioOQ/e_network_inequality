@@ -85,7 +85,7 @@ def generate_parameters_aggregate(G=G_default,uncertainty=0.005,n_experiments=20
 
 def run_simulation_with_params(param_dict, tolerance = 5*1e-03, tstep_stopping=False,
                                seed=420,seeded=False, number_of_steps=10000, show_bar=False, 
-                               agent_class=BayesAgent):
+                               agent_class=BetaAgent):
     
     process_seed = int.from_bytes(os.urandom(4), byteorder='little')
     rd.seed(process_seed)
@@ -97,7 +97,7 @@ def run_simulation_with_params(param_dict, tolerance = 5*1e-03, tstep_stopping=F
                     uncertainty=param_dict['uncertainty'],tolerance = tolerance,
                     histories=False,sampling_update=False,variance_stopping = False,
                     tstep_stopping = tstep_stopping,directed_network = True,
-                    seed=420,seeded=False, agent_class=BayesAgent)
+                    seed=420,seeded=False, agent_class=BetaAgent)
     # Run the simulation with predefined steps and show_bar option
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
@@ -110,10 +110,10 @@ def run_simulation_with_params(param_dict, tolerance = 5*1e-03, tstep_stopping=F
     result_dict['convergence_step'] = my_model.n_steps # takes note of the last reported step
     # result_dict['init_agents_alphas_betas'] = my_model.init_agents_alphas_betas
     # result_dict['degree_centrality_vector'] = my_model.degree_centrality_vector
-    result_dict['simulation_seed'] = process_seed
-    result_dict['rootnode_influence_pagerank'] = my_model.rootnode_influence_pagerank
-    result_dict['rootnode_influence_degree'] = my_model.rootnode_influence_degree
-    result_dict['rootnode_influence_reach'] = my_model.rootnode_influence_reach
+    # result_dict['simulation_seed'] = process_seed
+    # result_dict['rootnode_influence_pagerank'] = my_model.rootnode_influence_pagerank
+    # result_dict['rootnode_influence_degree'] = my_model.rootnode_influence_degree
+    # result_dict['rootnode_influence_reach'] = my_model.rootnode_influence_reach
     result_dict['proportion_reached_by_truth'] = my_model.proportion_reached_by_truth
     if 'group_id' in param_dict:
         result_dict['group_id'] = param_dict['group_id']
