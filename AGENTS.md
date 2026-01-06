@@ -19,7 +19,11 @@ This project is a simulation framework for agent-based models on various network
     *   **Context:** A "hook" is configured to run automatically after specific events.
     *   **The Event:** "PostToolUse" triggers immediately after an agent uses a tool to modify a file (e.g., writing code or applying an edit).
     *   **The Action:** The system automatically runs a code formatter ("beautifier") on the modified file.
-    *   **Implication:** Agents do not need to manually format code for spacing or style compliance; the hook ensures consistency automatically.
+    *   **Implication:** The hook handles the heavy lifting of styling.
+
+*   **Verification (Manual Check):**
+    *   **Rule:** Despite the automatic hook, agents must **manually double-check** that the code is correctly formatted and syntactically valid before submitting.
+    *   **Action:** Agents should explicitly run a formatter (e.g., `black .` or `black <file>`) or a linter to verify compliance. Do not blindly rely on the hook; ensure the final output is clean.
 
 ## Key Architecture & Logic
 
