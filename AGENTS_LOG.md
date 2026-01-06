@@ -78,3 +78,9 @@ When submitting changes, please use the following structure:
     *   Created `vectorized_simulation_functions.py`: Wrapper for running vectorized simulations.
     *   Created `test_vectorization.py`: Verified initialization match and update logic equivalence between `Model` and `VectorizedModel`.
     *   **Results:** Benchmarking showed a **~125x speedup** (from 14.5s to 0.11s for 100 agents / 500 steps).
+
+### [2026-01-06] - Documentation Update (Jules)
+*   **Task:** Update `AGENTS.md` with explicit Git Management rules.
+*   **Actions:**
+    *   Added "Git Management" subsection to `AGENTS.md`.
+    *   Specified: "All commits should be merged to the 'ai-agents-branch' branch".
