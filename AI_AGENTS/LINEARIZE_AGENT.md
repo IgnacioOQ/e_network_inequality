@@ -44,6 +44,13 @@ Instead of iterating `network.predecessors(agent.id)`, use the Adjacency Matrix.
 *   Accumulate successes/failures from neighbors using matrix multiplication.
 *   Update the state matrices (`Alphas`, `Betas`) in one operation.
 
+### 5. Bayes Agent Implementation
+*   **Support:** The vectorized model now supports `agent_type="bayes"`.
+*   **State:** `self.credences` is a 1D array of shape `(N_agents,)`.
+*   **Choice:** Vectorized check `credences > 0.5`.
+*   **Experiments:** Vectorized `binomial` generation, masked to only include agents who chose theory 1.
+*   **Update:** Vectorized Bayesian update formula applied using aggregated evidence for Theory 1.
+
 ## Verification Plan
 1.  **Unit Test:** Create `tests/test_vectorization.py`.
     *   Initialize `Model` and `VectorizedModel` with the same `seed`.
@@ -53,10 +60,11 @@ Instead of iterating `network.predecessors(agent.id)`, use the Adjacency Matrix.
 3.  **Benchmark:** Prove the speedup! Log the time difference between the loop-based and vectorized approaches.
 
 ## Checklist
-- [ ] Read `AGENTS.md` to understand the graph direction logic perfectly.
-- [ ] Create `vectorized_model.py`.
-- [ ] Implement global state matrices.
-- [ ] Implement matrix-based update logic.
-- [ ] Verify against `model.py` with a shared seed.
-- [ ] Run visual verification notebooks (`basic_model_testing.ipynb`, `run_simulations_test.ipynb`).
-- [ ] Log results in `AGENTS_LOG.md`.
+- [x] Read `AGENTS.md` to understand the graph direction logic perfectly.
+- [x] Create `vectorized_model.py`.
+- [x] Implement global state matrices.
+- [x] Implement matrix-based update logic.
+- [x] Verify against `model.py` with a shared seed.
+- [x] Run visual verification notebooks (`basic_model_testing.ipynb`, `run_simulations_test.ipynb`).
+- [x] Log results in `AGENTS_LOG.md`.
+- [x] Implement and verify Bayes Agent vectorization.
