@@ -1,6 +1,5 @@
 from imports import *
 
-
 def barabasi_albert_directed(n, m):
     """
     Implements the Barabási-Albert model for directed networks.
@@ -40,10 +39,8 @@ def barabasi_albert_directed(n, m):
             # Preferential attachment: choose a node with probability proportional to its in-degree
             target = random.choices(
                 list(G.nodes()),
-                weights=[
-                    G.out_degree(node) + 1 for node in G.nodes()
-                ],  # +1 to avoid zero probability
-                k=1,
+                weights=[G.out_degree(node) + 1 for node in G.nodes()],  # +1 to avoid zero probability
+                k=1
             )[0]
 
             # Add the target to the set (ensures unique connections)
