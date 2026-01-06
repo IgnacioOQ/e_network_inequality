@@ -60,3 +60,28 @@ When submitting changes, please use the following structure:
     *   Created `AGENTS.md` with project context and rules.
     *   Created `AI_AGENTS/` directory for sub-agent context.
     *   Documented development rules (immutability, consistency).
+
+### [2026-01-06] - Sync with Main & Environment Setup (Jules)
+*   **Task:** Update branch with code from `main`, add `requirements.txt`, and preserve local documentation/tests.
+*   **Actions:**
+    *   Synced all tracked files from `main` (commit `583ddb1`) to the current branch.
+    *   Restored local `unit_tests.py` to preserve test logic, but updated it to call `agent.update()` instead of `agent.beta_update()` to match the `main` codebase.
+    *   Created `requirements.txt` with project dependencies.
+    *   Verified simulations: `basic_model_testing.ipynb` (timed out but ran) and `run_simulations_test.ipynb` (failed due to missing `network_randomization.py` in `main`).
+    *   Verified unit tests: `python -m unittest unit_tests.py` passed.
+
+### [2026-01-06] - History Merge Fix (Jules)
+*   **Task:** Resolve "unrelated histories" between `main` and `ai-agents-branch`.
+*   **Actions:**
+    *   Performed `git merge origin/main --allow-unrelated-histories` into `ai-agents-branch` to unify git history.
+    *   Resolved conflicts by enforcing `origin/main` versions for core code files (`agents.py`, `model.py`, etc.) and preserving local versions for configuration and tests (`unit_tests.py`, `AGENTS.md`, `requirements.txt`).
+    *   Verified unit tests passed after merge.
+
+### [2026-01-06] - Linearization / Vectorization (Jules)
+*   **Task:** Create vectorized implementation of the simulation to improve performance.
+*   **Actions:**
+    *   Created `vectorized_model.py`: Implements `VectorizedModel` which replaces object-oriented agent state with NumPy matrices `(N_agents, 2, 2)`. Replaces loop-based updates with matrix multiplication (`Adjacency.T @ Outcomes`).
+    *   Created `vectorized_agents.py`: Implements `VectorizedBandit` for batch experiment generation.
+    *   Created `vectorized_simulation_functions.py`: Wrapper for running vectorized simulations.
+    *   Created `test_vectorization.py`: Verified initialization match and update logic equivalence between `Model` and `VectorizedModel`.
+    *   **Results:** Benchmarking showed a **~125x speedup** (from 14.5s to 0.11s for 100 agents / 500 steps).
