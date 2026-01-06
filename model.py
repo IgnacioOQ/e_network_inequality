@@ -1,9 +1,16 @@
 # import numpy as np
 # import tqdm
 # import pandas as pd
+<<<<<<< HEAD
 from imports import *
 from agents import BetaAgent, BayesAgent, Bandit
 
+=======
+from imports import *
+from agents import BetaAgent, BayesAgent, Bandit
+
+
+>>>>>>> origin/ai-agents-branch
 class Model:
     """
     Adapted from https://github.com/jweisber/sep-sen/blob/master/bg/agent.py
@@ -32,12 +39,21 @@ class Model:
         n_experiments: int,
         agent_type: str = "beta",
         uncertainty: float = 0.001,
+<<<<<<< HEAD
         tolerance = 5*1e-03,
         histories = False,
         sampling_update = False,
         variance_stopping = False,
         tstep_stopping = True,
         directed_network = True,
+=======
+        tolerance=5 * 1e-03,
+        histories=False,
+        sampling_update=False,
+        variance_stopping=False,
+        tstep_stopping=True,
+        directed_network=True,
+>>>>>>> origin/ai-agents-branch
         seed=np.random.randint(0, 2**32 - 1),
         seeded=False,
         *args,
@@ -45,8 +61,15 @@ class Model:
     ):
         self.network = network
         self.n_agents = len(network.nodes)
+<<<<<<< HEAD
         self.directedness = isinstance(network, nx.DiGraph) # network.is_directed()#directed_network
         #print(self.n_agents)
+=======
+        self.directedness = isinstance(
+            network, nx.DiGraph
+        )  # network.is_directed()#directed_network
+        # print(self.n_agents)
+>>>>>>> origin/ai-agents-branch
         self.n_experiments = n_experiments
         # else:
         # self.seed = seed
@@ -80,24 +103,41 @@ class Model:
         self.id_to_index_map = {u: index for index, u in enumerate(self.nodes)}
 
         # self.id_to_index_map will be: {'id1': 0, 'id2': 1, 'id3': 2, ...}
+<<<<<<< HEAD
         self.init_agents_alphas_betas= 'here goes the list of initial alphas and betas'
         # self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent in self.agents]
 
+=======
+        self.init_agents_alphas_betas = "here goes the list of initial alphas and betas"
+        # self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent in self.agents]
+
+>>>>>>> origin/ai-agents-branch
         # agent.id is the name of the node in the network
         # Compute degree centrality
         # degree_centrality_dict = nx.degree_centrality(self.network)
         # # Convert to a NumPy array (vector)
+<<<<<<< HEAD
         # degree_centrality_vector = np.array(list(degree_centrality_dict.values()))
         # self.degree_centrality_vector = degree_centrality_vector
         self.degree_centrality_vector = 'here goes the degree centrality vector'
 
+=======
+        # degree_centrality_vector = np.array(list(degree_centrality_dict.values()))
+        # self.degree_centrality_vector = degree_centrality_vector
+        self.degree_centrality_vector = "here goes the degree centrality vector"
+
+>>>>>>> origin/ai-agents-branch
         # self.agent_type = agent_type
         self.n_steps = 0
         self.tolerance = tolerance
         self.histories = histories
         self.variance_stopping = variance_stopping
         self.tstep_stopping = tstep_stopping
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> origin/ai-agents-branch
     def run_simulation(
         self, number_of_steps: int = 10**6, show_bar: bool = False, *args, **kwargs
     ):
@@ -110,7 +150,11 @@ class Model:
         # def stop_condition(credences_prior, credences_post) -> bool:
         #     # the tolerance is too tight, originally: rtol=1e-05, atol=1e-08
         #     return np.allclose(credences_prior, credences_post,rtol=self.tolerance, atol=self.tolerance)
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> origin/ai-agents-branch
         # def true_consensus_condition(credences: np.array) -> float:
         #     # Count how many pairs have the second coordinate larger than the first (second coordinate is the second theory)
         #     counts = np.sum([pair[1] > pair[0] for pair in credences])
@@ -170,7 +214,11 @@ class Model:
             iterable = tqdm.tqdm(iterable)
 
         for _ in iterable:
+<<<<<<< HEAD
              # Lots of if elses but oh well
+=======
+            # Lots of if elses but oh well
+>>>>>>> origin/ai-agents-branch
             # if self.variance_stopping:
             #     betas_prior = np.array([agent.alphas_betas for agent in self.agents])
             #     # mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for
@@ -217,13 +265,18 @@ class Model:
             # else:
             #     if stop_condition(credences_prior, credences_post):
             #         break
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> origin/ai-agents-branch
         # We add the conclusion at the end of the simulation
         self.conclusion = determine_conclusion()
         self.conclusion_core = determine_conclusion_core()
 
         # Adding this metric to test influence of root nodes
         # 1. Identify root nodes in the ORIGINAL network
+<<<<<<< HEAD
         root_nodes = [node for node, in_degree in self.network.in_degree() if in_degree == 0]
         # 2. Check if there are any root nodes to analyze
         if not root_nodes:
@@ -232,6 +285,18 @@ class Model:
             # --- Metric Initialization ---
 
             truthful_root_nodes = set() # Store truthful roots for the new metric
+=======
+        root_nodes = [
+            node for node, in_degree in self.network.in_degree() if in_degree == 0
+        ]
+        # 2. Check if there are any root nodes to analyze
+        if not root_nodes:
+            self.proportion_reached_by_truth = 0.0  # New metric
+        else:
+            # --- Metric Initialization ---
+
+            truthful_root_nodes = set()  # Store truthful roots for the new metric
+>>>>>>> origin/ai-agents-branch
             # --- Pre-computation ---
             # 3. Loop through root nodes to gather data
             for node in root_nodes:
@@ -252,9 +317,17 @@ class Model:
                 # Find the union of all nodes reachable by any truthful root
                 collective_reach_set = set()
                 for node in truthful_root_nodes:
+<<<<<<< HEAD
                     collective_reach_set.add(node) # Include the root itself
                     collective_reach_set.update(nx.descendants(self.network, node))
                 self.proportion_reached_by_truth = len(collective_reach_set) / total_nodes
+=======
+                    collective_reach_set.add(node)  # Include the root itself
+                    collective_reach_set.update(nx.descendants(self.network, node))
+                self.proportion_reached_by_truth = (
+                    len(collective_reach_set) / total_nodes
+                )
+>>>>>>> origin/ai-agents-branch
             else:
                 self.proportion_reached_by_truth = 0.0
 
@@ -264,7 +337,11 @@ class Model:
 
     def step(self):
         """Updates the model with one step, consisting of experiments and updates."""
+<<<<<<< HEAD
         self.n_steps+=1
+=======
+        self.n_steps += 1
+>>>>>>> origin/ai-agents-branch
         experiments_results = self.agents_experiment()
         self.agents_update(experiments_results)
 
@@ -272,11 +349,19 @@ class Model:
         experiments_results = {}
         for agent in self.agents:
             theory_index, n_success, n_failures = agent.experiment(self.n_experiments)
+<<<<<<< HEAD
             experiments_results[agent.id]=[theory_index, n_success, n_failures]
         # print('experiments done')
         return experiments_results
 
     def agents_update(self,experiments_results):
+=======
+            experiments_results[agent.id] = [theory_index, n_success, n_failures]
+        # print('experiments done')
+        return experiments_results
+
+    def agents_update(self, experiments_results):
+>>>>>>> origin/ai-agents-branch
         for agent in self.agents:
             # gather information from neighbors
             # if the graph is directed, the neighbors are the successors
@@ -289,6 +374,7 @@ class Model:
                 neighbor_nodes = list(self.network.predecessors(agent.id))
             else:
                 neighbor_nodes = list(self.network.neighbors(agent.id))
+<<<<<<< HEAD
             theories_exp_results = np.array([np.array([0,0]),np.array([0,0])])
             # for reference: experiments_results[agent.id]=[theory_index, n_success, n_failures]
             results = experiments_results[agent.id]
@@ -310,3 +396,29 @@ class Model:
         self.agent_histories = [agent.credences_history for agent in self.agents]
         #agent_choices = [agent.choice_history for agent in self.agents]
         #self.agents_choices = pd.DataFrame(agent_choices)
+
+
+
+
+=======
+            theories_exp_results = np.array([np.array([0, 0]), np.array([0, 0])])
+            # for reference: experiments_results[agent.id]=[theory_index, n_success, n_failures]
+            results = experiments_results[agent.id]
+            theory_index = results[0]
+            theories_exp_results[theory_index][0] += results[1]
+            theories_exp_results[theory_index][1] += results[2]
+            for id in neighbor_nodes:
+                results = experiments_results[id]
+                theory_index = results[0]
+                theories_exp_results[theory_index][0] += results[1]  # n_success
+                theories_exp_results[theory_index][1] += results[2]  # n_failures
+
+            # update
+            agent.update(0, theories_exp_results[0][0], theories_exp_results[0][1])
+            agent.update(1, theories_exp_results[1][0], theories_exp_results[1][1])
+
+    def add_agents_history(self):
+        self.agent_histories = [agent.credences_history for agent in self.agents]
+        # agent_choices = [agent.choice_history for agent in self.agents]
+        # self.agents_choices = pd.DataFrame(agent_choices)
+>>>>>>> origin/ai-agents-branch

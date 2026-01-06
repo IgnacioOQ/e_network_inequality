@@ -1,5 +1,9 @@
 from imports import *
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ai-agents-branch
 def barabasi_albert_directed(n, m):
     """
     Implements the Barabási-Albert model for directed networks.
@@ -39,8 +43,15 @@ def barabasi_albert_directed(n, m):
             # Preferential attachment: choose a node with probability proportional to its in-degree
             target = random.choices(
                 list(G.nodes()),
+<<<<<<< HEAD
                 weights=[G.out_degree(node) + 1 for node in G.nodes()],  # +1 to avoid zero probability
                 k=1
+=======
+                weights=[
+                    G.out_degree(node) + 1 for node in G.nodes()
+                ],  # +1 to avoid zero probability
+                k=1,
+>>>>>>> origin/ai-agents-branch
             )[0]
 
             # Add the target to the set (ensures unique connections)
@@ -57,11 +68,16 @@ def barabasi_albert_directed(n, m):
 def directed_watts_strogatz(n, k, p):
     """
     Generates a directed Watts-Strogatz small-world network.
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> origin/ai-agents-branch
     Parameters:
     n (int): Number of nodes
     k (int): Each node is initially connected to k nearest neighbors
     p (float): Probability of rewiring an edge
+<<<<<<< HEAD
 
     Returns:
     nx.DiGraph: A directed Watts-Strogatz network
@@ -71,18 +87,34 @@ def directed_watts_strogatz(n, k, p):
     G = nx.DiGraph()
     nodes = list(range(n))
 
+=======
+
+    Returns:
+    nx.DiGraph: A directed Watts-Strogatz network
+    """
+
+    # Step 1: Create a directed ring lattice
+    G = nx.DiGraph()
+    nodes = list(range(n))
+
+>>>>>>> origin/ai-agents-branch
     for i in range(n):
         for j in range(1, k // 2 + 1):  # k//2 neighbors in each direction
             neighbor = (i + j) % n
             G.add_edge(i, neighbor)  # Forward direction
             G.add_edge(neighbor, i)  # Backward direction (ensuring directed edges)
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> origin/ai-agents-branch
     # Step 2: Rewire edges with probability p
     edges = list(G.edges())  # Get the initial edges
     for edge in edges:
         u, v = edge
         if random.random() < p:
             G.remove_edge(u, v)  # Remove old edge
+<<<<<<< HEAD
 
             new_v = random.choice(nodes)
             while new_v == u or G.has_edge(u, new_v):  # Avoid self-loops and duplicates
@@ -90,4 +122,13 @@ def directed_watts_strogatz(n, k, p):
 
             G.add_edge(u, new_v)  # Add new directed edge
 
+=======
+
+            new_v = random.choice(nodes)
+            while new_v == u or G.has_edge(u, new_v):  # Avoid self-loops and duplicates
+                new_v = random.choice(nodes)
+
+            G.add_edge(u, new_v)  # Add new directed edge
+
+>>>>>>> origin/ai-agents-branch
     return G
