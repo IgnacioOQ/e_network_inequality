@@ -84,3 +84,12 @@ When submitting changes, please use the following structure:
 *   **Actions:**
     *   Added "Git Management" subsection to `AGENTS.md`.
     *   Specified: "All commits should be merged to the 'ai-agents-branch' branch".
+
+### [2026-01-06] - Vectorized Bayes Agent (Jules)
+*   **Task:** Extend vectorized model to support Bayes agents and verify.
+*   **Actions:**
+    *   Updated `vectorized_model.py` to support `agent_type="bayes"`.
+    *   Implemented vectorized Bayes initialization, threshold-based choice logic, and Bayesian update formula based on aggregated neighbor evidence.
+    *   Added `vectorized_basic_model_testing.ipynb` mirroring the original notebook to verify plots for both Beta and Bayes agents.
+    *   Updated `test_vectorization.py` to include unit tests for Bayes initialization and update logic equivalence (verified against object-oriented `Model`).
+    *   **Note:** Encountered a minor issue in `test_vectorization.py` where manual initialization of `Model` agents was incomplete, causing a mismatch. Fixed by explicitly setting credences for all agents in the test.
