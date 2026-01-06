@@ -142,6 +142,140 @@ class TestVectorization(unittest.TestCase):
             err_msg="Updated Credences do not match",
         )
 
+    def test_bayes_initialization_match(self):
+        """
+        Verify Bayes agent initialization.
+        """
+        agent_type = "bayes"
+        rd.seed(self.seed)
+        model = Model(
+            self.G,
+            self.n_experiments,
+            uncertainty=self.uncertainty,
+            seeded=True,
+            seed=self.seed,
+            agent_type=agent_type,
+        )
+
+        rd.seed(self.seed)
+        vec_model = VectorizedModel(
+            self.G,
+            self.n_experiments,
+            uncertainty=self.uncertainty,
+            seeded=True,
+            seed=self.seed,
+            agent_type=agent_type,
+        )
+
+        # Credences for Bayes are floats
+        model_credences = np.array([agent.credences for agent in model.agents])
+        vec_credences = vec_model.credences
+
+        np.testing.assert_array_equal(
+            model_credences,
+            vec_credences,
+            err_msg="Initial Bayes Credences do not match",
+        )
+
+    def test_bayes_update_logic(self):
+        """
+        Verify Bayes update logic manually.
+        """
+        agent_type = "bayes"
+        rd.seed(self.seed)
+        vec_model = VectorizedModel(
+            self.G,
+            self.n_experiments,
+            uncertainty=self.uncertainty,
+            seeded=True,
+            seed=self.seed,
+            agent_type=agent_type,
+        )
+
+        # Manually set credences to known value
+        vec_model.credences = np.full(vec_model.n_agents, 0.5)
+
+        # Mock experiment results
+        # Suppose all agents choose Theory 1 and get 10 successes, 0 failures
+        # And aggregate from neighbors
+        # Graph is path graph 0->1->2->3->4
+        # Agent 1 has predecessor 0.
+        # If Agent 0 has 10S, 0F.
+        # Agent 1 updates with own (10,0) + Agent 0 (10,0) = (20,0)?
+        # Let's mock the update calculation logic inside step() for Bayes.
+
+        # We will simulate the update math
+        # S1 = F1 = 0 initially
+        # Let's say outcomes are:
+        # Agent 0: 10S, 0F
+        # Agent 1: 0S, 0F (Suppose he chose 0, so no result? Or chose 1 and got nothing?)
+
+        # To be precise, let's use the Model's logic to generate a ground truth update
+        # and compare VectorizedModel's output.
+
+        rd.seed(self.seed)
+        model = Model(
+            self.G,
+            self.n_experiments,
+            uncertainty=self.uncertainty,
+            seeded=True,
+            seed=self.seed,
+            agent_type=agent_type,
+        )
+        for agent in model.agents:
+            agent.credences = 0.5
+
+        # Force experiments
+        # Agent 0 tests Theory 1: 10 S, 0 F
+        # Agent 1 tests Theory 1: 5 S, 5 F
+        experiments_results = {
+            0: [1, 10, 0],
+            1: [1, 5, 5],
+            2: [0, 0, 0],  # Theory 0 choice -> 0,0
+            3: [0, 0, 0],
+            4: [0, 0, 0],
+        }
+
+        model.agents_update(experiments_results)
+        model_credences = np.array([agent.credences for agent in model.agents])
+
+        # Vectorized Update
+        vec_model.credences = np.full(
+            vec_model.n_agents, 0.5
+        )  # Reset to 0.5 to match start
+        # Replicate update step
+        n_agents = vec_model.n_agents
+        outcome_success = np.zeros((n_agents, 2))
+        outcome_failure = np.zeros((n_agents, 2))
+
+        # Populate based on experiments_results
+        for i in range(n_agents):
+            idx, s, f = experiments_results[i]
+            outcome_success[i, idx] = s
+            outcome_failure[i, idx] = f
+
+        adj_matrix = nx.to_numpy_array(self.G, nodelist=vec_model.nodes)
+        agg_success = adj_matrix.T @ outcome_success
+        agg_failure = adj_matrix.T @ outcome_failure
+
+        total_success = agg_success + outcome_success
+        total_failure = agg_failure + outcome_failure
+
+        # Bayes Update
+        S1 = total_success[:, 1]
+        F1 = total_failure[:, 1]
+        uncertainty = vec_model.bandit.uncertainty
+        L = (0.5 - uncertainty) / (0.5 + uncertainty)
+        k = S1 - F1
+        epsilon = 1e-9
+        C = np.clip(vec_model.credences, epsilon, 1 - epsilon)
+        term = ((1 - C) / C) * (L**k)
+        vec_model.credences = 1 / (1 + term)
+
+        np.testing.assert_array_almost_equal(
+            model_credences, vec_model.credences, err_msg="Bayes Update Mismatch"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
