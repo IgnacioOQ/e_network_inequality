@@ -2,7 +2,7 @@
 # import tqdm
 # import pandas as pd
 from imports import *  
-from agents import BetaAgent, Bandit
+from agents import BetaAgent, BayesAgent, Bandit
 
 class Model:
     """
@@ -40,6 +40,7 @@ class Model:
         directed_network = True,
         seed=np.random.randint(0, 2**32 - 1),
         seeded=False,
+        agent_class=BetaAgent,
         *args,
         **kwargs
     ):
@@ -58,7 +59,7 @@ class Model:
         #               histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
         # ]
         self.nodes = list(self.network.nodes)
-        self.agents = [BetaAgent(u, self.bandit, histories=histories, sampling_update=sampling_update)
+        self.agents = [agent_class(u, self.bandit, histories=histories, sampling_update=sampling_update)
           for u in self.nodes]
         # Assuming self.nodes is a list like ['id1', 'id2', 'id3', ...]
         self.id_to_index_map = {u: index for index, u in enumerate(self.nodes)}
@@ -139,19 +140,19 @@ class Model:
         root_nodes = [node for node, in_degree in self.network.in_degree() if in_degree == 0]
         # 2. Check if there are any root nodes to analyze
         if not root_nodes:
-            self.rootnode_influence_pagerank = 0.0
-            self.rootnode_influence_degree = 0.0
-            self.rootnode_influence_reach = 0.0
+            # self.rootnode_influence_pagerank = 0.0
+            # self.rootnode_influence_degree = 0.0
+            # self.rootnode_influence_reach = 0.0
             self.proportion_reached_by_truth = 0.0 # New metric
         else:
             # --- Metric Initialization ---
-            truthful_pagerank_sum, total_pagerank_sum = 0.0, 0.0
-            truthful_degree_sum, total_degree_sum = 0.0, 0.0
-            truthful_reach_sum, total_reach_sum = 0.0, 0.0
+            # truthful_pagerank_sum, total_pagerank_sum = 0.0, 0.0
+            # truthful_degree_sum, total_degree_sum = 0.0, 0.0
+            # truthful_reach_sum, total_reach_sum = 0.0, 0.0
             truthful_root_nodes = set() # Store truthful roots for the new metric
             # --- Pre-computation ---
-            reversed_network = self.network.reverse(copy=True)
-            pagerank_scores = nx.pagerank(reversed_network)
+            # reversed_network = self.network.reverse(copy=True)
+            # pagerank_scores = nx.pagerank(reversed_network)
             # 3. Loop through root nodes to gather data
             for node in root_nodes:
                 # Check the agent's belief state once
@@ -161,20 +162,20 @@ class Model:
                 if is_truthful:
                     truthful_root_nodes.add(node)
                 # Calculate for existing metrics
-                pagerank_score = pagerank_scores.get(node, 0)
-                degree_score = self.network.out_degree(node)
-                reach_score = 1 + len(nx.descendants(self.network, node))
-                total_pagerank_sum += pagerank_score
-                total_degree_sum += degree_score
-                total_reach_sum += reach_score
-                if is_truthful:
-                    truthful_pagerank_sum += pagerank_score
-                    truthful_degree_sum += degree_score
-                    truthful_reach_sum += reach_score
+                # pagerank_score = pagerank_scores.get(node, 0)
+                # degree_score = self.network.out_degree(node)
+                # reach_score = 1 + len(nx.descendants(self.network, node))
+                # total_pagerank_sum += pagerank_score
+                # total_degree_sum += degree_score
+                # total_reach_sum += reach_score
+                # if is_truthful:
+                    # truthful_pagerank_sum += pagerank_score
+                    # truthful_degree_sum += degree_score
+                    # truthful_reach_sum += reach_score
             # 4. Safely calculate and store the final INFLUENCE metrics
-            self.rootnode_influence_pagerank = truthful_pagerank_sum / total_pagerank_sum if total_pagerank_sum > 0 else 0.0
-            self.rootnode_influence_degree = truthful_degree_sum / total_degree_sum if total_degree_sum > 0 else 0.0
-            self.rootnode_influence_reach = truthful_reach_sum / total_reach_sum if total_reach_sum > 0 else 0.0
+            # self.rootnode_influence_pagerank = truthful_pagerank_sum / total_pagerank_sum if total_pagerank_sum > 0 else 0.0
+            # self.rootnode_influence_degree = truthful_degree_sum / total_degree_sum if total_degree_sum > 0 else 0.0
+            # self.rootnode_influence_reach = truthful_reach_sum / total_reach_sum if total_reach_sum > 0 else 0.0
             # --- 5. Calculate the new COLLECTIVE REACH metric ---
             total_nodes = self.network.number_of_nodes()
             if total_nodes > 0:
