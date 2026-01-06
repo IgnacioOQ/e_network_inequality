@@ -1,8 +1,9 @@
 # import numpy as np
 # import tqdm
 # import pandas as pd
-from imports import *  
+from imports import *
 from agents import BetaAgent, BayesAgent, Bandit
+
 
 class Model:
     """
@@ -30,24 +31,25 @@ class Model:
         self,
         network,
         n_experiments: int,
-        # agent_type: str,
-        uncertainty: float = None,
-        tolerance = 5*1e-03,
-        histories = False,
-        sampling_update = False,
-        variance_stopping = False,
-        tstep_stopping = False,
-        directed_network = True,
+        agent_type: str = "beta",
+        uncertainty: float = 0.001,
+        tolerance=5 * 1e-03,
+        histories=False,
+        sampling_update=False,
+        variance_stopping=False,
+        tstep_stopping=True,
+        directed_network=True,
         seed=np.random.randint(0, 2**32 - 1),
         seeded=False,
-        agent_class=BetaAgent,
         *args,
         **kwargs
     ):
         self.network = network
         self.n_agents = len(network.nodes)
-        self.directedness = isinstance(network, nx.DiGraph) # network.is_directed()#directed_network
-        #print(self.n_agents)
+        self.directedness = isinstance(
+            network, nx.DiGraph
+        )  # network.is_directed()#directed_network
+        # print(self.n_agents)
         self.n_experiments = n_experiments
         # else:
         # self.seed = seed
@@ -59,30 +61,46 @@ class Model:
         #               histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
         # ]
         self.nodes = list(self.network.nodes)
-        self.agents = [agent_class(u, self.bandit, histories=histories, sampling_update=sampling_update)
-          for u in self.nodes]
+        self.agent_type = agent_type
+        if self.agent_type == "beta":
+            self.agents = [
+                BetaAgent(
+                    id,
+                    self.bandit,
+                    histories=histories,
+                    sampling_update=sampling_update,
+                    epsilon=0,
+                )
+                for id in self.nodes
+            ]
+        elif self.agent_type == "bayes":
+            self.agents = [BayesAgent(id, self.bandit) for id in self.nodes]
+        else:
+            raise ValueError("Agent type not recognized.")
+        # self.agents = [agent_class(u, self.bandit, histories=histories, sampling_update=sampling_update)
+        #   for u in self.nodes]
         # Assuming self.nodes is a list like ['id1', 'id2', 'id3', ...]
         self.id_to_index_map = {u: index for index, u in enumerate(self.nodes)}
 
         # self.id_to_index_map will be: {'id1': 0, 'id2': 1, 'id3': 2, ...}
-        self.init_agents_alphas_betas= 'here goes the list of initial alphas and betas'
+        self.init_agents_alphas_betas = "here goes the list of initial alphas and betas"
         # self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent in self.agents]
-        
+
         # agent.id is the name of the node in the network
         # Compute degree centrality
         # degree_centrality_dict = nx.degree_centrality(self.network)
         # # Convert to a NumPy array (vector)
-        # degree_centrality_vector = np.array(list(degree_centrality_dict.values()))  
+        # degree_centrality_vector = np.array(list(degree_centrality_dict.values()))
         # self.degree_centrality_vector = degree_centrality_vector
-        self.degree_centrality_vector = 'here goes the degree centrality vector'
-        
+        self.degree_centrality_vector = "here goes the degree centrality vector"
+
         # self.agent_type = agent_type
         self.n_steps = 0
         self.tolerance = tolerance
         self.histories = histories
         self.variance_stopping = variance_stopping
         self.tstep_stopping = tstep_stopping
-        
+
     def run_simulation(
         self, number_of_steps: int = 10**6, show_bar: bool = False, *args, **kwargs
     ):
@@ -92,14 +110,62 @@ class Model:
             number_of_steps (int, optional): Number of steps in the simulation
             (it will end sooner if the stop condition is met). Defaults to 10**6."""
 
-        def stop_condition(credences_prior, credences_post) -> bool:
+        # def stop_condition(credences_prior, credences_post) -> bool:
+        #     # the tolerance is too tight, originally: rtol=1e-05, atol=1e-08
+        #     return np.allclose(credences_prior, credences_post,rtol=self.tolerance, atol=self.tolerance)
+
+        # def true_consensus_condition(credences: np.array) -> float:
+        #     # Count how many pairs have the second coordinate larger than the first (second coordinate is the second theory)
+        #     counts = np.sum([pair[1] > pair[0] for pair in credences])
+        #     return counts/len(credences) #(second_coordinates > 0.5).mean()
+
+        def stop_condition() -> bool:  # credences_prior, credences_post) -> bool:
             # the tolerance is too tight, originally: rtol=1e-05, atol=1e-08
-            return np.allclose(credences_prior, credences_post,rtol=self.tolerance, atol=self.tolerance)
-        
-        def true_consensus_condition(credences: np.array) -> float:
-            # Count how many pairs have the second coordinate larger than the first (second coordinate is the second theory)
-            counts = np.sum([pair[1] > pair[0] for pair in credences])
-            return counts/len(credences) #(second_coordinates > 0.5).mean()
+            if self.agent_type == "bayes":
+                credences = np.array([a.credences for a in self.agents])
+                return all(credences <= 0.5) or all(credences > 0.99)
+
+            return False
+            # return np.allclose(
+            #     credences_prior,
+            #     credences_post,
+            #     rtol=self.tolerance,
+            #     atol=self.tolerance,
+            # )
+
+        def determine_conclusion() -> float:
+            # Count how many pairs have the second coordinate larger than the first
+            # (second coordinate is the second theory)
+            if self.agent_type == "beta":
+                credences = np.array([agent.credences for agent in self.agents])
+                counts = np.sum([pair[1] > pair[0] for pair in credences])
+                share_correct = counts / len(credences)
+                return share_correct
+            elif self.agent_type == "bayes":
+                credences = np.array([agent.credences for agent in self.agents])
+                counts = np.sum(credences > 0.99)
+                return counts / len(credences)  # type: ignore
+            else:
+                raise ValueError("Agent type not recognized.")
+            # return counts / len(credences)  # (second_coordinates > 0.5).mean()
+
+        def determine_conclusion_core() -> float:
+            # Count how many pairs have the second coordinate larger than the first
+            # (second coordinate is the second theory)
+            core_agents = [
+                agent for agent in self.agents if self.network.in_degree(agent.id) > 1
+            ]
+            if self.agent_type == "beta":
+                credences = np.array([agent.credences for agent in core_agents])
+                counts = np.sum([pair[1] > pair[0] for pair in credences])
+                share_correct = counts / len(credences)
+                return share_correct
+            elif self.agent_type == "bayes":
+                credences = np.array([agent.credences for agent in core_agents])
+                counts = np.sum(credences > 0.99)
+                return counts / len(credences)  # type: ignore
+            else:
+                raise ValueError("Agent type not recognized.")
 
         iterable = range(number_of_steps)
 
@@ -108,83 +174,94 @@ class Model:
 
         for _ in iterable:
             # Lots of if elses but oh well
-            if self.variance_stopping:
-                betas_prior = np.array([agent.alphas_betas for agent in self.agents])
-                # mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for prior in betas_prior])
-                mv_prior = np.array([[beta.stats(prior[0][0], prior[0][1], moments='mv'),beta.stats(prior[1][0], prior[1][1], moments='mv')] for prior in betas_prior])
-            else:
-                credences_prior = np.array([agent.credences for agent in self.agents])
-            
+            # if self.variance_stopping:
+            #     betas_prior = np.array([agent.alphas_betas for agent in self.agents])
+            #     # mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for
+            #     # prior in betas_prior])
+            #     mv_prior = np.array(
+            #         [
+            #             [
+            #                 beta.stats(prior[0][0], prior[0][1], moments="mv"),
+            #                 beta.stats(prior[1][0], prior[1][1], moments="mv"),
+            #             ]
+            #             for prior in betas_prior
+            #         ]
+            #     )
+            # else:
+            #     credences_prior = np.array([agent.credences for agent in self.agents])
+
             self.step()
-            
-            if self.variance_stopping:
-                betas_post = np.array([agent.alphas_betas for agent in self.agents])
-                # mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
-                mv_post = np.array([[beta.stats(post[0][0], post[0][1], moments='mv'),beta.stats(post[1][0], post[1][1], moments='mv')] for post in betas_post])
+
+            # if self.variance_stopping:
+            #     betas_post = np.array([agent.alphas_betas for agent in self.agents])
+            #     # mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
+            #     mv_post = np.array(
+            #         [
+            #             [
+            #                 beta.stats(post[0][0], post[0][1], moments="mv"),
+            #                 beta.stats(post[1][0], post[1][1], moments="mv"),
+            #             ]
+            #             for post in betas_post
+            #         ]
+            #     )
 
             # we need the credences post regardless of the variance stopping condition
-            credences_post = np.array([agent.credences for agent in self.agents])
-            
-            if self.variance_stopping:
-                if stop_condition(mv_prior, mv_post):
-                    break
-            else:
-                if not self.tstep_stopping and stop_condition(credences_prior, credences_post):
-                    break
-        
+            # credences_post = np.array([agent.credences for agent in self.agents])
+
+            if stop_condition():
+                break
+            # if self.step_counter > 1000 and self.step_counter % 100 == 0:
+            #     if self.prob_some_agent_switches() < 0.01:
+            #         break
+
+            # if self.variance_stopping:
+            #     if stop_condition(mv_prior, mv_post):
+            #         break
+            # else:
+            #     if stop_condition(credences_prior, credences_post):
+            #         break
+
         # We add the conclusion at the end of the simulation
-        self.conclusion = true_consensus_condition(credences_post)
+        self.conclusion = determine_conclusion()
+        self.conclusion_core = determine_conclusion_core()
 
         # Adding this metric to test influence of root nodes
         # 1. Identify root nodes in the ORIGINAL network
-        root_nodes = [node for node, in_degree in self.network.in_degree() if in_degree == 0]
+        root_nodes = [
+            node for node, in_degree in self.network.in_degree() if in_degree == 0
+        ]
         # 2. Check if there are any root nodes to analyze
         if not root_nodes:
-            # self.rootnode_influence_pagerank = 0.0
-            # self.rootnode_influence_degree = 0.0
-            # self.rootnode_influence_reach = 0.0
-            self.proportion_reached_by_truth = 0.0 # New metric
+            self.proportion_reached_by_truth = 0.0  # New metric
         else:
             # --- Metric Initialization ---
-            # truthful_pagerank_sum, total_pagerank_sum = 0.0, 0.0
-            # truthful_degree_sum, total_degree_sum = 0.0, 0.0
-            # truthful_reach_sum, total_reach_sum = 0.0, 0.0
-            truthful_root_nodes = set() # Store truthful roots for the new metric
+
+            truthful_root_nodes = set()  # Store truthful roots for the new metric
             # --- Pre-computation ---
-            # reversed_network = self.network.reverse(copy=True)
-            # pagerank_scores = nx.pagerank(reversed_network)
             # 3. Loop through root nodes to gather data
             for node in root_nodes:
                 # Check the agent's belief state once
                 agent_index = self.id_to_index_map[node]
                 agent = self.agents[agent_index]
-                is_truthful = agent.credences[1] > agent.credences[0]
+                if self.agent_type == "beta":
+                    is_truthful = agent.credences[1] > agent.credences[0]
+                elif self.agent_type == "bayes":
+                    is_truthful = agent.credences > 0.5
+                else:
+                    raise ValueError("Agent type not recognized.")
                 if is_truthful:
                     truthful_root_nodes.add(node)
-                # Calculate for existing metrics
-                # pagerank_score = pagerank_scores.get(node, 0)
-                # degree_score = self.network.out_degree(node)
-                # reach_score = 1 + len(nx.descendants(self.network, node))
-                # total_pagerank_sum += pagerank_score
-                # total_degree_sum += degree_score
-                # total_reach_sum += reach_score
-                # if is_truthful:
-                    # truthful_pagerank_sum += pagerank_score
-                    # truthful_degree_sum += degree_score
-                    # truthful_reach_sum += reach_score
-            # 4. Safely calculate and store the final INFLUENCE metrics
-            # self.rootnode_influence_pagerank = truthful_pagerank_sum / total_pagerank_sum if total_pagerank_sum > 0 else 0.0
-            # self.rootnode_influence_degree = truthful_degree_sum / total_degree_sum if total_degree_sum > 0 else 0.0
-            # self.rootnode_influence_reach = truthful_reach_sum / total_reach_sum if total_reach_sum > 0 else 0.0
             # --- 5. Calculate the new COLLECTIVE REACH metric ---
             total_nodes = self.network.number_of_nodes()
             if total_nodes > 0:
                 # Find the union of all nodes reachable by any truthful root
                 collective_reach_set = set()
                 for node in truthful_root_nodes:
-                    collective_reach_set.add(node) # Include the root itself
+                    collective_reach_set.add(node)  # Include the root itself
                     collective_reach_set.update(nx.descendants(self.network, node))
-                self.proportion_reached_by_truth = len(collective_reach_set) / total_nodes
+                self.proportion_reached_by_truth = (
+                    len(collective_reach_set) / total_nodes
+                )
             else:
                 self.proportion_reached_by_truth = 0.0
 
@@ -194,7 +271,7 @@ class Model:
 
     def step(self):
         """Updates the model with one step, consisting of experiments and updates."""
-        self.n_steps+=1
+        self.n_steps += 1
         experiments_results = self.agents_experiment()
         self.agents_update(experiments_results)
 
@@ -202,11 +279,11 @@ class Model:
         experiments_results = {}
         for agent in self.agents:
             theory_index, n_success, n_failures = agent.experiment(self.n_experiments)
-            experiments_results[agent.id]=[theory_index, n_success, n_failures]
+            experiments_results[agent.id] = [theory_index, n_success, n_failures]
         # print('experiments done')
         return experiments_results
 
-    def agents_update(self,experiments_results):
+    def agents_update(self, experiments_results):
         for agent in self.agents:
             # gather information from neighbors
             # if the graph is directed, the neighbors are the successors
@@ -219,28 +296,23 @@ class Model:
                 neighbor_nodes = list(self.network.predecessors(agent.id))
             else:
                 neighbor_nodes = list(self.network.neighbors(agent.id))
-            theories_exp_results = np.array([np.array([0,0]),np.array([0,0])])
+            theories_exp_results = np.array([np.array([0, 0]), np.array([0, 0])])
             # for reference: experiments_results[agent.id]=[theory_index, n_success, n_failures]
             results = experiments_results[agent.id]
             theory_index = results[0]
-            theories_exp_results[theory_index][0]+=results[1]
-            theories_exp_results[theory_index][1]+=results[2]
+            theories_exp_results[theory_index][0] += results[1]
+            theories_exp_results[theory_index][1] += results[2]
             for id in neighbor_nodes:
                 results = experiments_results[id]
                 theory_index = results[0]
-                theories_exp_results[theory_index][0]+=results[1] #n_success
-                theories_exp_results[theory_index][1]+=results[2] #n_failures
+                theories_exp_results[theory_index][0] += results[1]  # n_success
+                theories_exp_results[theory_index][1] += results[2]  # n_failures
 
             # update
-            agent.beta_update(0,theories_exp_results[0][0], theories_exp_results[0][1])
-            agent.beta_update(1,theories_exp_results[1][0], theories_exp_results[1][1])
+            agent.update(0, theories_exp_results[0][0], theories_exp_results[0][1])
+            agent.update(1, theories_exp_results[1][0], theories_exp_results[1][1])
 
-                
     def add_agents_history(self):
         self.agent_histories = [agent.credences_history for agent in self.agents]
-        #agent_choices = [agent.choice_history for agent in self.agents]
-        #self.agents_choices = pd.DataFrame(agent_choices)
-
-
-
-
+        # agent_choices = [agent.choice_history for agent in self.agents]
+        # self.agents_choices = pd.DataFrame(agent_choices)
