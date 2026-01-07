@@ -360,10 +360,27 @@ class VectorizedModel:
         if show_bar:
             iterable = tqdm.tqdm(iterable)
 
+        credences_prior = self.credences.copy()
+
         for _ in iterable:
+            credences_prior = self.credences.copy()
             self.step()
+
+            if self.tstep_stopping:
+                continue
+
             if stop_condition():
                 break
+
+            if self.agent_type == "beta":
+                # Beta convergence check: np.allclose(prior, post)
+                if np.allclose(
+                    credences_prior,
+                    self.credences,
+                    rtol=self.tolerance,
+                    atol=self.tolerance,
+                ):
+                    break
 
         self.conclusion = determine_conclusion()
         self.conclusion_core = determine_conclusion_core()
