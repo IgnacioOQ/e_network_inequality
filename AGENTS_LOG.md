@@ -93,3 +93,4 @@ When submitting changes, please use the following structure:
     *   Added `vectorized_basic_model_testing.ipynb` mirroring the original notebook to verify plots for both Beta and Bayes agents.
     *   Updated `test_vectorization.py` to include unit tests for Bayes initialization and update logic equivalence (verified against object-oriented `Model`).
     *   **Note:** Encountered a minor issue in `test_vectorization.py` where manual initialization of `Model` agents was incomplete, causing a mismatch. Fixed by explicitly setting credences for all agents in the test.
+    *   **Bug Fix:** Fixed indentation error in `vectorized_model.py` that caused `ValueError` when running Bayes agents by attempting to sample from Beta distribution.
