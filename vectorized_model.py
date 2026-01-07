@@ -35,7 +35,8 @@ class VectorizedModel:
         self.histories = histories
         self.sampling_update = sampling_update
         self.epsilon = 0  # As per original code default
-
+        self.tolerance = tolerance
+        self.tstep_stopping = tstep_stopping
         if seeded:
             if seed is None:
                 seed = np.random.randint(0, 2**32 - 1)
@@ -313,14 +314,23 @@ class VectorizedModel:
     ):
         # Copy logic from Model.run_simulation but using vectorized state
 
-        def stop_condition():
+        def stop_condition(credences_prior):
             # Original: np.allclose(prior, post) with tolerance.
             # But here just return False or implement check.
             if self.agent_type == "bayes":
                 # Bayes stop: all credences <= 0.5 or > 0.99 (Consensus)
                 # Model.py uses: all(credences <= 0.5) or all(credences > 0.99)
                 return np.all(self.credences <= 0.5) or np.all(self.credences > 0.99)
-            return False
+            if self.agent_type == "beta":
+                # Beta convergence check: np.allclose(prior, post)
+                return np.allclose(
+                    credences_prior,
+                    self.credences,
+                    rtol=self.tolerance,
+                    atol=self.tolerance,
+                )
+            else:
+                return print("Unknown agent type for stopping condition.")
 
         def determine_conclusion():
             if self.agent_type == "beta":
@@ -369,18 +379,8 @@ class VectorizedModel:
             if self.tstep_stopping:
                 continue
 
-            if stop_condition():
+            if stop_condition(credences_prior):
                 break
-
-            if self.agent_type == "beta":
-                # Beta convergence check: np.allclose(prior, post)
-                if np.allclose(
-                    credences_prior,
-                    self.credences,
-                    rtol=self.tolerance,
-                    atol=self.tolerance,
-                ):
-                    break
 
         self.conclusion = determine_conclusion()
         self.conclusion_core = determine_conclusion_core()
