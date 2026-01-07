@@ -317,8 +317,9 @@ class VectorizedModel:
             # Original: np.allclose(prior, post) with tolerance.
             # But here just return False or implement check.
             if self.agent_type == "bayes":
-                # Bayes stop: all credences <= 0.5 or > 0.99
-                return np.all((self.credences <= 0.5) | (self.credences > 0.99))
+                # Bayes stop: all credences <= 0.5 or > 0.99 (Consensus)
+                # Model.py uses: all(credences <= 0.5) or all(credences > 0.99)
+                return np.all(self.credences <= 0.5) or np.all(self.credences > 0.99)
             return False
 
         def determine_conclusion():
@@ -359,10 +360,27 @@ class VectorizedModel:
         if show_bar:
             iterable = tqdm.tqdm(iterable)
 
+        credences_prior = self.credences.copy()
+
         for _ in iterable:
+            credences_prior = self.credences.copy()
             self.step()
+
+            if self.tstep_stopping:
+                continue
+
             if stop_condition():
                 break
+
+            if self.agent_type == "beta":
+                # Beta convergence check: np.allclose(prior, post)
+                if np.allclose(
+                    credences_prior,
+                    self.credences,
+                    rtol=self.tolerance,
+                    atol=self.tolerance,
+                ):
+                    break
 
         self.conclusion = determine_conclusion()
         self.conclusion_core = determine_conclusion_core()
