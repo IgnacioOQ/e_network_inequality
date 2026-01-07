@@ -14,7 +14,7 @@ def run_vectorized_simulation_with_params(
     seeded=False,
     number_of_steps=10000,
     show_bar=False,
-    agent_type="beta",
+    agent_type="bayes",
 ):
     process_seed = int.from_bytes(os.urandom(4), byteorder="little")
     rd.seed(process_seed)
