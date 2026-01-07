@@ -317,8 +317,9 @@ class VectorizedModel:
             # Original: np.allclose(prior, post) with tolerance.
             # But here just return False or implement check.
             if self.agent_type == "bayes":
-                # Bayes stop: all credences <= 0.5 or > 0.99
-                return np.all((self.credences <= 0.5) | (self.credences > 0.99))
+                # Bayes stop: all credences <= 0.5 or > 0.99 (Consensus)
+                # Model.py uses: all(credences <= 0.5) or all(credences > 0.99)
+                return np.all(self.credences <= 0.5) or np.all(self.credences > 0.99)
             return False
 
         def determine_conclusion():
