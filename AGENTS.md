@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## HUMAN-ASSISTANT WORKFLOW
+*   **Open the assistant and load the ai-agents-branch into their local repositories.** Do this by commanding them to first of all read the AGENTS.md file.
+*   **Work on the ASSISTANT, making requests, modifying code, etc.**
+
 This file provides context for AI agents (and humans) working on this codebase.
 
 ## Project Overview
