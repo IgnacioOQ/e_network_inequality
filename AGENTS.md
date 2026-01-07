@@ -58,16 +58,18 @@ If you want to teach an agent a new language (like JAX) or technique:
 2.  Update the agent's instruction file (e.g., `AI_AGENTS/LINEARIZE_AGENT.md`) to reference them.
 3.  Ask the agent to "Refactor the code using the techniques in [File X]".
 
-## Project Overview
+## LOCAL PROJECT DESCRIPTION
+
+### Project Overview
 This project is a simulation framework for agent-based models on various network structures, specifically focusing on network epistemology and theory choice using Bandit problems.
 
-## Setup & Testing
+### Setup & Testing
 *   **Install Dependencies:** `pip install -r requirements.txt` (or manually install `numpy`, `scipy`, `pandas`, `networkx`, `tqdm`, `matplotlib`, `seaborn`, `dill`).
 *   **Run Tests:** `python -m unittest unit_tests.py`
 
-## Key Architecture & Logic
+### Key Architecture & Logic
 
-### 1. Directed Graphs & Information Flow
+#### 1. Directed Graphs & Information Flow
 *   The simulation uses **NetworkX** graphs.
 *   **Directionality:** The graph is treated as **Directed** (`nx.DiGraph`).
 *   **Interpretation of Edges (`A -> B`):**
@@ -79,15 +81,22 @@ This project is a simulation framework for agent-based models on various network
     *   **Convention:** The code typically iterates over `G.predecessors(agent.id)` (or neighbors if undirected) to find the agents that the current agent "observes".
     *   **Summary:** If A observes B, the graph should have an edge `A -> B` (A is the source, B is the target, but information flows B -> A in terms of observation).
 
-### 2. Agents
+#### 2. Agents
 *   **`Bandit`:** The environment. Returns success/failure based on probabilities.
 *   **`BetaAgent`:** Uses Beta distributions to model beliefs about two theories (0 and 1).
     *   `alphas_betas`: Stores `[alpha, beta]` for both theories.
     *   `credences`: Mean of the beta distribution.
     *   `choice`: Epsilon-greedy.
 
-### 3. Simulation Loop (`Model` class)
+#### 3. Simulation Loop (`Model` class)
 *   **Step:**
     1.  **Experiment:** Every agent chooses a theory and runs an experiment (getting success/failure).
     2.  **Update:** Every agent observes the results of their **predecessors** (neighbors who point to them).
     3.  **Bayesian Update:** Agents update their Alpha/Beta parameters based on their own *and* their neighbors' results.
+
+### Key Files
+*   `agents.py`: Defines `Bandit`, `BetaAgent`, and `BayesAgent`.
+*   `model.py`: Defines the `Model` class which manages the simulation loop, agent interactions, and graph updates.
+*   `simulation_functions.py`: Defines the wrapper functions for running parallel simulations.
+*   `unit_tests.py`: Contains unit tests for the agents. Note that tests must account for random initialization.
+*   `network_utils.py`: Helper functions for network manipulation.
