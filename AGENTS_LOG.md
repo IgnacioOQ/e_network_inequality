@@ -85,12 +85,22 @@ When submitting changes, please use the following structure:
     *   Added "Git Management" subsection to `AGENTS.md`.
     *   Specified: "All commits should be merged to the 'ai-agents-branch' branch".
 
-### [2026-01-06] - Vectorized Bayes Agent (Jules)
-*   **Task:** Extend vectorized model to support Bayes agents and verify.
+### [2026-01-06] - Vectorized Bayes Agent Fixes & Integration (Jules)
+*   **Task:** Finalize Vectorized Bayes Agent implementation, fix bugs, and update tests.
 *   **Actions:**
-    *   Updated `vectorized_model.py` to support `agent_type="bayes"`.
-    *   Implemented vectorized Bayes initialization, threshold-based choice logic, and Bayesian update formula based on aggregated neighbor evidence.
-    *   Added `vectorized_basic_model_testing.ipynb` mirroring the original notebook to verify plots for both Beta and Bayes agents.
-    *   Updated `test_vectorization.py` to include unit tests for Bayes initialization and update logic equivalence (verified against object-oriented `Model`).
-    *   **Note:** Encountered a minor issue in `test_vectorization.py` where manual initialization of `Model` agents was incomplete, causing a mismatch. Fixed by explicitly setting credences for all agents in the test.
-    *   **Bug Fix:** Fixed indentation error in `vectorized_model.py` that caused `ValueError` when running Bayes agents by attempting to sample from Beta distribution.
+    *   **Fixed `vectorized_model.py`:**
+        *   Corrected the indentation of the `if self.sampling_update:` block in `step()` method to prevent `ValueError: a <= 0` when running with `agent_type='bayes'`.
+        *   Implemented `agent_type='bayes'` logic in `__init__` and `step` (choice, masking experiments, Bayesian update).
+        *   Ensured Bayesian update only considers evidence for Theory 1, matching the object-oriented implementation.
+        *   **Refined Stopping Logic:** Integrated user-provided refinements to `stop_condition` (respecting `tstep_stopping` and using consensus check for Bayes) and class initialization.
+    *   **Updated `test_vectorization.py`:**
+        *   Added `test_bayes_initialization_match` to verify random state alignment with `Model`.
+        *   Added `test_bayes_update_logic` to verify the mathematical correctness of the vectorized Bayesian update against the scalar `Model`.
+    *   **Updated `vectorized_basic_model_testing.ipynb`:**
+        *   Added a new section to run and visualize the Bayes Agent simulation.
+    *   **Verified:**
+        *   Ran unit tests: All passed.
+        *   Ran notebook: Successfully executed Bayes simulation without errors.
+    *   **Documentation:**
+        *   Updated `AI_AGENTS/LINEARIZE_AGENT.md` with Bayes details.
+        *   Updated `AGENTS_LOG.md`.
