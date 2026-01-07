@@ -104,3 +104,10 @@ When submitting changes, please use the following structure:
     *   **Documentation:**
         *   Updated `AI_AGENTS/LINEARIZE_AGENT.md` with Bayes details.
         *   Updated `AGENTS_LOG.md`.
+
+### [2026-01-06] - Workflow & Context Documentation (Jules)
+*   **Task:** Add HUMAN-ASSISTANT WORKFLOW and CONTEXT FINE-TUNING to `AGENTS.md`.
+*   **Actions:**
+    *   Inserted detailed "HUMAN-ASSISTANT WORKFLOW" section at the top of `AGENTS.md`, outlining steps for repo loading, git branching, and PR merging.
+    *   Added "CONTEXT FINE-TUNING" section explaining how to teach agents via context files instead of weight updates.
+    *   Synced local workspace with `origin/ai-agents-branch` to incorporate user's manual fixes to `vectorized_model.py`.
