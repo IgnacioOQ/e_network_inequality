@@ -1,6 +1,7 @@
 # AGENTS.md
 
 ## SHORT ADVICE
+- The whole trick is providing the AI Assistants with context, and this is done using the *.md files (AGENTS.md, AGENTS_LOG.md, and the AI_AGENTS folder)
 - Learn how to work the Github, explained below.
 - Keep logs of changes in AGENTS_LOG.md
 - Always ask several forms of verification, so because the self-loop of the chain of thought improves performance.
