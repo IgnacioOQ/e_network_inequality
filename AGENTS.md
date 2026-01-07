@@ -30,21 +30,7 @@ If you want to teach an agent a new language (like JAX) or technique:
 2.  Update the agent's instruction file (e.g., `AI_AGENTS/LINEARIZE_AGENT.md`) to reference them.
 3.  Ask the agent to "Refactor the code using the techniques in [File X]".
 
-This file provides context for AI agents (and humans) working on this codebase.
-
-## Project Overview
-This project is a simulation framework for agent-based models on various network structures, specifically focusing on network epistemology and theory choice using Bandit problems.
-
-## Setup & Testing
-*   **Install Dependencies:** `pip install -r requirements.txt` (or manually install `numpy`, `scipy`, `pandas`, `networkx`, `tqdm`, `matplotlib`, `seaborn`, `dill`).
-*   **Run Tests:** `python -m unittest unit_tests.py`
-
-## Development Rules & Constraints
-1.  **Immutable Core Files:** Do not modify `agents.py`, `model.py`, or `simulation_functions.py`.
-    *   If you need to change the logic of an agent or the model, you must create a **new version** (e.g., a subclass or a new file) rather than modifying the existing classes in place.
-2.  **Consistency:** Ensure any modifications or new additions remain as consistent as possible with the logic and structure of the `main` branch.
-
-## Workflow & Tooling
+## WORKFLOW & TOOLING
 *   **PostToolUse Hook (Code Formatting):**
     *   **Context:** A "hook" is configured to run automatically after specific events.
     *   **The Event:** "PostToolUse" triggers immediately after an agent uses a tool to modify a file (e.g., writing code or applying an edit).
@@ -69,6 +55,20 @@ This project is a simulation framework for agent-based models on various network
 *   **Git Management:**
     *   **Rule:** All commits should be merged to the 'ai-agents-branch' branch.
     *   **Constraint:** Do **NOT** create new branches unless explicitly requested by the user. Always work on and submit to `ai-agents-branch`.
+
+This file provides context for AI agents (and humans) working on this codebase.
+
+## Project Overview
+This project is a simulation framework for agent-based models on various network structures, specifically focusing on network epistemology and theory choice using Bandit problems.
+
+## Setup & Testing
+*   **Install Dependencies:** `pip install -r requirements.txt` (or manually install `numpy`, `scipy`, `pandas`, `networkx`, `tqdm`, `matplotlib`, `seaborn`, `dill`).
+*   **Run Tests:** `python -m unittest unit_tests.py`
+
+## Development Rules & Constraints
+1.  **Immutable Core Files:** Do not modify `agents.py`, `model.py`, or `simulation_functions.py`.
+    *   If you need to change the logic of an agent or the model, you must create a **new version** (e.g., a subclass or a new file) rather than modifying the existing classes in place.
+2.  **Consistency:** Ensure any modifications or new additions remain as consistent as possible with the logic and structure of the `main` branch.
 
 ## Key Architecture & Logic
 
