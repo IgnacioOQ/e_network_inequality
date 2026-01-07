@@ -111,3 +111,11 @@ When submitting changes, please use the following structure:
     *   Inserted detailed "HUMAN-ASSISTANT WORKFLOW" section at the top of `AGENTS.md`, outlining steps for repo loading, git branching, and PR merging.
     *   Added "CONTEXT FINE-TUNING" section explaining how to teach agents via context files instead of weight updates.
     *   Synced local workspace with `origin/ai-agents-branch` to incorporate user's manual fixes to `vectorized_model.py`.
+
+### [2026-01-06] - Documentation Reorganization (Jules)
+*   **Task:** Reorganize `AGENTS.md` sections and add specific advice/rules.
+*   **Actions:**
+    *   Added `SHORT ADVICE` section at the top.
+    *   Reordered sections: Short Advice -> Human-Assistant Workflow -> Workflow & Tooling -> Development Rules -> Context Fine-Tuning.
+    *   Updated `WORKFLOW & TOOLING` to remove Git Management (now in Human-Assistant Workflow).
+    *   Updated `DEVELOPMENT RULES & CONSTRAINTS` with coding convention rule.
