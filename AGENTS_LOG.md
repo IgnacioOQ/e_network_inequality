@@ -119,3 +119,12 @@ When submitting changes, please use the following structure:
     *   Reordered sections: Short Advice -> Human-Assistant Workflow -> Workflow & Tooling -> Development Rules -> Context Fine-Tuning.
     *   Updated `WORKFLOW & TOOLING` to remove Git Management (now in Human-Assistant Workflow).
     *   Updated `DEVELOPMENT RULES & CONSTRAINTS` with coding convention rule.
+    *   Added `LOCAL PROJECT DESCRIPTION` header.
+
+### [2026-01-06] - Expand Key Files Description (Jules)
+*   **Task:** Expand the "Key Files and Directories" section in `AGENTS.md` with detailed structure and dependency info.
+*   **Actions:**
+    *   Renamed "Key Files" to "Key Files and Directories".
+    *   Added "Directory Structure" subsection.
+    *   Added "File Dependencies & Logic" subsection mapping out imports.
+    *   Expanded descriptions for both Legacy and Vectorized implementations.

@@ -95,9 +95,37 @@ This project is a simulation framework for agent-based models on various network
     2.  **Update:** Every agent observes the results of their **predecessors** (neighbors who point to them).
     3.  **Bayesian Update:** Agents update their Alpha/Beta parameters based on their own *and* their neighbors' results.
 
-### Key Files
-*   `agents.py`: Defines `Bandit`, `BetaAgent`, and `BayesAgent`.
-*   `model.py`: Defines the `Model` class which manages the simulation loop, agent interactions, and graph updates.
-*   `simulation_functions.py`: Defines the wrapper functions for running parallel simulations.
-*   `unit_tests.py`: Contains unit tests for the agents. Note that tests must account for random initialization.
-*   `network_utils.py`: Helper functions for network manipulation.
+### Key Files and Directories
+
+#### Directory Structure
+*   **`AI_AGENTS/`**: Contains context files (`.md`) and instructions for specific AI agent roles (e.g., `LINEARIZE_AGENT.md`). This is the primary mechanism for "context fine-tuning".
+*   **`empirical_networks/`**: Storage for empirical network datasets used in simulations.
+*   **`results_data_sets/`**: Output directory where simulation results (typically CSVs or pickled data) are saved.
+*   **`__pycache__/`**: Compiled Python bytecode (ignored by git).
+
+#### File Dependencies & Logic
+The project relies on a central imports file to manage dependencies across modules.
+*   **`imports.py`**: Imports all necessary external libraries (`numpy`, `scipy`, `networkx`, `pandas`, etc.) and sets up seeds. It is imported by `agents.py`, `model.py`, and simulation scripts.
+
+**Legacy/Reference Implementation:**
+*   **`agents.py`**: Defines the object-oriented agent classes:
+    *   `Bandit`: The environment returning experiment results.
+    *   `BetaAgent`: Bayesian learner using Beta distributions.
+    *   `BayesAgent`: Simplified Bayesian learner.
+*   **`model.py`**: Defines the `Model` class. It manages the graph (`self.network`), the list of agents, and the time loop (`run_simulation`). It handles the interaction between agents (observing neighbors).
+*   **`simulation_functions.py`**: Wrappers to initialize parameters (generating networks) and run the `Model`. Used for parallel execution.
+
+**Vectorized Implementation (Fast):**
+*   **`vectorized_model.py`**: The high-performance, matrix-based replacement for `Model`. It stores agent states in NumPy arrays `(N, 2, 2)` instead of objects.
+*   **`vectorized_agents.py`**: Contains `VectorizedBandit` for batch processing of experiments.
+*   **`vectorized_simulation_functions.py`**: Wrappers for running `VectorizedModel`.
+
+**Network Handling:**
+*   **`network_generation.py`**: Functions to generate synthetic networks (e.g., `barabasi_albert_directed`, `directed_watts_strogatz`).
+*   **`network_utils.py`**: Helper functions for calculating network statistics and metrics.
+
+**Testing & Verification:**
+*   **`unit_tests.py`**: Unit tests for the reference implementation (`agents.py`, `model.py`).
+*   **`test_vectorization.py`**: Regression tests ensuring `VectorizedModel` matches `Model`.
+*   **`basic_model_testing.ipynb`**: Visual verification notebook for the reference model.
+*   **`vectorized_basic_model_testing.ipynb`**: Visual verification notebook for the vectorized model.
