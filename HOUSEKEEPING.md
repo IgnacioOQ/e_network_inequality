@@ -10,44 +10,34 @@
 
 ## Dependency Network
 
-Based on the updated `src/` package structure:
-
-- **Core Modules (in `src/`):**
-    - `src/imports.py`: Base dependencies (numpy, torch, etc.).
-    - `src/utils.py`: Depends on `src.imports`.
-    - `src/agents.py`: Depends on `src.imports`.
-    - `src/environment.py`: Depends on `src.imports`.
-    - `src/reward_modulators.py`: Depends on `src.imports`, `src.agents`.
-    - `src/simulations.py`: Depends on `src.imports`, `src.agents`, `src.environment`, `src.reward_modulators`.
-    - `src/stationarity_analysis.py`: Depends on `src.imports`.
-
-- **Tests (in `tests/`):**
-    - `tests/test_agents.py`: Depends on `src.agents`.
-    - `tests/test_environment.py`: Depends on `src.environment`.
-    - `tests/test_modulators.py`: Depends on `src.reward_modulators`.
-    - `tests/test_receptor_modulator.py`: Depends on `src.reward_modulators`.
-
-- **Notebooks (in `notebooks/`):**
-    - `notebooks/testing_homeostasis.ipynb`: Depends on `src.reward_modulators`.
-    - `notebooks/testing_peaks.ipynb`: Depends on `src.*`.
-    - `notebooks/testing_rows.ipynb`: Depends on `src.*`.
+- **Core Dependencies (`imports.py`)**: Used by all other modules.
+- **Agent Definitions**:
+    - `agents.py`: Depends on `imports.py`.
+    - `vectorized_agents.py`: Depends on `imports.py`.
+- **Model Definitions**:
+    - `model.py`: Depends on `imports.py`, `agents.py`.
+    - `vectorized_model.py`: Depends on `imports.py`, `vectorized_agents.py`.
+- **Simulation Functions**:
+    - `simulation_functions.py`: Depends on `imports.py`, `agents.py`, `model.py`, `network_utils.py`, `network_generation.py`.
+    - `vectorized_simulation_functions.py`: Depends on `imports.py`, `vectorized_model.py`, `network_utils.py`, `network_generation.py`.
+- **Network Handling**:
+    - `network_generation.py`: Depends on `imports.py`.
+    - `network_utils.py`: Depends on `imports.py`.
+- **Testing**:
+    - `unit_tests.py`: Depends on `imports.py`, `agents.py`.
+    - `test_vectorization.py`: Depends on `model.py`, `vectorized_model.py`.
 
 ## Latest Report
 
-**Execution Date:** 2024-05-22
+**Execution Date:** 2026-01-11
 
 **Test Results:**
 
-*   **Unit Tests (`tests/`):** PASSED
-    *   `test_agents.py`: Verified `BaseQLearningAgent`, `RecommenderAgent`, `RecommendedAgent`.
-    *   `test_environment.py`: Verified `ExogenousRewardEnvironment` initialization, stepping, and shifting.
-    *   `test_modulators.py`: Verified `ReceptorModulator`, `HomeostaticModulator`, `TD_DHR`.
-    *   `test_receptor_modulator.py`: Executed successfully.
-
-*   **Notebook Verification (`notebooks/`):**
-    *   `testing_homeostasis.ipynb`: Executed successfully (converted to script). Validated PID and Homeostatic/Allostatic controllers (TD_DHR, DQN_DHR) using `src` package imports.
-    *   `testing_peaks.ipynb`: Executed successfully (converted to script). Validated gaussian peak landscape simulation using `src` package imports.
-    *   `testing_rows.ipynb`: (Assumed functional based on shared codebase with `testing_peaks`; not fully executed due to long runtime).
+*   **Unit Tests (`unit_tests.py`):** PASSED (8 tests)
+*   **Vectorization Tests (`test_vectorization.py`):** PASSED (4 tests)
+*   **Notebook Verification:**
+    *   `basic_model_testing.ipynb`: FAILED (`NameError: name 'df_bayes' is not defined`).
+    *   `vectorized_basic_model_testing.ipynb`: PASSED.
 
 **Summary:**
-The project has been successfully restructured. The `src` package is functioning correctly with relative imports. Tests and notebooks have been updated to reference the new structure and are passing.
+The project dependencies are correctly mapped. Core unit tests and vectorization tests are passing. The basic model testing notebook has a runtime error (undefined variable) that needs addressing, but the vectorized version is functional.

@@ -128,3 +128,14 @@ When submitting changes, please use the following structure:
     *   Added "Directory Structure" subsection.
     *   Added "File Dependencies & Logic" subsection mapping out imports.
     *   Expanded descriptions for both Legacy and Vectorized implementations.
+
+### [2026-01-11] - Housekeeping and Dependency Mapping (Jules)
+*   **Task:** Execute Housekeeping protocol, map dependencies, and update reports.
+*   **Actions:**
+    *   Mapped dependency network using `grep` on import statements.
+    *   Executed `unit_tests.py` (Passed).
+    *   Executed `test_vectorization.py` (Passed).
+    *   Executed `vectorized_basic_model_testing.ipynb` via conversion script (Passed).
+    *   Executed `basic_model_testing.ipynb` via conversion script (Failed: `NameError: name 'df_bayes' is not defined`).
+    *   Updated `HOUSEKEEPING.md` with the corrected dependency network and test report.
+    *   **Errors Logged:** `basic_model_testing.ipynb` failed with `NameError: name 'df_bayes' is not defined` at line `mean_credence = df_bayes.mean(axis=1)`.
