@@ -1,5 +1,5 @@
-from imports import *
-from vectorized_agents import VectorizedBandit
+from net_epistemology.utils.imports import *
+from .vectorized_agents import VectorizedBandit
 from scipy.stats import beta
 
 

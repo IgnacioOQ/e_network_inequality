@@ -10,9 +10,9 @@
 # In[1]:
 
 
-from imports import *
-from agents import BetaAgent, BayesAgent
-from model import Model
+from net_epistemology.utils.imports import *
+from net_epistemology.core.agents import BetaAgent, BayesAgent
+from net_epistemology.core.model import Model
 
 
 # ## Try with Bayes Agent
