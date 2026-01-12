@@ -1,8 +1,8 @@
 # import numpy as np
 # import tqdm
 # import pandas as pd
-from imports import *
-from agents import BetaAgent, BayesAgent, Bandit
+from net_epistemology.utils.imports import *
+from .agents import BetaAgent, BayesAgent, Bandit
 
 
 class Model:

@@ -1,7 +1,7 @@
 # import numpy as np
 # import numpy.random as rd
 # from scipy.stats import beta
-from imports import *
+from net_epistemology.utils.imports import *
 
 bad_theory_id: int = 0
 good_theory_id: int = 1

@@ -10,8 +10,8 @@
 # In[1]:
 
 
-from imports import *
-from vectorized_model import VectorizedModel
+from net_epistemology.utils.imports import *
+from net_epistemology.core.vectorized_model import VectorizedModel
 import matplotlib.pyplot as plt
 
 
