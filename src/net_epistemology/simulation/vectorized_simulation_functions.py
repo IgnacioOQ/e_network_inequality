@@ -1,7 +1,7 @@
-from imports import *
-from vectorized_model import VectorizedModel
-from network_utils import *
-from network_generation import *
+from net_epistemology.utils.imports import *
+from net_epistemology.core.vectorized_model import VectorizedModel
+from net_epistemology.utils.network_utils import *
+from net_epistemology.utils.network_generation import *
 
 G_default = barabasi_albert_directed(100, 5)
 
