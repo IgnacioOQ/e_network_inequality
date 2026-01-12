@@ -1,13 +1,22 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[1]:
+
+
+# Add src to path to allow importing net_epistemology without installing the package
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..', 'src')))
+
+
 # # Basic Testing (Vectorized)
 #
 # In this notebook we test that the vectorized files work well and produce similar results to the original model.
 
 # ## Setup
 
-# In[1]:
+# In[2]:
 
 
 from net_epistemology.utils.imports import *
@@ -15,16 +24,67 @@ from net_epistemology.core.vectorized_model import VectorizedModel
 import matplotlib.pyplot as plt
 
 
+# In[3]:
+
+
+# Save and load pud_final as JSON
+import json
+from networkx.readwrite import json_graph
+from pathlib import Path
+
+JSON_PATH = Path("../data/empirical_networks/pud_final.json")
+
+# Save to JSON
+def save_network_json(G, path):
+    data = json_graph.node_link_data(G)
+    with open(path, "w") as f:
+        json.dump(data, f)
+    print(f"Saved network to {path}")
+
+# Load from JSON
+def load_network_json(path):
+    with open(path, "r") as f:
+        data = json.load(f)
+    G = json_graph.node_link_graph(data)
+    print(f"Loaded network from {path}")
+    return G
+
+# Example usage:
+# save_network_json(pud_final, JSON_PATH)
+# my_network = load_network_json(JSON_PATH)
+
+
+# In[4]:
+
+
+n_agents = 1000
+my_network = nx.gnp_random_graph(n_agents, p=0.1, directed=True) #nx.complete_graph(n_agents, create_using=nx.DiGraph())
+
+
 # ## Try with Bayes Agent (Vectorized)
 
-# In[2]:
+# In[5]:
 
 
-n_agents = 100
-my_network = nx.gnp_random_graph(n_agents, p=0.2, directed=True)
+# import dill
+# import os
+# # Load empirical network
+# with open('../data/empirical_networks/pud_final.pkl', 'rb') as f:
+#     my_network = dill.load(f)
 
 
-# In[3]:
+# In[6]:
+
+
+# import pickle
+# import os
+
+# # Load empirical network
+# with open('../data/empirical_networks/pud_final.pkl', 'rb') as f:
+#     my_network = pickle.load(f)
+
+
+# In[7]:
 
 
 seed=420
@@ -40,7 +100,7 @@ df_bayes = pd.DataFrame(my_model.credences_history).T
 df_bayes.head(3)
 
 
-# In[4]:
+# In[8]:
 
 
 # Plot mean credence for Bayes
@@ -57,14 +117,7 @@ plt.show()
 
 # ## Try with Beta Agent (Vectorized)
 
-# In[5]:
-
-
-n_agents = 100
-my_network = nx.gnp_random_graph(n_agents, p=0.2, directed=True)
-
-
-# In[6]:
+# In[9]:
 
 
 seed=420
@@ -81,7 +134,7 @@ df = pd.DataFrame(my_model.credences_history).T # Transpose because history[agen
 df.head(3)
 
 
-# In[7]:
+# In[10]:
 
 
 # Extract the first coordinate (x) for each pair and calculate column-wise mean
@@ -96,7 +149,7 @@ plt.legend()
 plt.show()
 
 
-# In[8]:
+# In[11]:
 
 
 # Extract the first coordinate (x) for each pair

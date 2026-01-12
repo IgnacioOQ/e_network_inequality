@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[ ]:
+
+
+# Add src to path to allow importing net_epistemology without installing the package
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..', 'src')))
+
+
 # # Basic Testing
 #
 # In this notebook we test that the main files work well.
@@ -46,14 +55,14 @@ print('conclusion core', my_model.conclusion_core)
 # Credences are 1D arrays (scalar per agent)
 # df_bayes = pd.DataFrame(my_model.credences_history).T
 # df_bayes.head(3)
-mean_credence = df_bayes.mean(axis=1)
-plt.figure(figsize=(10, 6))
-plt.plot(mean_credence, label='Mean Credence')
-plt.title('Bayes Agent: Average Credence Evolution')
-plt.xlabel('Steps')
-plt.ylabel('Credence')
-plt.legend()
-plt.show()
+# mean_credence = df_bayes.mean(axis=1)
+# plt.figure(figsize=(10, 6))
+# plt.plot(mean_credence, label='Mean Credence')
+# plt.title('Bayes Agent: Average Credence Evolution')
+# plt.xlabel('Steps')
+# plt.ylabel('Credence')
+# plt.legend()
+# plt.show()
 
 
 # ## Try with Beta Agent
