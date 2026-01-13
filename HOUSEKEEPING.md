@@ -30,15 +30,16 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-12
+**Execution Date:** 2026-01-13
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
 *   **Notebook Verification:**
-    *   `basic_model_testing.ipynb`: PASSED (Fixed `BayesAgent` history tracking logic and updated notebook configuration).
-    *   `vectorized_basic_model_testing.ipynb`: PASSED (Fixed JSON data loading key mismatch).
+    *   `basic_model_testing.ipynb`: PASSED.
+    *   `vectorized_basic_model_testing.ipynb`: PASSED.
+    *   `run_simulations_test.ipynb`: PASSED. Fixed `randomize_network` usage in `simulation_functions.py` (switched from `p_rewiring` to `n_edges`). Fixed `net_epistemology.simulation` imports.
 
 **Summary:**
-The project dependencies are correctly mapped. Core unit tests and vectorization tests are passing. Both verification notebooks are now fully functional and verified to run without errors.
+All checks passed. The codebase is stable. Minor fixes were applied to `simulation_functions.py` and `src/net_epistemology/simulation/__init__.py` to ensure simulation scripts run correctly.
