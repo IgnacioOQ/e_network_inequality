@@ -151,3 +151,20 @@ When submitting changes, please use the following structure:
         *   `vectorized_basic_model_testing_script.py`: Failed (`AttributeError` in pandas usage).
     *   **Environment:** Installed missing `dill` dependency.
     *   **Documentation:** Updated `HOUSEKEEPING.md` with new dependency graph and latest test report.
+
+### [2026-01-12] - Notebook Fixes and Verification (Jules)
+*   **Task:** Fix identified errors in notebooks and `agents.py` to pass housekeeping checks.
+*   **Actions:**
+    *   **Branch Sync:** Merged `ai-agents-branch` to ensure latest state.
+    *   **`basic_model_testing.ipynb` Fix:**
+        *   Identified `AttributeError: 'Model' object has no attribute 'credences_history'` and `BayesAgent` lacking history tracking.
+        *   Modified `src/net_epistemology/core/agents.py`: Updated `BayesAgent` to accept `histories` parameter and store `credences_history` (overriding immutability rule with user permission).
+        *   Modified `src/net_epistemology/core/model.py`: Updated `Model.__init__` to pass `histories` to `BayesAgent`.
+        *   Patched `notebooks/basic_model_testing.ipynb`: Set `histories=True` for Bayes agent, updated attribute access to `agent_histories`, uncommented plotting code, and updated deprecated `applymap` to `map`.
+        *   Verified execution via extracted script.
+    *   **`vectorized_basic_model_testing.ipynb` Fix:**
+        *   Identified `KeyError: 'edges'` due to JSON format mismatch (`links` vs `edges`).
+        *   Patched `notebooks/vectorized_basic_model_testing.ipynb`: Added logic to rename `links` key to `edges` before loading into NetworkX.
+        *   Verified execution via extracted script.
+    *   **Housekeeping:** Updated `HOUSEKEEPING.md` with fully passing report.
+    *   **Clean Up:** Removed temporary scripts.

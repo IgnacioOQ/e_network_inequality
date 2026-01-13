@@ -188,6 +188,10 @@ class BayesAgent:
         self.id = id
         self.bandit = bandit
         self.credences = rd.uniform(0, 1)
+        self.histories = histories
+        if self.histories:
+            self.credences_history = []
+            self.credences_history.append(self.credences)
 
     def choice(self):
         if self.credences > 0.5:
@@ -216,3 +220,6 @@ class BayesAgent:
                 )
                 / self.credences
             )
+
+        if self.histories:
+            self.credences_history.append(self.credences)
