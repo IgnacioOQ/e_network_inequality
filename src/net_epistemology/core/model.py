@@ -74,7 +74,9 @@ class Model:
                 for id in self.nodes
             ]
         elif self.agent_type == "bayes":
-            self.agents = [BayesAgent(id, self.bandit) for id in self.nodes]
+            self.agents = [
+                BayesAgent(id, self.bandit, histories=histories) for id in self.nodes
+            ]
         else:
             raise ValueError("Agent type not recognized.")
         # self.agents = [agent_class(u, self.bandit, histories=histories, sampling_update=sampling_update)
