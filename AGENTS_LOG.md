@@ -168,3 +168,12 @@ When submitting changes, please use the following structure:
         *   Verified execution via extracted script.
     *   **Housekeeping:** Updated `HOUSEKEEPING.md` with fully passing report.
     *   **Clean Up:** Removed temporary scripts.
+
+### [2026-01-13] - Housekeeping Protocol (Jules)
+*   **Task:** Execute housekeeping protocol, map dependencies, and verify system stability.
+*   **Actions:**
+    *   **Verification:** Verified file structure and mapped dependencies in `HOUSEKEEPING.md`.
+    *   **Tests:** Ran `unit_tests.py` and `test_vectorization.py` (Both PASSED).
+    *   **Notebooks:** Verified `basic_model_testing.ipynb` and `vectorized_basic_model_testing.ipynb` via scripts (PASSED).
+    *   **Fixes:** Fixed `run_simulations_test.ipynb` by correcting `randomize_network` call (changed `p_rewiring` argument to `n_edges`) and fixing imports in `src/net_epistemology/simulation/__init__.py`.
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with execution date and full report.

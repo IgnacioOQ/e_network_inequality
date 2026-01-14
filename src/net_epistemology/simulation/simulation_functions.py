@@ -23,7 +23,8 @@ def generate_parameters(_, G=G_default):
     p_rewiring = rd.rand()
 
     # Do randomization
-    randomized_network = randomize_network(G, p_rewiring=p_rewiring)
+    n_edges = int(p_rewiring * len(G.edges()))
+    randomized_network = randomize_network(G, n_edges=n_edges)
 
     params = {
         "randomized": True,
