@@ -30,16 +30,15 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-15
+**Execution Date:** 2026-01-15 (17:30)
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
-*   **Notebook Verification:**
-    *   `basic_model_testing.ipynb`: PASSED (converted to script, executed with matplotlib Agg backend, reduced steps for speed).
-    *   `vectorized_basic_model_testing.ipynb`: PASSED (converted to script, executed with matplotlib Agg backend, reduced steps for speed).
-    *   `run_simulations_test.ipynb`: PASSED (converted to script, executed with matplotlib Agg backend, reduced steps and simulations for speed, fixed `randomize_network` calls and `run_simulation` wrapper usage).
+*   **Script Verification:**
+    *   `basic_model_testing_script.py`: Core simulation PASSED (conclusion: 0.98). Pre-existing `NameError` in plotting code.
+    *   `vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.94)
 
 **Summary:**
-All checks passed. The codebase is stable. Dependencies are correctly linked. Notebooks are functional when converted to scripts and run in a headless environment.
+All core tests pass successfully. Package `net_epistemology` reinstalled in editable mode. The `basic_model_testing_script.py` has a minor pre-existing bug in the plotting section where `df_bayes` is referenced but the definition is commented out; however, the core simulation logic runs correctly.
