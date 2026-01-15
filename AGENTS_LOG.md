@@ -97,7 +97,7 @@ When submitting changes, please use the following structure:
         *   Added `test_bayes_initialization_match` to verify random state alignment with `Model`.
         *   Added `test_bayes_update_logic` to verify the mathematical correctness of the vectorized Bayesian update against the scalar `Model`.
     *   **Updated `vectorized_basic_model_testing.ipynb`:**
-        *   Added a new section to run and visualize the Bayes Agent simulation.
+        *   Added a new section to run and visualize the Bayes simulation.
     *   **Verified:**
         *   Ran unit tests: All passed.
         *   Ran notebook: Successfully executed Bayes simulation without errors.
@@ -177,3 +177,11 @@ When submitting changes, please use the following structure:
     *   **Notebooks:** Verified `basic_model_testing.ipynb` and `vectorized_basic_model_testing.ipynb` via scripts (PASSED).
     *   **Fixes:** Fixed `run_simulations_test.ipynb` by correcting `randomize_network` call (changed `p_rewiring` argument to `n_edges`) and fixing imports in `src/net_epistemology/simulation/__init__.py`.
     *   **Documentation:** Updated `HOUSEKEEPING.md` with execution date and full report.
+
+### [2026-01-15] - Housekeeping Protocol (Jules)
+*   **Task:** Execute housekeeping protocol, map dependencies, and verify system stability.
+*   **Actions:**
+    *   **Dependency Analysis:** Verified imports and dependency graph.
+    *   **Tests:** Ran `unit_tests.py` and `test_vectorization.py` (Both PASSED).
+    *   **Notebook Verification:** Converted and executed `basic_model_testing.ipynb`, `vectorized_basic_model_testing.ipynb`, and `run_simulations_test.ipynb` (All PASSED with headless modifications).
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with 2026-01-15 report.
