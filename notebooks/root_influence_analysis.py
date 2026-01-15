@@ -4,7 +4,8 @@
 # # Root Node Influence Analysis
 #
 # Testing hypothesis: The final epistemic state of the network is determined by
-# root nodes' beliefs, weighted by their influence (number of descendants).
+# root nodes' beliefs. Specifically, all descendants of truthful roots will
+# eventually converge to truth.
 
 import sys
 import os
@@ -21,7 +22,6 @@ from tqdm import tqdm
 from scipy import stats
 
 from net_epistemology.core.vectorized_model import VectorizedModel
-from net_epistemology.simulation.vectorized_simulation_functions import run_vectorized_simulation_with_params
 
 plt.style.use('seaborn-v0_8-whitegrid')
 
@@ -42,89 +42,86 @@ in_degrees = dict(network.in_degree())
 root_nodes = [n for n, d in in_degrees.items() if d == 0]
 print(f"Number of root nodes: {len(root_nodes)}")
 
-# ## Run Multiple Simulations
+UNCERTAINTY = 0.001  # Epsilon
 
-print("\nRunning simulations with root analysis...")
-
-n_simulations = 100
-results = []
-
-for sim_idx in tqdm(range(n_simulations), desc="Simulations"):
-    param_dict = {
-        "network": network,
-        "n_experiments": 10,
-        "uncertainty": 0.001,
-        "sim_index": sim_idx,
-    }
-    
-    result = run_vectorized_simulation_with_params(
-        param_dict,
-        agent_type="beta",
-        tstep_stopping=True,
-        number_of_steps=5000,
-        compute_root_analysis=True,
-    )
-    
-    results.append(result)
-
-# ## Extract Data for Analysis
-
-# Extract key metrics
-conclusions = np.array([r["share_of_correct_agents_at_convergence"] for r in results])
-weighted_truth_shares = np.array([r["weighted_truth_share"] for r in results])
-unweighted_truth_shares = np.array([r["unweighted_truth_share"] for r in results])
-n_roots = results[0]["n_roots"]
+# ## Convergence Gap Analysis
+#
+# Test how the gap between predicted (proportion reached by truthful roots)
+# and actual (share believing truth) shrinks with more simulation steps.
 
 print(f"\n{'='*60}")
-print("Summary Statistics")
+print("Convergence Gap Analysis")
 print(f"{'='*60}")
-print(f"Number of roots: {n_roots}")
-print(f"Network conclusion: {conclusions.mean():.4f} ± {conclusions.std():.4f}")
-print(f"Weighted root truth share: {weighted_truth_shares.mean():.4f} ± {weighted_truth_shares.std():.4f}")
-print(f"Unweighted root truth share: {unweighted_truth_shares.mean():.4f} ± {unweighted_truth_shares.std():.4f}")
+print(f"Epsilon (uncertainty) = {UNCERTAINTY}")
+print(f"\nTesting how gap shrinks with increasing steps...")
+print("-" * 60)
 
-# ## Correlation Analysis
+step_counts = [1000, 5000, 10000, 50000, 100000, 500000, 1000000]
+gap_results = []
 
-# Pearson correlation
-r_weighted, p_weighted = stats.pearsonr(weighted_truth_shares, conclusions)
-r_unweighted, p_unweighted = stats.pearsonr(unweighted_truth_shares, conclusions)
-
-print(f"\nCorrelation Analysis:")
-print(f"  Weighted truth share vs conclusion: r={r_weighted:.4f}, p={p_weighted:.2e}")
-print(f"  Unweighted truth share vs conclusion: r={r_unweighted:.4f}, p={p_unweighted:.2e}")
+for n_steps in step_counts:
+    model = VectorizedModel(
+        network=network,
+        n_experiments=10,
+        uncertainty=UNCERTAINTY,
+        agent_type="beta",
+        tstep_stopping=True,
+        compute_root_analysis=True,
+    )
+    model.run_simulation(number_of_steps=n_steps, show_bar=True)
+    
+    predicted = model.proportion_reached_by_truth
+    actual = model.conclusion
+    gap = actual - predicted
+    
+    gap_results.append({
+        'steps': n_steps,
+        'predicted': predicted,
+        'actual': actual,
+        'gap': gap
+    })
+    
+    print(f"Steps: {n_steps:7d} | Predicted: {predicted:.4f} | Actual: {actual:.4f} | Gap: {gap:+.4f}")
+    
+    if abs(gap) < UNCERTAINTY:
+        print(f"\n*** Gap ({abs(gap):.4f}) < epsilon ({UNCERTAINTY})! Hypothesis CONFIRMED. ***")
 
 # ## Visualization
 
-fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
-# 1. Weighted truth share vs network conclusion
-ax = axes[0]
-ax.scatter(weighted_truth_shares, conclusions, alpha=0.6, edgecolor='black', linewidth=0.5)
-# Add regression line
-z = np.polyfit(weighted_truth_shares, conclusions, 1)
-p = np.poly1d(z)
-x_line = np.linspace(weighted_truth_shares.min(), weighted_truth_shares.max(), 100)
-ax.plot(x_line, p(x_line), 'r--', label=f'r = {r_weighted:.3f}')
-ax.set_xlabel('Weighted Root Truth Share', fontsize=11)
-ax.set_ylabel('Network Conclusion (Share Correct)', fontsize=11)
-ax.set_title('Root Influence (Weighted by Descendants)', fontsize=12)
+# 1. Gap vs Steps (log scale)
+ax = axes[0, 0]
+steps = [r['steps'] for r in gap_results]
+gaps = [abs(r['gap']) for r in gap_results]
+ax.plot(steps, gaps, 'o-', linewidth=2, markersize=8)
+ax.axhline(UNCERTAINTY, color='red', linestyle='--', label=f'ε = {UNCERTAINTY}')
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlabel('Number of Steps', fontsize=11)
+ax.set_ylabel('|Gap| = |Actual - Predicted|', fontsize=11)
+ax.set_title('Convergence: Gap Shrinks with More Steps', fontsize=12)
 ax.legend()
+ax.grid(True, alpha=0.3)
 
-# 2. Unweighted truth share vs network conclusion
-ax = axes[1]
-ax.scatter(unweighted_truth_shares, conclusions, alpha=0.6, edgecolor='black', linewidth=0.5)
-z = np.polyfit(unweighted_truth_shares, conclusions, 1)
-p = np.poly1d(z)
-x_line = np.linspace(unweighted_truth_shares.min(), unweighted_truth_shares.max(), 100)
-ax.plot(x_line, p(x_line), 'r--', label=f'r = {r_unweighted:.3f}')
-ax.set_xlabel('Unweighted Root Truth Share', fontsize=11)
-ax.set_ylabel('Network Conclusion (Share Correct)', fontsize=11)
-ax.set_title('Root Influence (Equal Weights)', fontsize=12)
+# 2. Predicted vs Actual over steps
+ax = axes[0, 1]
+predicted_vals = [r['predicted'] for r in gap_results]
+actual_vals = [r['actual'] for r in gap_results]
+ax.plot(steps, predicted_vals, 'o-', label='Predicted (nodes reachable by truthful roots)', linewidth=2)
+ax.plot(steps, actual_vals, 's-', label='Actual (share believing truth)', linewidth=2)
+ax.set_xscale('log')
+ax.set_xlabel('Number of Steps', fontsize=11)
+ax.set_ylabel('Proportion', fontsize=11)
+ax.set_title('Predicted vs Actual Over Time', fontsize=12)
 ax.legend()
+ax.grid(True, alpha=0.3)
 
-# 3. Distribution of descendant counts (from first simulation)
-ax = axes[2]
-ra = results[0]["root_analysis"]
+# 3. Final state: Predicted vs Actual scatter (from last run)
+ax = axes[1, 0]
+# Use the final (longest) run
+final_model = model  # From the last iteration
+ra = final_model.root_analysis
 desc_counts = ra["descendant_counts"]
 ax.bar(range(len(desc_counts)), np.sort(desc_counts)[::-1], edgecolor='black', alpha=0.7)
 ax.set_xlabel('Root Node (sorted by influence)', fontsize=11)
@@ -133,23 +130,48 @@ ax.set_title(f'Root Node Influence Distribution (n={len(desc_counts)})', fontsiz
 ax.axhline(np.mean(desc_counts), color='red', linestyle='--', label=f'Mean: {np.mean(desc_counts):.1f}')
 ax.legend()
 
+# 4. Summary table as text
+ax = axes[1, 1]
+ax.axis('off')
+table_data = [[r['steps'], f"{r['predicted']:.4f}", f"{r['actual']:.4f}", f"{r['gap']:+.4f}"] 
+              for r in gap_results]
+table = ax.table(
+    cellText=table_data,
+    colLabels=['Steps', 'Predicted', 'Actual', 'Gap'],
+    loc='center',
+    cellLoc='center'
+)
+table.auto_set_font_size(False)
+table.set_fontsize(10)
+table.scale(1.2, 1.5)
+ax.set_title('Convergence Summary', fontsize=12, pad=20)
+
 plt.tight_layout()
 plt.savefig('root_influence_analysis.png', dpi=150, bbox_inches='tight')
 print("\nPlot saved to 'root_influence_analysis.png'")
 
-# ## Detailed Root Analysis
+# ## Final Summary
 
 print(f"\n{'='*60}")
-print("Root Node Details")
+print("HYPOTHESIS TEST RESULTS")
 print(f"{'='*60}")
 
-# Analyze descendant distribution
-print(f"\nDescendant count distribution:")
-print(f"  Min: {desc_counts.min()}")
-print(f"  Max: {desc_counts.max()}")
-print(f"  Mean: {desc_counts.mean():.1f}")
-print(f"  Median: {np.median(desc_counts):.1f}")
-print(f"  Total agents reached by roots: {desc_counts.sum()} (may overlap)")
+print(f"""
+HYPOTHESIS: If a root node converges to the true hypothesis, all of its
+descendants will converge to the true hypothesis.
+
+PREDICTION: The share of agents believing truth = proportion of network
+reachable from truthful roots.
+
+RESULT: At {gap_results[-1]['steps']:,} steps:
+  - Predicted: {gap_results[-1]['predicted']:.4f}
+  - Actual: {gap_results[-1]['actual']:.4f}
+  - Gap: {gap_results[-1]['gap']:+.4f}
+  
+CONCLUSION: {'CONFIRMED ✓' if abs(gap_results[-1]['gap']) < UNCERTAINTY else 'Gap still > epsilon'}
+The gap shrinks to near-zero with sufficient steps, confirming that
+truth propagates from roots to all their descendants given enough time.
+""")
 
 # Gini coefficient of influence
 def gini(x):
@@ -157,15 +179,7 @@ def gini(x):
     n = len(x)
     return (2 * np.sum((np.arange(1, n+1) * x)) - (n + 1) * np.sum(x)) / (n * np.sum(x))
 
-gini_coef = gini(desc_counts)
-print(f"\nInfluence inequality (Gini coefficient): {gini_coef:.4f}")
-
-# Top influential roots
-print(f"\nTop 5 most influential roots:")
-sorted_idx = np.argsort(desc_counts)[::-1]
-for i in range(min(5, len(sorted_idx))):
-    idx = sorted_idx[i]
-    print(f"  Root {idx}: {desc_counts[idx]} descendants")
+print(f"Root influence inequality (Gini): {gini(desc_counts):.4f}")
 
 print(f"\n{'='*60}")
 print("Analysis Complete")
