@@ -23,6 +23,7 @@ class VectorizedModel:
         seed=None,
         seeded=False,
         compute_convergence=False,
+        compute_root_analysis=False,
         *args,
         **kwargs
     ):
@@ -39,12 +40,16 @@ class VectorizedModel:
         self.tolerance = tolerance
         self.tstep_stopping = tstep_stopping
         self.compute_convergence = compute_convergence
+        self.compute_root_analysis = compute_root_analysis
         
         # Convergence tracking attributes (populated after simulation if compute_convergence=True)
         self.credences_prior_final = None  # Beliefs at step N-1
         self.belief_change_abs = None  # Per-agent, per-theory absolute difference (final step)
         self.belief_change_kl = None  # Per-agent, per-theory KL divergence (final step)
         self.belief_change_history = None  # Per-step mean belief change: list of (mean_T0, mean_T1)
+        
+        # Root analysis attributes (populated after simulation if compute_root_analysis=True)
+        self.root_analysis = None
         if seeded:
             if seed is None:
                 seed = np.random.randint(0, 2**32 - 1)
@@ -460,6 +465,10 @@ class VectorizedModel:
         # Compute convergence metrics if requested (Beta agent only)
         if self.compute_convergence and self.agent_type == "beta" and alphas_betas_prior is not None:
             self._compute_convergence_metrics(alphas_betas_prior)
+        
+        # Compute root node analysis if requested
+        if self.compute_root_analysis:
+            self._compute_root_analysis()
     
     def _compute_convergence_metrics(self, alphas_betas_prior):
         """
@@ -501,3 +510,75 @@ class VectorizedModel:
               (a2 - a1 + b2 - b1) * digamma(a1 + b1))
         
         self.belief_change_kl = kl  # Shape (N, 2)
+    
+    def _compute_root_analysis(self):
+        """
+        Analyze root nodes (nodes with no incoming edges) and their influence.
+        
+        Computes:
+        - Which nodes are roots
+        - Their final credences
+        - Whether they believe the truth
+        - Their descendant sets and counts
+        - Weighted truth share (root beliefs weighted by descendant count)
+        """
+        # Identify root nodes (in_degree == 0)
+        degrees = np.sum(self.adj_matrix, axis=0)  # In-degree
+        root_mask = degrees == 0
+        root_indices = np.where(root_mask)[0]
+        
+        if len(root_indices) == 0:
+            self.root_analysis = {
+                'n_roots': 0,
+                'root_indices': np.array([]),
+                'root_node_ids': [],
+                'root_credences': np.array([]),
+                'root_believes_truth': np.array([]),
+                'descendant_counts': np.array([]),
+                'descendants': [],
+                'weighted_truth_share': None,
+                'unweighted_truth_share': None,
+            }
+            return
+        
+        # Get root credences
+        if self.agent_type == "beta":
+            root_credences = self.credences[root_indices]  # Shape (n_roots, 2)
+            # Root believes truth if credence for Theory 1 > Theory 0
+            root_believes_truth = root_credences[:, 1] > root_credences[:, 0]
+        elif self.agent_type == "bayes":
+            root_credences = self.credences[root_indices]  # Shape (n_roots,)
+            root_believes_truth = root_credences > 0.5
+        
+        # Compute descendants for each root
+        root_node_ids = [self.nodes[i] for i in root_indices]
+        descendants = []
+        descendant_counts = []
+        
+        for node_id in root_node_ids:
+            desc_set = nx.descendants(self.network, node_id)
+            desc_set.add(node_id)  # Include the root itself
+            # Convert to indices
+            desc_indices = [self.id_to_index_map[n] for n in desc_set if n in self.id_to_index_map]
+            descendants.append(set(desc_indices))
+            descendant_counts.append(len(desc_indices))
+        
+        descendant_counts = np.array(descendant_counts)
+        
+        # Compute weighted truth share
+        # Weight = proportion of network each root influences
+        weights = descendant_counts / descendant_counts.sum()
+        weighted_truth_share = np.sum(weights * root_believes_truth.astype(float))
+        unweighted_truth_share = np.mean(root_believes_truth.astype(float))
+        
+        self.root_analysis = {
+            'n_roots': len(root_indices),
+            'root_indices': root_indices,
+            'root_node_ids': root_node_ids,
+            'root_credences': root_credences,
+            'root_believes_truth': root_believes_truth,
+            'descendant_counts': descendant_counts,
+            'descendants': descendants,
+            'weighted_truth_share': weighted_truth_share,
+            'unweighted_truth_share': unweighted_truth_share,
+        }
