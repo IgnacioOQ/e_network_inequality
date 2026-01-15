@@ -16,6 +16,7 @@ def run_vectorized_simulation_with_params(
     show_bar=False,
     agent_type="bayes",
     compute_convergence=False,
+    compute_root_analysis=False,
 ):
     process_seed = int.from_bytes(os.urandom(4), byteorder="little")
     rd.seed(process_seed)
@@ -37,6 +38,7 @@ def run_vectorized_simulation_with_params(
         seeded=seeded,
         agent_type=agent_type,
         compute_convergence=compute_convergence,
+        compute_root_analysis=compute_root_analysis,
     )
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
@@ -64,10 +66,20 @@ def run_vectorized_simulation_with_params(
         result_dict["belief_change_abs_per_agent"] = my_model.belief_change_abs
         result_dict["belief_change_kl_per_agent"] = my_model.belief_change_kl
 
+    # Add root analysis if computed
+    if compute_root_analysis and my_model.root_analysis is not None:
+        ra = my_model.root_analysis
+        result_dict["n_roots"] = ra["n_roots"]
+        result_dict["weighted_truth_share"] = ra["weighted_truth_share"]
+        result_dict["unweighted_truth_share"] = ra["unweighted_truth_share"]
+        # Store full root analysis dict for detailed analysis
+        result_dict["root_analysis"] = ra
+
     if "group_id" in param_dict:
         result_dict["group_id"] = param_dict["group_id"]
     if "sim_index" in param_dict:
         result_dict["sim_index"] = param_dict["sim_index"]
 
     return result_dict
+
 
