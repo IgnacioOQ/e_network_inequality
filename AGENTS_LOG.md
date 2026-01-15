@@ -196,3 +196,17 @@ When submitting changes, please use the following structure:
         *   `vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.94)
         *   `basic_model_testing_script.py`: Core simulation PASSED (conclusion: 0.98). Pre-existing `NameError` in plotting code (`df_bayes` referenced but commented out).
     *   **Documentation:** Updated `HOUSEKEEPING.md` with latest report.
+
+### [2026-01-15 23:51] - Housekeeping Protocol and Script Fixes (Jules)
+*   **Task:** Execute housekeeping protocol, fix broken verification scripts, and update reports.
+*   **Actions:**
+    *   **Script Fixes:**
+        *   Fixed `NameError` in `tests/basic_model_testing_script.py` by uncommenting `df_bayes` definition.
+        *   Fixed `AttributeError` in `tests/basic_model_testing_script.py` by setting `histories=True` and accessing `my_model.agent_histories`.
+        *   Replaced deprecated `applymap` with `map` in `tests/basic_model_testing_script.py`.
+    *   **Tests:**
+        *   Ran `tests/unit_tests.py`: PASSED.
+        *   Ran `tests/test_vectorization.py`: PASSED.
+    *   **Verification:**
+        *   Executed `tests/basic_model_testing_script.py` and `tests/vectorized_basic_model_testing_script.py` headless (using custom runner). Both PASSED.
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with the latest test results.

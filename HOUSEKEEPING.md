@@ -30,15 +30,15 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-15 (17:30)
+**Execution Date:** 2026-01-15 (23:51)
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
 *   **Script Verification:**
-    *   `basic_model_testing_script.py`: Core simulation PASSED (conclusion: 0.98). Pre-existing `NameError` in plotting code.
-    *   `vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.94)
+    *   `basic_model_testing_script.py`: PASSED (conclusion: 0.97). Fixed `NameError` (uncommented `df_bayes`) and `AttributeError` (used `agent_histories` and set `histories=True`). Deprecated `applymap` replaced with `map`.
+    *   `vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.96)
 
 **Summary:**
-All core tests pass successfully. Package `net_epistemology` reinstalled in editable mode. The `basic_model_testing_script.py` has a minor pre-existing bug in the plotting section where `df_bayes` is referenced but the definition is commented out; however, the core simulation logic runs correctly.
+All core tests and verification scripts pass successfully. `net_epistemology` package is installed in editable mode. `basic_model_testing_script.py` bugs were fixed to allow full verification.
