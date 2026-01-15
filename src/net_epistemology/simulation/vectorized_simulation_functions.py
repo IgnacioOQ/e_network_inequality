@@ -15,6 +15,7 @@ def run_vectorized_simulation_with_params(
     number_of_steps=10000,
     show_bar=False,
     agent_type="bayes",
+    compute_convergence=False,
 ):
     process_seed = int.from_bytes(os.urandom(4), byteorder="little")
     rd.seed(process_seed)
@@ -35,6 +36,7 @@ def run_vectorized_simulation_with_params(
         seed=seed,
         seeded=seeded,
         agent_type=agent_type,
+        compute_convergence=compute_convergence,
     )
 
     my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
@@ -50,9 +52,22 @@ def run_vectorized_simulation_with_params(
     result_dict["convergence_step"] = my_model.n_steps
     result_dict["proportion_reached_by_truth"] = my_model.proportion_reached_by_truth
 
+    # Add convergence metrics if computed (Beta agent only)
+    if compute_convergence and my_model.belief_change_abs is not None:
+        result_dict["avg_belief_change_abs_theory_0"] = np.mean(my_model.belief_change_abs[:, 0])
+        result_dict["avg_belief_change_abs_theory_1"] = np.mean(my_model.belief_change_abs[:, 1])
+        result_dict["avg_belief_change_abs"] = np.mean(my_model.belief_change_abs)
+        result_dict["avg_belief_change_kl_theory_0"] = np.mean(my_model.belief_change_kl[:, 0])
+        result_dict["avg_belief_change_kl_theory_1"] = np.mean(my_model.belief_change_kl[:, 1])
+        result_dict["avg_belief_change_kl"] = np.mean(my_model.belief_change_kl)
+        # Store full arrays for detailed analysis (optional)
+        result_dict["belief_change_abs_per_agent"] = my_model.belief_change_abs
+        result_dict["belief_change_kl_per_agent"] = my_model.belief_change_kl
+
     if "group_id" in param_dict:
         result_dict["group_id"] = param_dict["group_id"]
     if "sim_index" in param_dict:
         result_dict["sim_index"] = param_dict["sim_index"]
 
     return result_dict
+
