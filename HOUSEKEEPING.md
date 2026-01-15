@@ -30,16 +30,16 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-13
+**Execution Date:** 2026-01-15
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
 *   **Notebook Verification:**
-    *   `basic_model_testing.ipynb`: PASSED.
-    *   `vectorized_basic_model_testing.ipynb`: PASSED.
-    *   `run_simulations_test.ipynb`: PASSED. Fixed `randomize_network` usage in `simulation_functions.py` (switched from `p_rewiring` to `n_edges`). Fixed `net_epistemology.simulation` imports.
+    *   `basic_model_testing.ipynb`: PASSED (converted to script, executed with matplotlib Agg backend, reduced steps for speed).
+    *   `vectorized_basic_model_testing.ipynb`: PASSED (converted to script, executed with matplotlib Agg backend, reduced steps for speed).
+    *   `run_simulations_test.ipynb`: PASSED (converted to script, executed with matplotlib Agg backend, reduced steps and simulations for speed, fixed `randomize_network` calls and `run_simulation` wrapper usage).
 
 **Summary:**
-All checks passed. The codebase is stable. Minor fixes were applied to `simulation_functions.py` and `src/net_epistemology/simulation/__init__.py` to ensure simulation scripts run correctly.
+All checks passed. The codebase is stable. Dependencies are correctly linked. Notebooks are functional when converted to scripts and run in a headless environment.
