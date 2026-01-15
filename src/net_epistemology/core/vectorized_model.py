@@ -22,6 +22,7 @@ class VectorizedModel:
         directed_network=True,
         seed=None,
         seeded=False,
+        compute_convergence=False,
         *args,
         **kwargs
     ):
@@ -37,6 +38,13 @@ class VectorizedModel:
         self.epsilon = 0  # As per original code default
         self.tolerance = tolerance
         self.tstep_stopping = tstep_stopping
+        self.compute_convergence = compute_convergence
+        
+        # Convergence tracking attributes (populated after simulation if compute_convergence=True)
+        self.credences_prior_final = None  # Beliefs at step N-1
+        self.belief_change_abs = None  # Per-agent, per-theory absolute difference (final step)
+        self.belief_change_kl = None  # Per-agent, per-theory KL divergence (final step)
+        self.belief_change_history = None  # Per-step mean belief change: list of (mean_T0, mean_T1)
         if seeded:
             if seed is None:
                 seed = np.random.randint(0, 2**32 - 1)
@@ -371,16 +379,46 @@ class VectorizedModel:
             iterable = tqdm.tqdm(iterable)
 
         credences_prior = self.credences.copy()
+        alphas_betas_prior = self.alphas_betas.copy() if self.agent_type == "beta" and self.compute_convergence else None
+        
+        # Track per-step belief change if computing convergence
+        if self.compute_convergence and self.agent_type == "beta":
+            self.belief_change_history = []
 
         for _ in iterable:
             credences_prior = self.credences.copy()
+            if self.agent_type == "beta" and self.compute_convergence:
+                alphas_betas_prior = self.alphas_betas.copy()
+            
             self.step()
+            
+            # Compute per-step belief change for convergence tracking
+            if self.compute_convergence and self.agent_type == "beta":
+                # Compute mean of prior and posterior
+                a_prior = alphas_betas_prior[:, :, 0]
+                b_prior = alphas_betas_prior[:, :, 1]
+                mean_prior = a_prior / (a_prior + b_prior)
+                
+                a_post = self.alphas_betas[:, :, 0]
+                b_post = self.alphas_betas[:, :, 1]
+                mean_post = a_post / (a_post + b_post)
+                
+                # Mean absolute change across agents for each theory
+                abs_change = np.abs(mean_post - mean_prior)
+                self.belief_change_history.append((
+                    np.mean(abs_change[:, 0]),  # Theory 0
+                    np.mean(abs_change[:, 1])   # Theory 1
+                ))
 
             if self.tstep_stopping:
                 continue
 
             if stop_condition(credences_prior):
                 break
+        
+        # Store final prior for convergence analysis
+        if self.compute_convergence:
+            self.credences_prior_final = credences_prior
 
         self.conclusion = determine_conclusion()
         self.conclusion_core = determine_conclusion_core()
@@ -418,3 +456,48 @@ class VectorizedModel:
                 )
             else:
                 self.proportion_reached_by_truth = 0.0
+        
+        # Compute convergence metrics if requested (Beta agent only)
+        if self.compute_convergence and self.agent_type == "beta" and alphas_betas_prior is not None:
+            self._compute_convergence_metrics(alphas_betas_prior)
+    
+    def _compute_convergence_metrics(self, alphas_betas_prior):
+        """
+        Compute belief change metrics between last two steps.
+        
+        For Beta distributions:
+        - Absolute difference: |mean_final - mean_prior|
+        - KL divergence: KL(prior || posterior) using scipy.stats.entropy
+        
+        Args:
+            alphas_betas_prior: (N, 2, 2) array of prior alpha/beta values
+        """
+        # Compute means for prior and posterior
+        # Mean of Beta(a, b) = a / (a + b)
+        a_prior = alphas_betas_prior[:, :, 0]
+        b_prior = alphas_betas_prior[:, :, 1]
+        mean_prior = a_prior / (a_prior + b_prior)
+        
+        a_post = self.alphas_betas[:, :, 0]
+        b_post = self.alphas_betas[:, :, 1]
+        mean_post = a_post / (a_post + b_post)
+        
+        # Absolute difference in means: shape (N, 2)
+        self.belief_change_abs = np.abs(mean_post - mean_prior)
+        
+        # KL divergence for Beta distributions
+        # KL(Beta(a1,b1) || Beta(a2,b2)) = log(B(a2,b2)/B(a1,b1)) 
+        #   + (a1-a2)*psi(a1) + (b1-b2)*psi(b1) + (a2-a1+b2-b1)*psi(a1+b1)
+        # where B is beta function and psi is digamma
+        from scipy.special import betaln, digamma
+        
+        # Prior is P, Posterior is Q, we compute KL(P || Q)
+        a1, b1 = a_prior, b_prior  # Prior
+        a2, b2 = a_post, b_post    # Posterior
+        
+        kl = (betaln(a2, b2) - betaln(a1, b1) +
+              (a1 - a2) * digamma(a1) +
+              (b1 - b2) * digamma(b1) +
+              (a2 - a1 + b2 - b1) * digamma(a1 + b1))
+        
+        self.belief_change_kl = kl  # Shape (N, 2)
