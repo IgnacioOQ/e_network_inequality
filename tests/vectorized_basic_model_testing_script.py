@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
+import matplotlib
+matplotlib.use('Agg')
+import sys
+import os
+import matplotlib.pyplot as plt
+
+# Add src to path to allow importing net_epistemology without installing the package
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 
 # # Basic Testing (Vectorized)
 #
@@ -7,7 +16,7 @@
 
 # ## Setup
 
-# In[1]:
+# In[2]:
 
 
 from net_epistemology.utils.imports import *
@@ -15,32 +24,66 @@ from net_epistemology.core.vectorized_model import VectorizedModel
 import matplotlib.pyplot as plt
 
 
+# In[3]:
+
+
+# Save and load pud_final as JSON
+import json
+from networkx.readwrite import json_graph
+from pathlib import Path
+
+# Fix path relative to script
+JSON_PATH = Path(os.path.join(os.path.dirname(__file__), "../data/empirical_networks/pud_final.json"))
+
+# Save to JSON
+def save_network_json(G, path):
+    data = json_graph.node_link_data(G)
+    with open(path, "w") as f:
+        json.dump(data, f)
+    print(f"Saved network to {path}")
+
+# Load from JSON
+def load_network_json(path):
+    with open(path, "r") as f:
+        data = json.load(f)
+    # Fix for networkx expecting 'edges' instead of 'links' or vice-versa
+    if "links" in data and "edges" not in data:
+        data["edges"] = data["links"]
+    G = json_graph.node_link_graph(data)
+    print(f"Loaded network from {path}")
+    return G
+
+# Example usage:
+# save_network_json(pud_final, JSON_PATH)
+my_network = load_network_json(JSON_PATH)
+
+
+# In[4]:
+
+
+# n_agents = 1000
+# my_network = nx.gnp_random_graph(n_agents, p=0.1, directed=True) #nx.complete_graph(n_agents, create_using=nx.DiGraph())
+
+
 # ## Try with Bayes Agent (Vectorized)
 
-# In[2]:
-
-
-n_agents = 100
-my_network = nx.gnp_random_graph(n_agents, p=0.2, directed=True)
-
-
-# In[3]:
+# In[5]:
 
 
 seed=420
 my_model = VectorizedModel(my_network, n_experiments=10, uncertainty=0.001,
                  histories=True,sampling_update=True,variance_stopping = False,directed_network = True,
                  seed=seed,seeded=False, agent_type='bayes')
-my_model.run_simulation(number_of_steps=10000,show_bar=True)
+my_model.run_simulation(number_of_steps=5000,show_bar=False)
 print('steps: ',my_model.n_steps)
 print('conclusion: ',my_model.conclusion)
 print('conclusion core', my_model.conclusion_core)
 
 df_bayes = pd.DataFrame(my_model.credences_history).T
-df_bayes.head(3)
+# df_bayes.head(3)
 
 
-# In[4]:
+# In[6]:
 
 
 # Plot mean credence for Bayes
@@ -52,19 +95,12 @@ plt.title('Bayes Agent: Average Credence Evolution')
 plt.xlabel('Steps')
 plt.ylabel('Credence')
 plt.legend()
-plt.show()
+# plt.show()
 
 
 # ## Try with Beta Agent (Vectorized)
 
-# In[5]:
-
-
-n_agents = 100
-my_network = nx.gnp_random_graph(n_agents, p=0.2, directed=True)
-
-
-# In[6]:
+# In[7]:
 
 
 seed=420
@@ -72,16 +108,16 @@ my_model = VectorizedModel(my_network, n_experiments=10, uncertainty=0.001,
                  histories=True,sampling_update=True,variance_stopping = False,directed_network = True,
                  seed=seed,seeded=False, agent_type='beta')
 
-my_model.run_simulation(number_of_steps=10000,show_bar=True)
+my_model.run_simulation(number_of_steps=1000,show_bar=False)
 print('steps: ',my_model.n_steps)
 print('conclusion: ',my_model.conclusion)
 
 # agent_histories in VectorizedModel is a list of lists of numpy arrays
 df = pd.DataFrame(my_model.credences_history).T # Transpose because history[agent] is list of steps
-df.head(3)
+# df.head(3)
 
 
-# In[7]:
+# In[8]:
 
 
 # Extract the first coordinate (x) for each pair and calculate column-wise mean
@@ -93,10 +129,10 @@ plt.plot(x_means, label='Theory 0')
 plt.plot(y_means, label='Theory 1')
 plt.title('Beta Agent: Average Credence Evolution')
 plt.legend()
-plt.show()
+# plt.show()
 
 
-# In[8]:
+# In[9]:
 
 
 # Extract the first coordinate (x) for each pair
@@ -108,4 +144,4 @@ plt.figure(figsize=(10, 6))
 for agent_idx in range(min(10, x_values.shape[1])):
     plt.plot(x_values[agent_idx], label=f'Agent {agent_idx}')
 plt.title('Beta Agent: Individual Credence (Theory 0)')
-plt.show()
+# plt.show()

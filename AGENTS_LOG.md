@@ -196,3 +196,16 @@ When submitting changes, please use the following structure:
         *   `vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.94)
         *   `basic_model_testing_script.py`: Core simulation PASSED (conclusion: 0.98). Pre-existing `NameError` in plotting code (`df_bayes` referenced but commented out).
     *   **Documentation:** Updated `HOUSEKEEPING.md` with latest report.
+
+### [2026-01-20] - Housekeeping Protocol (Jules)
+*   **Task:** Execute housekeeping protocol as requested.
+*   **Actions:**
+    *   **Repo Update:** Verified sync with `ai-agents-branch`.
+    *   **Testing:**
+        *   Ran `tests/unit_tests.py` (PASSED).
+        *   Ran `tests/test_vectorization.py` (PASSED).
+        *   Converted and ran notebooks via headless scripts in `tests/`:
+            *   `basic_model_testing_script.py`: PASSED.
+            *   `vectorized_basic_model_testing_script.py`: PASSED.
+            *   `run_simulations_test_script.py`: PASSED (Generated network tests). Empirical tests skipped due to missing pickle file.
+    *   **Documentation:** Updated `HOUSEKEEPING.md` and `AGENTS_LOG.md` with the results.

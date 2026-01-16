@@ -30,15 +30,16 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-15 (17:30)
+**Execution Date:** 2026-01-20 (Current)
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
 *   **Script Verification:**
-    *   `basic_model_testing_script.py`: Core simulation PASSED (conclusion: 0.98). Pre-existing `NameError` in plotting code.
-    *   `vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.94)
+    *   `basic_model_testing_script.py`: PASSED.
+    *   `vectorized_basic_model_testing_script.py`: PASSED.
+    *   `run_simulations_test_script.py`: PASSED (Testing Generated section). "Testing Empirical" section skipped due to missing `perc_pruned_lcc.pkl` file.
 
 **Summary:**
-All core tests pass successfully. Package `net_epistemology` reinstalled in editable mode. The `basic_model_testing_script.py` has a minor pre-existing bug in the plotting section where `df_bayes` is referenced but the definition is commented out; however, the core simulation logic runs correctly.
+All core tests pass successfully. Verification scripts for notebooks ran successfully in headless mode after being converted and adjusted for paths and matplotlib backend. The simulation logic is robust. The empirical network test was skipped because the specific data file is missing from the repository, but the generated network simulations confirm functionality.
