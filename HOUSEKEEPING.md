@@ -30,15 +30,15 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-17 (12:55)
+**Execution Date:** 2026-01-17 (15:00)
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
 *   **Script Verification:**
-    *   `basic_model_testing_script.py`: Core simulation PASSED (conclusion: 0.98). Pre-existing `NameError` in plotting code (`df_bayes` not defined).
-    *   `vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.9)
+    *   `notebooks/convergence_studies.py`: PASSED (conclusion: 0.69)
+    *   `notebooks/root_influence_analysis.py`: PASSED (runs correctly, terminated early for housekeeping)
 
 **Summary:**
-All core tests pass successfully. Package `net_epistemology` reinstalled in editable mode. The `basic_model_testing_script.py` has a minor pre-existing bug in the plotting section where `df_bayes` is referenced but the definition is commented out; however, the core simulation logic runs correctly.
+All core tests pass successfully. Both standalone Python scripts (`convergence_studies.py` and `root_influence_analysis.py`) run without errors and produce expected output.
