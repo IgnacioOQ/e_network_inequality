@@ -185,10 +185,10 @@ dumping_path = '/content/drive/My Drive/Colab Projects/Data Driven ABMs/Data Set
 N_SIMULATIONS_PER_TYPE = 100
 
 # Maximum steps (simulations stop when epsilon threshold reached or max steps)
-MAX_STEPS = 500000
+MAX_STEPS = 5000000  # 5 million steps
 
-# Uncertainty threshold for root influence hypothesis
-EPSILON = 0.001
+# Epsilon threshold for convergence (1% error tolerance)
+EPSILON = 0.01
 
 # Representative network sizes
 n_sizes = [50, 100, 200]
@@ -208,8 +208,8 @@ methods = ['randomization']
 
 print("Parameters configured:")
 print(f"  Simulations per network type: {N_SIMULATIONS_PER_TYPE}")
-print(f"  Max steps: {MAX_STEPS}")
-print(f"  Epsilon threshold: {EPSILON}")
+print(f"  Max steps: {MAX_STEPS:,}")
+print(f"  Epsilon threshold: {EPSILON} (1% error tolerance)")
 print(f"  Network sizes: {n_sizes}")
 
 
@@ -331,12 +331,26 @@ def run_simulations_to_convergence(G, network_name, network_type, n_simulations,
         num_cores: CPU cores for parallel processing
         randomize: If True, randomize network (only for empirical)
         agent_type: 'beta' or 'bayes'
+    
+    Returns:
+        DataFrame with results, or None if skipped
     """
+    # Count root nodes (nodes with in-degree = 0)
+    in_degrees = dict(G.in_degree())
+    n_roots = sum(1 for d in in_degrees.values() if d == 0)
+    
     print(f"\n{'='*60}")
     print(f"Network: {network_name} ({network_type})")
     print(f"Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
+    print(f"Root nodes: {n_roots}")
     print(f"Randomize: {randomize}, Simulations: {n_simulations}")
     print(f"{'='*60}")
+    
+    # Skip if no root nodes (strongly connected network)
+    if n_roots == 0:
+        print(f"⚠️  SKIPPING: Network has 0 root nodes (strongly connected).")
+        print(f"    Root influence analysis requires at least 1 root node.")
+        return None
     
     # Generate parameters
     if randomize:
@@ -429,8 +443,8 @@ def root_analysis_main(n_simulations=100, agent_type='beta'):
     print(f"Cores: {num_cores}")
     print(f"Simulations per type: {n_simulations}")
     print(f"Agent type: {agent_type}")
-    print(f"Epsilon: {EPSILON}")
-    print(f"Max steps: {MAX_STEPS}")
+    print(f"Epsilon: {EPSILON} (1% error tolerance)")
+    print(f"Max steps: {MAX_STEPS:,}")
     
     all_results = []
     
@@ -447,7 +461,8 @@ def root_analysis_main(n_simulations=100, agent_type='beta'):
                 G, name, 'er', n_simulations, num_cores, 
                 randomize=False, agent_type=agent_type
             )
-            all_results.append(df)
+            if df is not None:
+                all_results.append(df)
     
     # ─── 2. WATTS-STROGATZ (no randomization) ───
     print(f"\n{'='*70}")
@@ -466,7 +481,8 @@ def root_analysis_main(n_simulations=100, agent_type='beta'):
                     G, name, 'ws', n_simulations, num_cores,
                     randomize=False, agent_type=agent_type
                 )
-                all_results.append(df)
+                if df is not None:
+                    all_results.append(df)
     
     # ─── 3. BARABÁSI-ALBERT (no randomization) ───
     print(f"\n{'='*70}")
@@ -484,7 +500,8 @@ def root_analysis_main(n_simulations=100, agent_type='beta'):
                 G, name, 'ba', n_simulations, num_cores,
                 randomize=False, agent_type=agent_type
             )
-            all_results.append(df)
+            if df is not None:
+                all_results.append(df)
     
     # ─── 4. EMPIRICAL NETWORK (WITH randomization) ───
     print(f"\n{'='*70}")
@@ -497,7 +514,8 @@ def root_analysis_main(n_simulations=100, agent_type='beta'):
             G_empirical, "pud_final_randomized", 'empirical', n_simulations, num_cores,
             randomize=True, agent_type=agent_type
         )
-        all_results.append(df)
+        if df is not None:
+            all_results.append(df)
     except Exception as e:
         print(f"Error with empirical network: {e}")
         import traceback
@@ -508,7 +526,14 @@ def root_analysis_main(n_simulations=100, agent_type='beta'):
     print("COMBINING ALL RESULTS")
     print(f"{'='*70}")
     
-    combined_df = pd.concat(all_results, ignore_index=True)
+    # Filter out None values  
+    valid_results = [r for r in all_results if r is not None]
+    
+    if not valid_results:
+        print("⚠️  No valid results to combine!")
+        return None
+    
+    combined_df = pd.concat(valid_results, ignore_index=True)
     combined_path = dumping_path + "root_analysis_all_networks.csv"
     combined_df.to_csv(combined_path, index=False)
     print(f"Combined results saved: {combined_path}")
