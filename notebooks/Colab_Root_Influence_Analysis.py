@@ -11,38 +11,92 @@
 # In[ ]:
 
 
-# !git clone https://github.com/IgnacioOQ/e_network_inequality
+# ═══════════════════════════════════════════════════════════════════════════════
+# RECOMMENDED GOOGLE COLAB RUNTIME
+# ═══════════════════════════════════════════════════════════════════════════════
+print("=" * 70)
+print("🚀 RECOMMENDED COLAB RUNTIME SETTINGS")
+print("=" * 70)
+print("""
+Runtime Type: CPU (NOT GPU/TPU)
+   - This notebook uses multiprocessing (CPU parallelization)
+   - GPU/TPU won't help and wastes resources
+
+Hardware Accelerator: None
+   - Go to: Runtime → Change runtime type → Hardware accelerator: None
+
+RAM:
+   - Standard (12GB): OK for small networks (n < 200) and few simulations
+   - High-RAM (25GB+): RECOMMENDED for larger networks or many simulations
+   - To enable: Runtime → Change runtime type → High-RAM (Colab Pro)
+
+Session Duration:
+   - Free Colab: ~90 min timeout, may disconnect
+   - Colab Pro: Up to 24h runtime, background execution
+   - RECOMMENDED: Colab Pro for long simulation runs
+
+Estimated Runtime (100 simulations × 5 step counts × 3 networks):
+   - ~30-60 minutes on standard Colab
+   - Faster with Colab Pro (more cores)
+
+TIP: Run in background with Colab Pro to avoid disconnects!
+""")
+print("=" * 70)
+
+
+# In[ ]:
+
+
+# Clone the repository (ai-agents-branch has the latest code)
 get_ipython().system('git clone -b ai-agents-branch https://github.com/IgnacioOQ/e_network_inequality')
 
 
 # In[ ]:
 
 
-get_ipython().system('pip install dill')
+# Install required packages
+get_ipython().system('pip install dill tqdm networkx pandas numpy scipy matplotlib seaborn')
 
 
 # In[ ]:
 
 
+# Change to repository directory and install the package
 get_ipython().run_line_magic('cd', 'e_network_inequality')
+get_ipython().system('pip install -e .')
 
 
 # In[ ]:
 
 
-from imports import *
-from agents import BetaAgent, BayesAgent
-from model import Model
-from network_utils import *
-# notice this is not network_utilsv2
-from network_generation import *
-from simulation_functions import *
-from vectorized_simulation_functions import *
+# Add src to path and import modules
+import sys
+import os
+sys.path.insert(0, os.path.abspath('src'))
+
+# Core imports
+import numpy as np
+import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt
+import random as rd
+import tqdm
+from multiprocessing import Pool, cpu_count
 from functools import partial
-import hashlib
-import gc
-from multiprocessing import get_context
 from scipy import stats
+
+# Import from net_epistemology package
+from net_epistemology.utils.imports import *
+from net_epistemology.core.agents import BetaAgent, BayesAgent
+from net_epistemology.core.model import Model
+from net_epistemology.utils.network_utils import *
+from net_epistemology.utils.network_generation import *
+# Import only what we need from non-vectorized (for parameter generation)
+from net_epistemology.simulation.simulation_functions import generate_parameters_aggregate
+# Vectorized simulations for performance
+from net_epistemology.simulation.vectorized_simulation_functions import *
+
+print("✅ All imports successful!")
 
 
 # In[ ]:
@@ -53,7 +107,6 @@ drive.mount('/content/drive')
 
 dumping_path = '/content/drive/My Drive/Colab Projects/Data Driven ABMs/Data Sets/ignacio_playground/root_influence/'
 # Create directory if it doesn't exist
-import os
 os.makedirs(dumping_path, exist_ok=True)
 print("Output Directory:", dumping_path)
 
@@ -141,13 +194,57 @@ ws_p_values = [0.01, 0.1]
 # BA parameters (m = edges to attach from new node)
 ba_m_values = [2, 4]
 
+# Step counts for convergence gap analysis (like root_influence_analysis.py)
+step_counts = [1000, 5000, 10000, 50000, 100000]
+
+# Uncertainty threshold for root influence hypothesis
+UNCERTAINTY = 0.001
+
+
+# ## Load Empirical Network
+
+# In[ ]:
+
+
+def load_empirical_network():
+    """
+    Load the pud_final.json empirical network.
+    """
+    import json
+    
+    network_path = 'data/empirical_networks/pud_final.json'
+    
+    print(f"Loading empirical network from: {network_path}")
+    
+    with open(network_path, 'r') as f:
+        network_data = json.load(f)
+    
+    # Handle both 'links' and 'edges' format
+    if 'links' in network_data and 'edges' not in network_data:
+        network_data['edges'] = network_data['links']
+    
+    network = nx.node_link_graph(network_data, edges="edges")
+    
+    n_agents = len(network.nodes())
+    n_edges = len(network.edges())
+    
+    # Analyze network structure
+    in_degrees = dict(network.in_degree())
+    root_nodes = [n for n, d in in_degrees.items() if d == 0]
+    
+    print(f"Network: {n_agents} nodes, {n_edges} edges")
+    print(f"Number of root nodes: {len(root_nodes)}")
+    
+    return network
+
 
 # ## Vectorized Simulation Method with Root Analysis
 
 # In[ ]:
 
 
-def run_vect_method_root_analysis(method, G_default, num_cores, n_simulations, network_name_prefix, combine_results=False, agent_type='beta'):
+def run_vect_method_root_analysis(method, G_default, num_cores, n_simulations, network_name_prefix, 
+                                   combine_results=False, agent_type='beta', number_of_steps=50000):
     """
     Runs the full parameter generation and simulation pipeline for a single method
     on a given network, WITH ROOT INFLUENCE ANALYSIS ENABLED.
@@ -160,6 +257,7 @@ def run_vect_method_root_analysis(method, G_default, num_cores, n_simulations, n
         network_name_prefix (str): Base name for the network (e.g., "er_n100_p0.05").
         combine_results (bool): If True, append to existing results. If False, overwrite.
         agent_type (str): 'beta' or 'bayes'. Default 'beta' for root analysis.
+        number_of_steps (int): Number of simulation steps.
     """
 
     # ─── Generate parameters ───
@@ -188,7 +286,7 @@ def run_vect_method_root_analysis(method, G_default, num_cores, n_simulations, n
         tstep_stopping=True,
         agent_type=agent_type,
         compute_root_analysis=True,  # ENABLE ROOT ANALYSIS
-        number_of_steps=50000  # More steps for convergence
+        number_of_steps=number_of_steps
     )
 
     simulation_results = []
@@ -197,7 +295,7 @@ def run_vect_method_root_analysis(method, G_default, num_cores, n_simulations, n
             simulation_results = list(tqdm.tqdm(
                 pool.imap_unordered(run_simulation_wrapper, param_dict),
                 total=len(param_dict),
-                desc=f"Running simulations for {method}"
+                desc=f"Running simulations for {method} ({number_of_steps} steps)"
             ))
     except Exception as e:
         print(f"Error during simulation pool for method {method}: {e}")
@@ -207,13 +305,14 @@ def run_vect_method_root_analysis(method, G_default, num_cores, n_simulations, n
             return
 
     # ─── Save results ───
-    results_path = dumping_path + f"root_analysis_{network_name_prefix}_results_{method}.csv"
+    results_path = dumping_path + f"root_analysis_{network_name_prefix}_steps{number_of_steps}_results_{method}.csv"
     
     # Filter out complex objects that can't be saved to CSV
     clean_results = []
     for r in simulation_results:
         clean_r = {k: v for k, v in r.items() 
                    if isinstance(v, (int, float, str, bool, type(None)))}
+        clean_r['number_of_steps'] = number_of_steps  # Add step count to results
         clean_results.append(clean_r)
     
     new_results_df = pd.DataFrame(clean_results)
@@ -226,7 +325,7 @@ def run_vect_method_root_analysis(method, G_default, num_cores, n_simulations, n
             combined_results_df = new_results_df
 
         combined_results_df.to_csv(results_path, index=False)
-        print(f"Total results for {method} ({network_name_prefix}): {len(combined_results_df)}")
+        print(f"Total results for {method} ({network_name_prefix}, {number_of_steps} steps): {len(combined_results_df)}")
         print(f"Saved to: {results_path}")
         
         # Show columns
@@ -238,16 +337,25 @@ def run_vect_method_root_analysis(method, G_default, num_cores, n_simulations, n
         print(f"Total results for {method} ({network_name_prefix}): {len(new_results_df)}")
     except Exception as e:
         print(f"Error saving results to {results_path}: {e}")
+    
+    return simulation_results
 
 
-# ## Main Simulation Runner
+# ## Main Simulation Runner with Step Count Variations
 
 # In[ ]:
 
 
-def root_analysis_main(combine_results=False, agent_type='beta', n_simulations=100):
+def root_analysis_main(combine_results=False, agent_type='beta', n_simulations=100, include_empirical=True):
     """
     Main function to generate networks, run simulations with root analysis, and save results.
+    Runs simulations for multiple step counts to analyze convergence gaps.
+    
+    Args:
+        combine_results: If True, append to existing results
+        agent_type: 'beta' or 'bayes'
+        n_simulations: Number of simulations per network per step count
+        include_empirical: If True, also run on pud_final.json empirical network
     """
 
     try:
@@ -258,31 +366,61 @@ def root_analysis_main(combine_results=False, agent_type='beta', n_simulations=1
 
     print(f"Number of cores: {num_cores}")
     print(f"Agent type: {agent_type}")
-    print(f"Number of simulations per network: {n_simulations}")
+    print(f"Number of simulations per network per step count: {n_simulations}")
+    print(f"Step counts to test: {step_counts}")
+    print(f"Include empirical network: {include_empirical}")
 
-    # --- Loop 1: Erdős-Rényi ---
+    # --- Part 1: Erdős-Rényi Networks ---
     for n in n_sizes:
         for p in er_p_values:
             network_name_prefix = f"er_n{n}_p{p:.2f}"
-            print(f"\n{'='*60}")
-            print(f"--- Starting ROOT ANALYSIS simulations for ER Network: {network_name_prefix} ---")
-            print(f"{'='*60}")
-
+            
             # Generate the network
             G_default = nx.erdos_renyi_graph(n, p, directed=True)
-            print(f"Network: {G_default.number_of_nodes()} nodes, {G_default.number_of_edges()} edges")
             
             # Count root nodes
             in_degrees = dict(G_default.in_degree())
             root_nodes = [node for node, deg in in_degrees.items() if deg == 0]
+            
+            print(f"\n{'='*60}")
+            print(f"--- ER Network: {network_name_prefix} ---")
+            print(f"Network: {G_default.number_of_nodes()} nodes, {G_default.number_of_edges()} edges")
             print(f"Root nodes: {len(root_nodes)}")
+            print(f"{'='*60}")
 
-            for method in methods:
-                run_vect_method_root_analysis(
-                    method, G_default, num_cores, n_simulations, 
-                    network_name_prefix, combine_results=combine_results, 
-                    agent_type=agent_type
-                )
+            # Run for each step count
+            for n_steps in step_counts:
+                print(f"\n--- Running with {n_steps} steps ---")
+                for method in methods:
+                    run_vect_method_root_analysis(
+                        method, G_default, num_cores, n_simulations, 
+                        network_name_prefix, combine_results=combine_results, 
+                        agent_type=agent_type, number_of_steps=n_steps
+                    )
+
+    # --- Part 2: Empirical Network (pud_final.json) ---
+    if include_empirical:
+        print(f"\n{'='*60}")
+        print("--- EMPIRICAL NETWORK: pud_final.json ---")
+        print(f"{'='*60}")
+        
+        try:
+            G_empirical = load_empirical_network()
+            network_name_prefix = "pud_final"
+            
+            # Run for each step count
+            for n_steps in step_counts:
+                print(f"\n--- Running empirical network with {n_steps} steps ---")
+                for method in methods:
+                    run_vect_method_root_analysis(
+                        method, G_empirical, num_cores, n_simulations, 
+                        network_name_prefix, combine_results=combine_results, 
+                        agent_type=agent_type, number_of_steps=n_steps
+                    )
+        except Exception as e:
+            print(f"Error loading empirical network: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 # # Root Influence Plotting Functions
@@ -409,15 +547,97 @@ def root_analysis_summary_plot(df, title_prefix=""):
     plt.show()
 
 
+# ## Convergence Gap Analysis Plot
+
+# In[ ]:
+
+
+def convergence_gap_analysis(network_name_prefix):
+    """
+    Analyzes how the gap between predicted and actual outcomes shrinks with more simulation steps.
+    Similar to root_influence_analysis.py's convergence gap analysis.
+    """
+    method = methods[0] if methods else 'randomization'
+    
+    gap_results = []
+    
+    for n_steps in step_counts:
+        results_path = dumping_path + f"root_analysis_{network_name_prefix}_steps{n_steps}_results_{method}.csv"
+        
+        try:
+            df = pd.read_csv(results_path)
+            
+            if 'proportion_reached_by_truth' not in df.columns:
+                continue
+                
+            predicted = df['proportion_reached_by_truth'].mean()
+            actual = df['share_of_correct_agents_at_convergence'].mean()
+            gap = actual - predicted
+            
+            gap_results.append({
+                'steps': n_steps,
+                'predicted': predicted,
+                'actual': actual,
+                'gap': gap,
+                'abs_gap': abs(gap)
+            })
+            
+            print(f"Steps: {n_steps:7d} | Predicted: {predicted:.4f} | Actual: {actual:.4f} | Gap: {gap:+.4f}")
+            
+        except FileNotFoundError:
+            print(f"File not found for {n_steps} steps, skipping")
+        except Exception as e:
+            print(f"Error loading {results_path}: {e}")
+    
+    if not gap_results:
+        print("No results to plot.")
+        return
+    
+    # Create convergence gap plot
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    # Plot 1: Gap vs Steps (log scale)
+    ax = axes[0]
+    steps = [r['steps'] for r in gap_results]
+    gaps = [r['abs_gap'] for r in gap_results]
+    ax.plot(steps, gaps, 'o-', linewidth=2, markersize=8)
+    ax.axhline(UNCERTAINTY, color='red', linestyle='--', label=f'ε = {UNCERTAINTY}')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('Number of Steps', fontsize=11)
+    ax.set_ylabel('|Gap| = |Actual - Predicted|', fontsize=11)
+    ax.set_title(f'{network_name_prefix}: Convergence Gap vs Steps', fontsize=12)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    # Plot 2: Predicted vs Actual over steps
+    ax = axes[1]
+    predicted_vals = [r['predicted'] for r in gap_results]
+    actual_vals = [r['actual'] for r in gap_results]
+    ax.plot(steps, predicted_vals, 'o-', label='Predicted (root influence)', linewidth=2)
+    ax.plot(steps, actual_vals, 's-', label='Actual (share believing truth)', linewidth=2)
+    ax.set_xscale('log')
+    ax.set_xlabel('Number of Steps', fontsize=11)
+    ax.set_ylabel('Proportion', fontsize=11)
+    ax.set_title(f'{network_name_prefix}: Predicted vs Actual Over Time', fontsize=12)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    return gap_results
+
+
 # ## Main Plotting Function
 
 # In[ ]:
 
 
-def run_root_plotting():
+def run_root_plotting(include_empirical=True):
     """
-    Loops through all network parameters and methods, loading results
-    and generating root influence analysis plots.
+    Loops through all network parameters, step counts, and methods, 
+    loading results and generating root influence analysis plots.
     """
     print("\n--- Starting Root Influence Plotting Phase ---")
 
@@ -426,39 +646,47 @@ def run_root_plotting():
         return
 
     method = methods[0]
-
-    # --- Plot Loop 1: Erdős-Rényi ---
+    
+    all_networks = []
+    
+    # Collect ER networks
     for n in n_sizes:
         for p in er_p_values:
-            network_name_prefix = f"er_n{n}_p{p:.2f}"
-            results_path = dumping_path + f"root_analysis_{network_name_prefix}_results_{method}.csv"
+            all_networks.append(f"er_n{n}_p{p:.2f}")
+    
+    # Add empirical network
+    if include_empirical:
+        all_networks.append("pud_final")
+
+    # --- Process each network ---
+    for network_name_prefix in all_networks:
+        print(f"\n{'='*60}")
+        print(f"NETWORK: {network_name_prefix}")
+        print(f"{'='*60}")
+        
+        # 1. Convergence Gap Analysis (across step counts)
+        print("\n--- Convergence Gap Analysis ---")
+        gap_results = convergence_gap_analysis(network_name_prefix)
+        
+        # 2. Detailed plots for each step count
+        for n_steps in step_counts:
+            results_path = dumping_path + f"root_analysis_{network_name_prefix}_steps{n_steps}_results_{method}.csv"
 
             try:
-                print(f"\n{'='*60}")
-                print(f"Loading results for: {network_name_prefix} ({method})")
-                print(f"{'='*60}")
+                print(f"\n--- {network_name_prefix} @ {n_steps} steps ---")
                 
-                combined_results_df = pd.read_csv(results_path)
-                print(f"Loaded {len(combined_results_df)} results from path: {results_path}.")
-                print(f"Columns: {list(combined_results_df.columns)}")
-                
-                # Standard plots
-                scatter_plot(combined_results_df)
-                scatter_plot(combined_results_df, target_variable="convergence_step")
+                df = pd.read_csv(results_path)
+                print(f"Loaded {len(df)} results")
                 
                 # Root influence specific plots
-                root_influence_scatter(combined_results_df, title_prefix=f"{network_name_prefix}: ")
-                root_analysis_summary_plot(combined_results_df, title_prefix=f"{network_name_prefix}: ")
+                root_influence_scatter(df, title_prefix=f"{network_name_prefix} ({n_steps} steps): ")
                 
-                print('\n')
             except FileNotFoundError:
-                print(f"File not found, skipping: {results_path}\n")
+                print(f"File not found, skipping: {results_path}")
             except Exception as e:
-                print(f"Error plotting {results_path}: {e}\n")
-                import traceback
-                traceback.print_exc()
+                print(f"Error plotting {results_path}: {e}")
 
-    print("--- Plotting Phase Complete ---")
+    print("\n--- Plotting Phase Complete ---")
 
 
 # # Run Simulations
@@ -472,7 +700,8 @@ if __name__ == '__main__':
     root_analysis_main(
         combine_results=False,
         agent_type='beta',  # Use Beta agents for root analysis
-        n_simulations=500   # Adjust as needed
+        n_simulations=100,  # Simulations per network per step count
+        include_empirical=True  # Include pud_final.json empirical network
     )
 
 
@@ -481,7 +710,7 @@ if __name__ == '__main__':
 # In[ ]:
 
 
-run_root_plotting()
+run_root_plotting(include_empirical=True)
 
 
 # # Disconnect from Runtime
