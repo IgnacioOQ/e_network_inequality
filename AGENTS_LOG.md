@@ -217,3 +217,16 @@ When submitting changes, please use the following structure:
         *   `notebooks/convergence_studies.py`: PASSED (conclusion: 0.69)
         *   `notebooks/root_influence_analysis.py`: PASSED (runs correctly)
     *   **Documentation:** Updated `HOUSEKEEPING.md` with latest report.
+
+### [2026-01-17 15:25] - Root Influence Analysis Notebook (Antigravity)
+*   **Task:** Create Colab notebook for parallel root influence analysis simulations.
+*   **Actions:**
+    *   **Created** `notebooks/Colab_Root_Influence_Analysis.ipynb`: New notebook adapted from `Colab_Ignacio_Convergence_Study.ipynb`.
+    *   **Key Changes:**
+        *   Enabled `compute_root_analysis=True` in vectorized simulation calls.
+        *   Added `run_vect_method_root_analysis()` function with root analysis enabled.
+        *   Added `root_influence_scatter()` plotting function for predicted vs actual outcomes.
+        *   Added `root_analysis_summary_plot()` for comprehensive visualization.
+        *   Uses `agent_type='beta'` for root analysis (required for convergence behavior).
+        *   Outputs CSV files with additional columns: `n_roots`, `weighted_truth_share`, `unweighted_truth_share`, `proportion_reached_by_truth`.
+    *   **Also created** `notebooks/Colab_Root_Influence_Analysis.py` (Python script version).
