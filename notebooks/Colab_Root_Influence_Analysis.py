@@ -184,11 +184,13 @@ dumping_path = '/content/drive/My Drive/Colab Projects/Data Driven ABMs/Data Set
 # Number of simulations per network TYPE (not per configuration)
 N_SIMULATIONS_PER_TYPE = 100
 
-# Maximum steps (simulations stop when epsilon threshold reached or max steps)
-MAX_STEPS = 5000000  # 5 million steps
+# Maximum steps (fallback if AUC threshold not reached)
+MAX_STEPS = 2000000  # 2 million steps max
 
-# Epsilon threshold for convergence (1% error tolerance)
-EPSILON = 0.01
+# AUC-based stopping parameters
+AUC_STOPPING = True
+AUC_THRESHOLD = 0.95  # Stop when node-level AUC-ROC >= 0.95
+AUC_CHECK_INTERVAL = 500  # Check AUC every 500 steps
 
 # Representative network sizes
 n_sizes = [50, 100, 200]
@@ -209,7 +211,9 @@ methods = ['randomization']
 print("Parameters configured:")
 print(f"  Simulations per network type: {N_SIMULATIONS_PER_TYPE}")
 print(f"  Max steps: {MAX_STEPS:,}")
-print(f"  Epsilon threshold: {EPSILON} (1% error tolerance)")
+print(f"  AUC-based stopping: {AUC_STOPPING}")
+print(f"  AUC threshold: {AUC_THRESHOLD} (stop when AUC >= {AUC_THRESHOLD})")
+print(f"  AUC check interval: every {AUC_CHECK_INTERVAL} steps")
 print(f"  Network sizes: {n_sizes}")
 
 
@@ -366,14 +370,17 @@ def run_simulations_to_convergence(G, network_name, network_type, n_simulations,
         # For non-randomized, generate params serially (same network)
         param_list = [generate_simple_params(G) for _ in range(n_simulations)]
     
-    # Run simulations with tstep_stopping=True (stops at convergence)
+    # Run simulations with AUC-based stopping
     run_sim = partial(
         run_vectorized_simulation_with_params,
-        tolerance=EPSILON,
-        tstep_stopping=True,
+        tolerance=0.01,  # Fallback tolerance
+        tstep_stopping=False,  # Disable tstep stopping
         agent_type=agent_type,
         compute_root_analysis=True,
-        number_of_steps=MAX_STEPS
+        number_of_steps=MAX_STEPS,
+        auc_stopping=AUC_STOPPING,
+        auc_threshold=AUC_THRESHOLD,
+        auc_check_interval=AUC_CHECK_INTERVAL
     )
     
     results = []
@@ -443,7 +450,8 @@ def root_analysis_main(n_simulations=100, agent_type='beta'):
     print(f"Cores: {num_cores}")
     print(f"Simulations per type: {n_simulations}")
     print(f"Agent type: {agent_type}")
-    print(f"Epsilon: {EPSILON} (1% error tolerance)")
+    print(f"AUC threshold: {AUC_THRESHOLD} (stop when AUC >= {AUC_THRESHOLD})")
+    print(f"AUC check interval: every {AUC_CHECK_INTERVAL} steps")
     print(f"Max steps: {MAX_STEPS:,}")
     
     all_results = []

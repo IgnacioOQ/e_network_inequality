@@ -323,8 +323,20 @@ class VectorizedModel:
                 self.credences_history[i].append(self.credences[i])
 
     def run_simulation(
-        self, number_of_steps: int = 10**6, show_bar: bool = False, *args, **kwargs
+        self, number_of_steps: int = 10**6, show_bar: bool = False,
+        auc_stopping: bool = False, auc_threshold: float = 0.95, 
+        auc_check_interval: int = 500, *args, **kwargs
     ):
+        """
+        Run the simulation.
+        
+        Args:
+            number_of_steps: Maximum number of steps to run
+            show_bar: Whether to show progress bar
+            auc_stopping: If True, stop when node-level AUC-ROC >= auc_threshold
+            auc_threshold: AUC-ROC threshold for stopping (default 0.95)
+            auc_check_interval: How often to check AUC (default every 500 steps)
+        """
         # Copy logic from Model.run_simulation but using vectorized state
 
         def stop_condition(credences_prior):
@@ -379,6 +391,56 @@ class VectorizedModel:
                 counts = np.sum(core_credences > 0.99)
                 return counts / len(core_credences)
 
+        def compute_current_auc():
+            """
+            Compute current node-level AUC-ROC for stopping check.
+            Falls back to node_accuracy if AUC is unavailable.
+            Returns tuple: (auc_or_accuracy, is_auc)
+            """
+            # Get root nodes and their descendants (cached info)
+            degrees = np.sum(self.adj_matrix, axis=0)
+            root_mask = degrees == 0
+            root_indices = np.where(root_mask)[0]
+            
+            if len(root_indices) == 0:
+                return None, False
+            
+            # Get which roots believe truth
+            if self.agent_type == "beta":
+                root_believes_truth = self.credences[root_indices, 1] > self.credences[root_indices, 0]
+            else:
+                root_believes_truth = self.credences[root_indices] > 0.5
+            
+            # Compute node predictions based on reachability from truthful roots
+            node_predictions = np.zeros(self.n_agents)
+            root_node_ids = [self.nodes[i] for i in root_indices]
+            
+            for i, (node_id, believes_truth) in enumerate(zip(root_node_ids, root_believes_truth)):
+                if believes_truth:
+                    desc_set = nx.descendants(self.network, node_id)
+                    desc_set.add(node_id)
+                    for n in desc_set:
+                        if n in self.id_to_index_map:
+                            node_predictions[self.id_to_index_map[n]] = 1.0
+            
+            # Get actual outcomes
+            if self.agent_type == "beta":
+                node_actuals = (self.credences[:, 1] > self.credences[:, 0]).astype(float)
+            else:
+                node_actuals = (self.credences > 0.5).astype(float)
+            
+            # Try to compute AUC-ROC first
+            try:
+                from sklearn.metrics import roc_auc_score
+                if len(np.unique(node_actuals)) > 1 and len(np.unique(node_predictions)) > 1:
+                    return roc_auc_score(node_actuals, node_predictions), True
+            except Exception:
+                pass
+            
+            # Fallback to node_accuracy if AUC not computable
+            node_accuracy = np.mean(node_predictions == node_actuals)
+            return node_accuracy, False
+
         iterable = range(number_of_steps)
         if show_bar:
             iterable = tqdm.tqdm(iterable)
@@ -389,8 +451,11 @@ class VectorizedModel:
         # Track per-step belief change if computing convergence
         if self.compute_convergence and self.agent_type == "beta":
             self.belief_change_history = []
+        
+        # Track AUC stopping
+        auc_stopped = False
 
-        for _ in iterable:
+        for step_num in iterable:
             credences_prior = self.credences.copy()
             if self.agent_type == "beta" and self.compute_convergence:
                 alphas_betas_prior = self.alphas_betas.copy()
@@ -415,11 +480,20 @@ class VectorizedModel:
                     np.mean(abs_change[:, 1])   # Theory 1
                 ))
 
-            if self.tstep_stopping:
-                continue
+            # AUC-based stopping (check every auc_check_interval steps)
+            if auc_stopping and (step_num + 1) % auc_check_interval == 0:
+                result = compute_current_auc()
+                if result[0] is not None and result[0] >= auc_threshold:
+                    auc_stopped = True
+                    break
 
-            if stop_condition(credences_prior):
-                break
+            # Only use old stopping condition if not using AUC stopping
+            if auc_stopping:
+                continue  # Keep running until AUC threshold or max steps
+            elif self.tstep_stopping:
+                continue  # tstep mode: run for fixed number of steps
+            elif stop_condition(credences_prior):
+                break  # Old convergence-based stopping
         
         # Store final prior for convergence analysis
         if self.compute_convergence:
