@@ -521,6 +521,7 @@ class VectorizedModel:
         - Whether they believe the truth
         - Their descendant sets and counts
         - Weighted truth share (root beliefs weighted by descendant count)
+        - Node-level predictions and accuracy (AUC-ROC)
         """
         # Identify root nodes (in_degree == 0)
         degrees = np.sum(self.adj_matrix, axis=0)  # In-degree
@@ -538,6 +539,10 @@ class VectorizedModel:
                 'descendants': [],
                 'weighted_truth_share': None,
                 'unweighted_truth_share': None,
+                'node_predictions': np.array([]),
+                'node_actuals': np.array([]),
+                'node_accuracy': None,
+                'node_auc_roc': None,
             }
             return
         
@@ -571,6 +576,39 @@ class VectorizedModel:
         weighted_truth_share = np.sum(weights * root_believes_truth.astype(float))
         unweighted_truth_share = np.mean(root_believes_truth.astype(float))
         
+        # ─── NODE-LEVEL PREDICTIONS ───
+        # Prediction: A node will believe truth if it's reachable from ANY truthful root
+        node_predictions = np.zeros(self.n_agents)
+        
+        for i, (root_idx, believes_truth) in enumerate(zip(root_indices, root_believes_truth)):
+            if believes_truth:
+                # Mark all descendants of this truthful root as predicted to believe truth
+                for desc_idx in descendants[i]:
+                    node_predictions[desc_idx] = 1.0
+        
+        # Get actual outcomes (which nodes actually believe truth)
+        if self.agent_type == "beta":
+            node_actuals = (self.credences[:, 1] > self.credences[:, 0]).astype(float)
+        else:  # bayes
+            node_actuals = (self.credences > 0.5).astype(float)
+        
+        # Compute accuracy metrics
+        node_accuracy = np.mean(node_predictions == node_actuals)
+        
+        # Compute AUC-ROC (handle edge case where all predictions are same class)
+        node_auc_roc = None
+        try:
+            from sklearn.metrics import roc_auc_score
+            # AUC-ROC requires both classes in y_true
+            if len(np.unique(node_actuals)) > 1 and len(np.unique(node_predictions)) > 1:
+                node_auc_roc = roc_auc_score(node_actuals, node_predictions)
+            elif len(np.unique(node_actuals)) > 1:
+                # Predictions all same, but actuals vary - still informative
+                node_auc_roc = roc_auc_score(node_actuals, node_predictions)
+        except Exception:
+            # sklearn not available or other error
+            node_auc_roc = None
+        
         self.root_analysis = {
             'n_roots': len(root_indices),
             'root_indices': root_indices,
@@ -581,4 +619,10 @@ class VectorizedModel:
             'descendants': descendants,
             'weighted_truth_share': weighted_truth_share,
             'unweighted_truth_share': unweighted_truth_share,
+            # Node-level prediction metrics
+            'node_predictions': node_predictions,
+            'node_actuals': node_actuals,
+            'node_accuracy': node_accuracy,
+            'node_auc_roc': node_auc_roc,
         }
+

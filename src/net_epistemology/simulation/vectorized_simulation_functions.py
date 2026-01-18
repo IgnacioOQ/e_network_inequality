@@ -72,6 +72,9 @@ def run_vectorized_simulation_with_params(
         result_dict["n_roots"] = ra["n_roots"]
         result_dict["weighted_truth_share"] = ra["weighted_truth_share"]
         result_dict["unweighted_truth_share"] = ra["unweighted_truth_share"]
+        # Node-level accuracy metrics
+        result_dict["node_accuracy"] = ra.get("node_accuracy")
+        result_dict["node_auc_roc"] = ra.get("node_auc_roc")
         # Store full root analysis dict for detailed analysis
         result_dict["root_analysis"] = ra
 
