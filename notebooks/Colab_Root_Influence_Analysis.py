@@ -182,7 +182,7 @@ def generate_parameters_here(_,G,method='randomization'):
 dumping_path = '/content/drive/My Drive/Colab Projects/Data Driven ABMs/Data Sets/ignacio_playground/root_influence/'
 
 # Number of simulations per network TYPE (not per configuration)
-N_SIMULATIONS_PER_TYPE = 100
+N_SIMULATIONS_PER_TYPE = 50
 
 # Maximum steps (fallback if AUC threshold not reached)
 MAX_STEPS = 2000000  # 2 million steps max
@@ -408,18 +408,47 @@ def run_simulations_to_convergence(G, network_name, network_type, n_simulations,
     df.to_csv(results_path, index=False)
     
     # Print summary
-    print(f"\n--- Results Summary ---")
+    print(f"\n--- Results Summary for {network_name} ---")
     print(f"Saved: {results_path}")
     print(f"Simulations: {len(df)}")
+    
+    # Convergence statistics
     if 'convergence_step' in df.columns:
-        print(f"Avg convergence steps: {df['convergence_step'].mean():.0f}")
+        avg_steps = df['convergence_step'].mean()
+        min_steps = df['convergence_step'].min()
+        max_steps = df['convergence_step'].max()
+        non_converged = (df['convergence_step'] >= MAX_STEPS).sum()
+        print(f"\n📊 Convergence:")
+        print(f"   Avg steps: {avg_steps:,.0f}")
+        print(f"   Range: {min_steps:,.0f} - {max_steps:,.0f}")
+        if non_converged > 0:
+            print(f"   ⚠️  Non-converged (hit {MAX_STEPS:,} max): {non_converged}/{len(df)} ({100*non_converged/len(df):.1f}%)")
+        else:
+            print(f"   ✅ All simulations converged")
+    
+    # Proportion-based accuracy (predicted vs actual share)
     if 'proportion_reached_by_truth' in df.columns and 'share_of_correct_agents_at_convergence' in df.columns:
         predicted = df['proportion_reached_by_truth'].mean()
         actual = df['share_of_correct_agents_at_convergence'].mean()
         gap = actual - predicted
-        print(f"Predicted (root influence): {predicted:.4f}")
-        print(f"Actual (share believing truth): {actual:.4f}")
-        print(f"Gap: {gap:+.4f}")
+        print(f"\n📈 Proportion Accuracy:")
+        print(f"   Predicted (root influence): {predicted:.4f}")
+        print(f"   Actual (share believing truth): {actual:.4f}")
+        print(f"   Gap: {gap:+.4f}")
+    
+    # Node-level accuracy metrics
+    if 'node_accuracy' in df.columns:
+        node_acc_valid = df['node_accuracy'].dropna()
+        if len(node_acc_valid) > 0:
+            print(f"\n🎯 Node-Level Accuracy:")
+            print(f"   Mean node accuracy: {node_acc_valid.mean():.4f}")
+    
+    if 'node_auc_roc' in df.columns:
+        auc_valid = df['node_auc_roc'].dropna()
+        if len(auc_valid) > 0:
+            print(f"   Mean AUC-ROC: {auc_valid.mean():.4f} (n={len(auc_valid)})")
+        else:
+            print(f"   AUC-ROC: N/A (predictions all same class)")
     
     return df
 
@@ -713,6 +742,81 @@ def plot_node_accuracy(df):
             print("No valid AUC-ROC values (predictions may all be same class)")
 
 
+def plot_auc_roc(df):
+    """Plot AUC-ROC distribution by network type."""
+    if 'node_auc_roc' not in df.columns:
+        print("'node_auc_roc' column not found.")
+        return
+    
+    # Filter out None/NaN values
+    df_valid = df[df['node_auc_roc'].notna()]
+    if len(df_valid) == 0:
+        print("No valid AUC-ROC values to plot (predictions may all be same class).")
+        return
+    
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    
+    # Plot 1: AUC-ROC histogram by network type
+    ax = axes[0]
+    network_types = df_valid['network_type'].unique() if 'network_type' in df_valid.columns else ['all']
+    for ntype in network_types:
+        if 'network_type' in df_valid.columns:
+            subset = df_valid[df_valid['network_type'] == ntype]
+        else:
+            subset = df_valid
+        if len(subset) > 0:
+            ax.hist(subset['node_auc_roc'], bins=20, alpha=0.6, label=f'{ntype.upper()} (n={len(subset)})')
+    
+    ax.axvline(0.95, color='red', linestyle='--', linewidth=2, label='Threshold (0.95)')
+    ax.set_xlabel('AUC-ROC Score', fontsize=11)
+    ax.set_ylabel('Frequency', fontsize=11)
+    ax.set_title(f'AUC-ROC Distribution (mean={df_valid["node_auc_roc"].mean():.4f})', fontsize=12)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    # Plot 2: AUC-ROC box plot by network type
+    ax = axes[1]
+    if 'network_type' in df_valid.columns and len(network_types) > 1:
+        data_by_type = [df_valid[df_valid['network_type'] == nt]['node_auc_roc'].dropna() 
+                        for nt in network_types if len(df_valid[df_valid['network_type'] == nt]) > 0]
+        valid_types = [nt.upper() for nt in network_types if len(df_valid[df_valid['network_type'] == nt]) > 0]
+        if data_by_type:
+            ax.boxplot(data_by_type, labels=valid_types)
+            ax.axhline(0.95, color='red', linestyle='--', linewidth=1.5, label='Threshold')
+            ax.set_xlabel('Network Type', fontsize=11)
+            ax.set_ylabel('AUC-ROC', fontsize=11)
+            ax.set_title('AUC-ROC by Network Type', fontsize=12)
+    ax.grid(True, alpha=0.3)
+    
+    # Plot 3: AUC-ROC vs Node Accuracy scatter
+    ax = axes[2]
+    if 'node_accuracy' in df_valid.columns:
+        for ntype in network_types:
+            if 'network_type' in df_valid.columns:
+                subset = df_valid[df_valid['network_type'] == ntype]
+            else:
+                subset = df_valid
+            if len(subset) > 0:
+                ax.scatter(subset['node_accuracy'], subset['node_auc_roc'], alpha=0.5, label=f'{ntype.upper()}')
+        
+        ax.plot([0, 1], [0, 1], 'k--', alpha=0.3)
+        ax.axhline(0.95, color='red', linestyle='--', linewidth=1.5, alpha=0.7)
+        ax.set_xlabel('Node Accuracy', fontsize=11)
+        ax.set_ylabel('AUC-ROC', fontsize=11)
+        ax.set_title('AUC-ROC vs Node Accuracy', fontsize=12)
+        ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Print summary
+    print(f"\n--- AUC-ROC Summary ---")
+    print(f"Valid AUC-ROC values: {len(df_valid)}/{len(df)} ({100*len(df_valid)/len(df):.1f}%)")
+    print(f"Mean AUC-ROC: {df_valid['node_auc_roc'].mean():.4f}")
+    print(f"Simulations with AUC >= 0.95: {(df_valid['node_auc_roc'] >= 0.95).sum()}/{len(df_valid)}")
+
+
 # ## Main Plotting Function
 
 # In[ ]:
@@ -741,9 +845,13 @@ def run_root_plotting():
         print("\n--- Convergence Steps ---")
         plot_convergence_steps(df)
         
-        # 4. Node-level accuracy (NEW)
+        # 4. Node-level accuracy
         print("\n--- Node-Level Accuracy ---")
         plot_node_accuracy(df)
+        
+        # 5. AUC-ROC plots (NEW)
+        print("\n--- AUC-ROC Analysis ---")
+        plot_auc_roc(df)
         
         # 5. Summary statistics (updated)
         print("\n--- Summary Statistics ---")
