@@ -17,6 +17,9 @@ def run_vectorized_simulation_with_params(
     agent_type="bayes",
     compute_convergence=False,
     compute_root_analysis=False,
+    auc_stopping=False,
+    auc_threshold=0.95,
+    auc_check_interval=500,
 ):
     process_seed = int.from_bytes(os.urandom(4), byteorder="little")
     rd.seed(process_seed)
@@ -41,7 +44,13 @@ def run_vectorized_simulation_with_params(
         compute_root_analysis=compute_root_analysis,
     )
 
-    my_model.run_simulation(number_of_steps=number_of_steps, show_bar=show_bar)
+    my_model.run_simulation(
+        number_of_steps=number_of_steps, 
+        show_bar=show_bar,
+        auc_stopping=auc_stopping,
+        auc_threshold=auc_threshold,
+        auc_check_interval=auc_check_interval
+    )
 
     result_dict = {
         key: value
