@@ -230,3 +230,16 @@ When submitting changes, please use the following structure:
         *   Uses `agent_type='beta'` for root analysis (required for convergence behavior).
         *   Outputs CSV files with additional columns: `n_roots`, `weighted_truth_share`, `unweighted_truth_share`, `proportion_reached_by_truth`.
     *   **Also created** `notebooks/Colab_Root_Influence_Analysis.py` (Python script version).
+
+### [2026-01-18] - Housekeeping and Verification (Jules)
+*   **Task:** Execute housekeeping protocol, verify dependencies, run tests, and fix script regressions.
+*   **Actions:**
+    *   **Dependency Verification:** Verified imports in `imports.py`, `agents.py`, `model.py`, and `simulation_functions.py` against `HOUSEKEEPING.md` graph.
+    *   **Unit Tests:** Ran `tests/unit_tests.py` (8/8 PASSED) and `tests/test_vectorization.py` (4/4 PASSED).
+    *   **Script Fixes:**
+        *   Modified `tests/basic_model_testing_script.py` to fix `NameError` (uncommented `df_bayes`), set `histories=True` for Bayes agent, replaced deprecated `applymap` with `map`, and added headless matplotlib backend.
+    *   **Verification:**
+        *   `tests/basic_model_testing_script.py`: PASSED (after fixes).
+        *   `notebooks/convergence_studies.py`: PASSED.
+        *   `notebooks/root_influence_analysis.py`: PASSED (verified with reduced steps).
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with 2026-01-18 report and added `basic_model_testing_script.py` to dependency network.

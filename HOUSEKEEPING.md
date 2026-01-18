@@ -27,18 +27,20 @@
 - **Testing**:
     - `tests/unit_tests.py`: Depends on `imports`, `core.agents`.
     - `tests/test_vectorization.py`: Depends on `core.model`, `core.vectorized_model`.
+    - `tests/basic_model_testing_script.py`: Depends on `imports`, `core.agents`, `core.model`.
 
 ## Latest Report
 
-**Execution Date:** 2026-01-17 (15:00)
+**Execution Date:** 2026-01-18
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
 *   **Script Verification:**
-    *   `notebooks/convergence_studies.py`: PASSED (conclusion: 0.69)
-    *   `notebooks/root_influence_analysis.py`: PASSED (runs correctly, terminated early for housekeeping)
+    *   `tests/basic_model_testing_script.py`: PASSED (Fixed `df_bayes` instantiation and deprecated `applymap` usage)
+    *   `notebooks/convergence_studies.py`: PASSED
+    *   `notebooks/root_influence_analysis.py`: PASSED (verified with reduced steps)
 
 **Summary:**
-All core tests pass successfully. Both standalone Python scripts (`convergence_studies.py` and `root_influence_analysis.py`) run without errors and produce expected output.
+All core tests pass successfully. `tests/basic_model_testing_script.py` was updated to fix a broken DataFrame definition and remove deprecated Pandas methods. `notebooks/root_influence_analysis.py` runs correctly but takes a long time for the full analysis; verified with a shortened run.
