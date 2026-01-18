@@ -54,8 +54,8 @@ get_ipython().system('git clone -b ai-agents-branch https://github.com/IgnacioOQ
 # In[ ]:
 
 
-# Install required packages
-get_ipython().system('pip install dill tqdm networkx pandas numpy scipy matplotlib seaborn')
+# Install required packages (including sklearn for AUC-ROC)
+get_ipython().system('pip install dill tqdm networkx pandas numpy scipy matplotlib seaborn scikit-learn')
 
 
 # In[ ]:
@@ -642,9 +642,67 @@ def plot_convergence_steps(df):
     ax.set_title('Steps to Convergence by Network Type', fontsize=12)
     ax.legend()
     ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_node_accuracy(df):
+    """Plot node-level accuracy metrics by network type."""
+    if 'node_accuracy' not in df.columns:
+        print("'node_accuracy' column not found.")
+        return
+    
+    # Filter out None values
+    df_valid = df[df['node_accuracy'].notna()]
+    if len(df_valid) == 0:
+        print("No valid node_accuracy values to plot.")
+        return
+    
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    # Plot 1: Node accuracy distribution
+    ax = axes[0]
+    network_types = df_valid['network_type'].unique() if 'network_type' in df_valid.columns else ['all']
+    for ntype in network_types:
+        if 'network_type' in df_valid.columns:
+            subset = df_valid[df_valid['network_type'] == ntype]
+        else:
+            subset = df_valid
+        ax.hist(subset['node_accuracy'], bins=20, alpha=0.6, label=f'{ntype.upper()}')
+    
+    ax.set_xlabel('Node-Level Accuracy', fontsize=11)
+    ax.set_ylabel('Frequency', fontsize=11)
+    ax.set_title(f'Node-Level Prediction Accuracy (mean={df_valid["node_accuracy"].mean():.4f})', fontsize=12)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    # Plot 2: Node accuracy by network type (box plot)
+    ax = axes[1]
+    if 'network_type' in df_valid.columns and len(network_types) > 1:
+        data_by_type = [df_valid[df_valid['network_type'] == nt]['node_accuracy'].dropna() for nt in network_types]
+        ax.boxplot(data_by_type, labels=[nt.upper() for nt in network_types])
+        ax.set_xlabel('Network Type', fontsize=11)
+        ax.set_ylabel('Node Accuracy', fontsize=11)
+        ax.set_title('Node Accuracy by Network Type', fontsize=12)
+    else:
+        ax.hist(df_valid['node_accuracy'], bins=30, edgecolor='black')
+        ax.set_xlabel('Node Accuracy', fontsize=11)
+        ax.set_ylabel('Frequency', fontsize=11)
+        ax.set_title('Node Accuracy Distribution', fontsize=12)
+    ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.show()
+    
+    # Print summary
+    print(f"\n--- Node-Level Accuracy Summary ---")
+    print(f"Mean node accuracy: {df_valid['node_accuracy'].mean():.4f}")
+    if 'node_auc_roc' in df_valid.columns:
+        auc_valid = df_valid['node_auc_roc'].dropna()
+        if len(auc_valid) > 0:
+            print(f"Mean AUC-ROC: {auc_valid.mean():.4f} (n={len(auc_valid)})")
+        else:
+            print("No valid AUC-ROC values (predictions may all be same class)")
 
 
 # ## Main Plotting Function
@@ -675,14 +733,24 @@ def run_root_plotting():
         print("\n--- Convergence Steps ---")
         plot_convergence_steps(df)
         
-        # 4. Summary statistics
+        # 4. Node-level accuracy (NEW)
+        print("\n--- Node-Level Accuracy ---")
+        plot_node_accuracy(df)
+        
+        # 5. Summary statistics (updated)
         print("\n--- Summary Statistics ---")
         if 'network_type' in df.columns:
-            summary = df.groupby('network_type').agg({
+            agg_dict = {
                 'proportion_reached_by_truth': 'mean',
                 'share_of_correct_agents_at_convergence': 'mean',
-                'convergence_step': 'mean' if 'convergence_step' in df.columns else 'count'
-            }).round(4)
+                'convergence_step': 'mean',
+            }
+            if 'node_accuracy' in df.columns:
+                agg_dict['node_accuracy'] = 'mean'
+            if 'node_auc_roc' in df.columns:
+                agg_dict['node_auc_roc'] = lambda x: x.dropna().mean() if len(x.dropna()) > 0 else None
+            
+            summary = df.groupby('network_type').agg(agg_dict).round(4)
             print(summary)
         
     except FileNotFoundError:
