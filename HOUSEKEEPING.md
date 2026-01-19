@@ -30,15 +30,16 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-17 (15:00)
+**Execution Date:** 2026-01-18
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
-*   **Script Verification:**
-    *   `notebooks/convergence_studies.py`: PASSED (conclusion: 0.69)
-    *   `notebooks/root_influence_analysis.py`: PASSED (runs correctly, terminated early for housekeeping)
+*   **Script Verification (Smoke Tests):**
+    *   `notebooks/basic_model_testing.py` (derived from notebook): PASSED.
+    *   `notebooks/vectorized_basic_model_testing.py` (derived from notebook): PASSED.
+    *   `notebooks/run_simulations_test.py` (derived from notebook): PASSED (with modifications for headless environment and reduced parameters).
 
 **Summary:**
-All core tests pass successfully. Both standalone Python scripts (`convergence_studies.py` and `root_influence_analysis.py`) run without errors and produce expected output.
+All core tests pass successfully. The notebook verification scripts run without errors when adapted for the headless environment (reduced steps/simulations, headless matplotlib, fixed paths). The `run_simulations_test.py` script was modified to use `run_simulation_with_params` instead of the missing wrapper and to handle the missing `perc_pruned_lcc.pkl` file (used `perceptron_final.pkl` instead).

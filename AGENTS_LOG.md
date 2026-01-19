@@ -230,3 +230,16 @@ When submitting changes, please use the following structure:
         *   Uses `agent_type='beta'` for root analysis (required for convergence behavior).
         *   Outputs CSV files with additional columns: `n_roots`, `weighted_truth_share`, `unweighted_truth_share`, `proportion_reached_by_truth`.
     *   **Also created** `notebooks/Colab_Root_Influence_Analysis.py` (Python script version).
+
+### [2026-01-18 15:30] - Housekeeping Protocol (Jules)
+*   **Task:** Execute housekeeping protocol, map dependencies, and verify system stability.
+*   **Actions:**
+    *   **Package Installation:** Reinstalled dependencies and package in editable mode.
+    *   **Unit Tests:** Ran `tests/unit_tests.py` (PASSED).
+    *   **Vectorization Tests:** Ran `tests/test_vectorization.py` (PASSED).
+    *   **Script Verification (Smoke Tests):**
+        *   Converted notebooks to Python scripts and executed them in headless mode.
+        *   `basic_model_testing.py`: PASSED.
+        *   `vectorized_basic_model_testing.py`: PASSED.
+        *   `run_simulations_test.py`: PASSED (modified to use `run_simulation_with_params`, reduced parameters, and point to `perceptron_final.pkl` for empirical test).
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with full report.
