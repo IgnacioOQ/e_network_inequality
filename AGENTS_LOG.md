@@ -230,3 +230,13 @@ When submitting changes, please use the following structure:
         *   Uses `agent_type='beta'` for root analysis (required for convergence behavior).
         *   Outputs CSV files with additional columns: `n_roots`, `weighted_truth_share`, `unweighted_truth_share`, `proportion_reached_by_truth`.
     *   **Also created** `notebooks/Colab_Root_Influence_Analysis.py` (Python script version).
+
+### [2026-01-19] - Housekeeping Protocol and Smoke Tests (Jules)
+*   **Task:** Execute housekeeping protocol, map dependencies, and verify system stability.
+*   **Actions:**
+    *   **Dependency Analysis:** Generated and updated the dependency network in `HOUSEKEEPING.md` using a custom analysis script (verified manually to handle relative imports).
+    *   **Tests:** Ran `unit_tests.py` (8/8 PASSED) and `test_vectorization.py` (4/4 PASSED).
+    *   **Notebook Verification:**
+        *   Created `tests/basic_model_testing_smoke.py` based on `basic_model_testing.ipynb`. Runs successfully with reduced parameters.
+        *   Created `tests/run_simulations_smoke.py` based on `run_simulations_test.ipynb`. Runs successfully with reduced parameters and fixed multiprocessing issues (moved worker function to top level).
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with execution date and full report.
