@@ -30,15 +30,17 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-17 (15:00)
+**Execution Date:** 2026-01-20
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
 *   **Script Verification:**
-    *   `notebooks/convergence_studies.py`: PASSED (conclusion: 0.69)
-    *   `notebooks/root_influence_analysis.py`: PASSED (runs correctly, terminated early for housekeeping)
+    *   `notebooks/root_influence_analysis.py`: PASSED (modified to 200 steps for smoke test)
+    *   `notebooks/convergence_studies.py`: PASSED (10000 steps)
+    *   `notebooks/basic_model_testing.py`: PASSED (converted from ipynb, modified to 100 steps)
+    *   `notebooks/run_simulations_test.py`: PASSED (converted from ipynb, modified parameters, skipping empirical test due to missing file)
 
 **Summary:**
-All core tests pass successfully. Both standalone Python scripts (`convergence_studies.py` and `root_influence_analysis.py`) run without errors and produce expected output.
+All core tests pass successfully. Notebooks were converted to scripts and run successfully with reduced parameters where necessary to avoid timeouts. The "Testing Empirical" section in `run_simulations_test` was skipped because `perc_pruned_lcc.pkl` is missing, consistent with known issues.
