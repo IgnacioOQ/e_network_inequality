@@ -260,3 +260,15 @@ When submitting changes, please use the following structure:
             *   `notebooks/convergence_studies.py`: PASSED.
             *   `notebooks/root_influence_analysis.py`: PASSED.
     *   **Documentation:** Updated `HOUSEKEEPING.md` with latest report.
+
+### [2026-01-21 13:45] - Organization and Verification Fixes (Antigravity)
+*   **Task:** Reorganize notebooks and verify system integrity via Housekeeping.
+*   **Actions:**
+    *   **Notebook Organization:** Moved notebooks into `convergence_analysis`, `basic_testing`, and `simulation_variations` subfolders.
+    *   **Script Updates:** Updated `sys.path` and data loading paths in `convergence_studies.py` and `root_influence_analysis.py` to account for new location.
+    *   **Test Script Fixes:**
+        *   Patched `tests/basic_model_testing_script.py` and `tests/vectorized_basic_model_testing_script.py` to use `matplotlib.use('Agg')` to prevent blocking on `plt.show()`.
+        *   Fixed `AttributeError: 'Model' object has no attribute 'credences_history'` in `basic_model_testing_script.py` by using `agent_histories` and enabling `histories=True`.
+    *   **Housekeeping Execution:**
+        *   All tests and scripts PASSED.
+    *   **Documentation:** Updated `HOUSEKEEPING.md`.

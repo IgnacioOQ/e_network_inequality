@@ -30,17 +30,17 @@
 
 ## Latest Report
 
-**Execution Date:** 2026-01-21 (13:20)
+**Execution Date:** 2026-01-21 (13:45)
 
 **Test Results:**
 
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8 tests)
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4 tests)
 *   **Script Verification:**
-    *   `tests/basic_model_testing_script.py`: PASSED (conclusion: 0.96)
-    *   `tests/vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.99)
-    *   `notebooks/convergence_studies.py`: PASSED (conclusion: 0.6731)
-    *   `notebooks/root_influence_analysis.py`: PASSED (Hypothesis CONFIRMED at 100k steps)
+    *   `tests/basic_model_testing_script.py`: PASSED (conclusion: 0.86/0.95)
+    *   `tests/vectorized_basic_model_testing_script.py`: PASSED (conclusion: 0.91)
+    *   `notebooks/convergence_analysis/convergence_studies.py`: PASSED (conclusion: 0.5929)
+    *   `notebooks/convergence_analysis/root_influence_analysis.py`: PASSED (Gap +0.0096 at 1M steps)
 
 **Summary:**
-Fixed critical `ValueError` in `model.py` (seed overflow) to enable testing. Fixed `KeyError` in notebook scripts. All core tests and scripts now run and pass.
+Notebooks organized into subfolders. Testing scripts patched to use Agg backend and fixed attribute access (`credences_history` -> `agent_histories`). All tests passed.
