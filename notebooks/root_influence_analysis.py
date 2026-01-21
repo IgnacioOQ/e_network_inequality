@@ -33,6 +33,9 @@ network_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'empirical_
 with open(network_path, 'r') as f:
     network_data = json.load(f)
 
+if 'links' in network_data:
+    network_data['edges'] = network_data.pop('links')
+
 network = nx.node_link_graph(network_data)
 n_agents = len(network.nodes())
 print(f"Network: {n_agents} nodes, {len(network.edges())} edges")

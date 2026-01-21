@@ -39,7 +39,7 @@ class Model:
         variance_stopping=False,
         tstep_stopping=True,
         directed_network=True,
-        seed=np.random.randint(0, 2**32 - 1),
+        seed=np.random.randint(0, 2**31 - 1),
         seeded=False,
         *args,
         **kwargs
@@ -56,10 +56,6 @@ class Model:
         if seeded:
             rd.seed(seed)
         self.bandit = Bandit(uncertainty)
-        # self.agents = [
-        #     BetaAgent(i, self.bandit,
-        #               histories=histories,sampling_update=sampling_update) for i in range(self.n_agents)
-        # ]
         self.nodes = list(self.network.nodes)
         self.agent_type = agent_type
         if self.agent_type == "beta":
