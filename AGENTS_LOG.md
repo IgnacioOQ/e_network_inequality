@@ -272,3 +272,39 @@ When submitting changes, please use the following structure:
     *   **Housekeeping Execution:**
         *   All tests and scripts PASSED.
     *   **Documentation:** Updated `HOUSEKEEPING.md`.
+
+### [2026-01-21 13:55] - Created MC_AGENT.md (Antigravity)
+*   **Task:** Create Markov Chain Analysis Agent documentation.
+*   **Actions:**
+    *   Created `AI_AGENTS/MC_AGENT.md` with comprehensive instructions for:
+        *   Markov Chain interpretation of the simulation
+        *   State space definitions for Beta and Bayes agents
+        *   Transition dynamics and sources of randomness
+        *   Key Markov properties to track (absorbing states, mixing time, etc.)
+        *   Implementation plan for `mc_analysis.py` utilities
+        *   Verification checklist and mathematical notes
+    *   Links to existing convergence and root influence analysis work.
+
+### [2026-01-21 14:00] - Implemented mc_analysis.py (Antigravity/MC Agent)
+*   **Task:** Implement Phase 1-3 of MC_AGENT.md - Markov Chain analysis utilities.
+*   **Actions:**
+    *   Created `src/net_epistemology/analysis/` module with:
+        *   `__init__.py`: Module initialization
+        *   `mc_analysis.py`: Core analysis utilities
+    *   Implemented `MarkovChainAnalyzer` class with methods:
+        *   `snapshot_state()`: Record simulation state
+        *   `state_fingerprint()`: Compute hashable state representation
+        *   `state_distance()`: Compute distances between states (L1, L2, Linf, TV)
+        *   `check_markov_property()`: Verify reproducibility with same seed
+        *   `compute_convergence_diagnostics()`: Analyze convergence from snapshots
+        *   `estimate_mixing_time()`: Run parallel chains to estimate mixing
+        *   `estimate_absorption_probabilities()`: Monte Carlo absorption analysis
+        *   `get_trajectory_summary()`: Summary statistics of recorded trajectory
+    *   Implemented supporting dataclasses:
+        *   `StateSnapshot`: Immutable state record with fingerprint
+        *   `ConvergenceDiagnostics`: Step-by-step convergence metrics
+        *   `AbsorptionAnalysis`: Monte Carlo absorption results
+    *   Created `tests/test_mc_analysis.py` with 12 unit tests.
+*   **Verification:**
+    *   All 12 tests PASSED.
+
