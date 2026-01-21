@@ -308,3 +308,23 @@ When submitting changes, please use the following structure:
 *   **Verification:**
     *   All 12 tests PASSED.
 
+### [2026-01-21 14:18] - Left Eigenvector Analysis Notebooks (Antigravity)
+*   **Task:** Create analysis notebooks testing Left Eigenvector Centrality hypothesis.
+*   **Actions:**
+    *   Created `notebooks/convergence_analysis/Colab_LEigen_Analysis.py`:
+        *   Google Colab-compatible notebook for LE analysis
+        *   Tests on multiple network types (with/without roots)
+        *   Compares LE, Root-based, and Katz centrality predictions
+    *   Created `notebooks/convergence_analysis/left_eigen_analysis.py`:
+        *   Local-runnable version (non-Colab)
+        *   Runs on empirical PUD network
+        *   Computes LE centrality distribution and prediction accuracy
+*   **Key Findings (from initial test run):**
+    *   In networks with root nodes, roots hold ~100% of LE centrality
+    *   LE prediction matches root-based prediction conceptually
+    *   Root-based node-level accuracy: 99.04% at 100k steps
+    *   LE is the theoretical foundation; root analysis is the practical implementation
+*   **Files:**
+    *   Uses existing `left_eigen.py` for centrality computation
+    *   Integrates with `VectorizedModel` for simulation
+
