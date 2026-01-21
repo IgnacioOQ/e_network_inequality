@@ -98,16 +98,60 @@ This project is a simulation framework for agent-based models on various network
 ### Key Files and Directories
 
 #### Directory Structure
-*   **`AI_AGENTS/`**: Contains context files (`.md`) and instructions for specific AI agent roles (e.g., `LINEARIZE_AGENT.md`). This is the primary mechanism for "context fine-tuning".
-*   **`empirical_networks/`**: Storage for empirical network datasets used in simulations.
-*   **`results_data_sets/`**: Output directory where simulation results (typically CSVs or pickled data) are saved.
-*   **`__pycache__/`**: Compiled Python bytecode (ignored by git).
+```
+e_network_inequality/
+├── AGENTS.md                    # This file - AI agent context
+├── AGENTS_LOG.md                # Log of AI interventions
+├── HOUSEKEEPING.md              # Housekeeping protocol & reports
+├── README.md                    # Project readme
+├── requirements.txt             # Python dependencies
+├── setup.py                     # Package installation
+│
+├── AI_AGENTS/                   # Context files for specialized AI agents
+│   ├── LINEARIZE_AGENT.md       # Vectorization specialist instructions
+│   ├── MC_AGENT.md              # Markov Chain analysis agent instructions
+│   └── README.md
+│
+├── src/net_epistemology/        # Main source package
+│   ├── core/                    # Core simulation classes
+│   │   ├── agents.py            # Legacy agent classes (immutable)
+│   │   ├── model.py             # Legacy Model class (immutable)
+│   │   ├── vectorized_agents.py # Vectorized bandit
+│   │   └── vectorized_model.py  # Fast vectorized simulation
+│   ├── simulation/              # Simulation runners
+│   │   ├── simulation_functions.py
+│   │   └── vectorized_simulation_functions.py
+│   ├── utils/                   # Utilities
+│   │   ├── imports.py           # Central imports
+│   │   ├── network_generation.py
+│   │   └── network_utils.py
+│   └── analysis/                # Analysis tools (NEW)
+│       └── mc_analysis.py       # Markov Chain analysis utilities
+│
+├── notebooks/                   # Jupyter notebooks (organized by topic)
+│   ├── basic_testing/           # Basic model verification
+│   │   ├── basic_model_testing.ipynb
+│   │   └── vectorized_basic_model_testing.ipynb
+│   ├── convergence_analysis/    # Convergence & root influence studies
+│   │   ├── convergence_studies.py
+│   │   ├── root_influence_analysis.py
+│   │   └── Colab_*.ipynb        # Google Colab versions
+│   └── simulation_variations/   # Variation method experiments
+│
+├── tests/                       # Unit tests
+│   ├── unit_tests.py            # Core agent tests
+│   ├── test_vectorization.py    # Vectorized vs legacy equivalence
+│   └── test_mc_analysis.py      # Markov Chain analysis tests
+│
+└── data/                        # Data files
+    └── empirical_networks/      # Real-world network data (JSON)
+```
 
 #### File Dependencies & Logic
 The project relies on a central imports file to manage dependencies across modules.
 *   **`imports.py`**: Imports all necessary external libraries (`numpy`, `scipy`, `networkx`, `pandas`, etc.) and sets up seeds. It is imported by `agents.py`, `model.py`, and simulation scripts.
 
-**Legacy/Reference Implementation:**
+**Legacy/Reference Implementation (Immutable):**
 *   **`agents.py`**: Defines the object-oriented agent classes:
     *   `Bandit`: The environment returning experiment results.
     *   `BetaAgent`: Bayesian learner using Beta distributions.
@@ -116,16 +160,24 @@ The project relies on a central imports file to manage dependencies across modul
 *   **`simulation_functions.py`**: Wrappers to initialize parameters (generating networks) and run the `Model`. Used for parallel execution.
 
 **Vectorized Implementation (Fast):**
-*   **`vectorized_model.py`**: The high-performance, matrix-based replacement for `Model`. It stores agent states in NumPy arrays `(N, 2, 2)` instead of objects.
+*   **`vectorized_model.py`**: The high-performance, matrix-based replacement for `Model`. It stores agent states in NumPy arrays `(N, 2, 2)` instead of objects. Includes convergence tracking and root analysis.
 *   **`vectorized_agents.py`**: Contains `VectorizedBandit` for batch processing of experiments.
 *   **`vectorized_simulation_functions.py`**: Wrappers for running `VectorizedModel`.
+
+**Analysis Tools:**
+*   **`analysis/mc_analysis.py`**: Markov Chain analysis utilities including:
+    *   `MarkovChainAnalyzer`: Main class for trajectory analysis
+    *   `StateSnapshot`: Immutable state records with fingerprinting
+    *   Convergence diagnostics, mixing time estimation, absorption analysis
 
 **Network Handling:**
 *   **`network_generation.py`**: Functions to generate synthetic networks (e.g., `barabasi_albert_directed`, `directed_watts_strogatz`).
 *   **`network_utils.py`**: Helper functions for calculating network statistics and metrics.
 
 **Testing & Verification:**
-*   **`unit_tests.py`**: Unit tests for the reference implementation (`agents.py`, `model.py`).
-*   **`test_vectorization.py`**: Regression tests ensuring `VectorizedModel` matches `Model`.
-*   **`basic_model_testing.ipynb`**: Visual verification notebook for the reference model.
-*   **`vectorized_basic_model_testing.ipynb`**: Visual verification notebook for the vectorized model.
+*   **`tests/unit_tests.py`**: Unit tests for the reference implementation (`agents.py`, `model.py`).
+*   **`tests/test_vectorization.py`**: Regression tests ensuring `VectorizedModel` matches `Model`.
+*   **`tests/test_mc_analysis.py`**: Unit tests for Markov Chain analysis utilities.
+*   **`notebooks/basic_testing/`**: Visual verification notebooks for both model implementations.
+*   **`notebooks/convergence_analysis/`**: Convergence studies and root influence analysis scripts.
+

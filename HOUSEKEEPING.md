@@ -24,9 +24,12 @@
 - **Network Handling**:
     - `src/net_epistemology/utils/network_generation.py`: Depends on `imports`.
     - `src/net_epistemology/utils/network_utils.py`: Depends on `imports`.
+- **Analysis Tools**:
+    - `src/net_epistemology/analysis/mc_analysis.py`: Depends on `core.vectorized_model`. Provides Markov Chain analysis utilities.
 - **Testing**:
     - `tests/unit_tests.py`: Depends on `imports`, `core.agents`.
     - `tests/test_vectorization.py`: Depends on `core.model`, `core.vectorized_model`.
+    - `tests/test_mc_analysis.py`: Depends on `core.vectorized_model`, `analysis.mc_analysis`.
 
 ## Latest Report
 
