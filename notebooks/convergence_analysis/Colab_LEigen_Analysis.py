@@ -179,38 +179,44 @@ def compute_katz_centrality(G, alpha=0.1, beta=1.0, measure_influence=True):
 # In[ ]:
 
 
-def predict_outcomes_by_left_eigen(G, node_beliefs, left_eigen_centrality):
+def predict_outcomes_by_left_eigen(node_list, node_beliefs, left_eigen_centrality):
     """
     Predict final network belief based on left eigenvector weighted beliefs.
     
+    The prediction is: sum of LE centrality for nodes believing truth.
+    This represents the "influence mass" that believes truth.
+    
+    IMPORTANT: node_list must match the ordering of node_beliefs!
+    Use model.nodes to ensure consistency with model.credences.
+    
     Parameters:
     -----------
-    G : nx.DiGraph
-        The network
+    node_list : list
+        List of node IDs in the SAME ORDER as node_beliefs array.
+        Should be model.nodes to match model.credences ordering.
     node_beliefs : np.ndarray
-        Current beliefs of each node (True/False for believing truth)
+        Boolean array where True = believes truth. 
+        MUST be indexed same as node_list.
     left_eigen_centrality : dict
-        Left eigenvector centrality scores for each node
+        Left eigenvector centrality scores for each node (by node ID)
         
     Returns:
     --------
     float
-        Predicted proportion believing truth (weighted by left eigenvector)
+        Predicted share believing truth (= sum of LE for truthful nodes)
     """
-    nodes = list(G.nodes())
-    total_weight = 0.0
     truth_weight = 0.0
     
-    for i, node in enumerate(nodes):
+    for i, node in enumerate(node_list):
         weight = left_eigen_centrality.get(node, 0.0)
-        total_weight += weight
         if node_beliefs[i]:
             truth_weight += weight
     
-    return truth_weight / total_weight if total_weight > 0 else 0.0
+    # LE centrality sums to 1.0, so truth_weight IS the predicted proportion
+    return truth_weight
 
 
-def predict_node_outcomes_by_influence(G, node_beliefs, left_eigen_centrality, threshold=0.5):
+def predict_node_outcomes_by_influence(G, node_list, node_beliefs, left_eigen_centrality, threshold=0.5):
     """
     Predict per-node outcomes based on the influence from truthful vs false believers.
     
@@ -220,7 +226,9 @@ def predict_node_outcomes_by_influence(G, node_beliefs, left_eigen_centrality, t
     Parameters:
     -----------
     G : nx.DiGraph
-        The network
+        The network (for predecessor lookup)
+    node_list : list
+        List of node IDs in same order as node_beliefs (use model.nodes)
     node_beliefs : np.ndarray
         Current beliefs of each node (True/False for believing truth)
     left_eigen_centrality : dict
@@ -233,12 +241,11 @@ def predict_node_outcomes_by_influence(G, node_beliefs, left_eigen_centrality, t
     np.ndarray
         Predicted beliefs for each node
     """
-    nodes = list(G.nodes())
-    n = len(nodes)
-    node_to_idx = {node: i for i, node in enumerate(nodes)}
+    n = len(node_list)
+    node_to_idx = {node: i for i, node in enumerate(node_list)}
     predictions = np.zeros(n, dtype=float)
     
-    for i, node in enumerate(nodes):
+    for i, node in enumerate(node_list):
         # Get predecessors (those influencing this node)
         preds = list(G.predecessors(node))
         
@@ -250,11 +257,12 @@ def predict_node_outcomes_by_influence(G, node_beliefs, left_eigen_centrality, t
             total_influence = 0.0
             truth_influence = 0.0
             for pred in preds:
-                pred_idx = node_to_idx[pred]
-                weight = left_eigen_centrality.get(pred, 1.0 / len(preds))
-                total_influence += weight
-                if node_beliefs[pred_idx]:
-                    truth_influence += weight
+                pred_idx = node_to_idx.get(pred)
+                if pred_idx is not None:
+                    weight = left_eigen_centrality.get(pred, 1.0 / len(preds))
+                    total_influence += weight
+                    if node_beliefs[pred_idx]:
+                        truth_influence += weight
             
             if total_influence > 0:
                 predictions[i] = truth_influence / total_influence
@@ -448,8 +456,11 @@ def run_single_analysis(network_name, network_info, n_steps=50000, uncertainty=0
     actual_proportion = np.mean(actual_beliefs)
     
     # Compute predictions
+    # IMPORTANT: Use model.nodes to ensure same ordering as model.credences
+    node_list = model.nodes  # This matches the ordering of actual_beliefs
+    
     # 1. Left Eigenvector weighted prediction
-    le_prediction = predict_outcomes_by_left_eigen(G, actual_beliefs, left_eigen)
+    le_prediction = predict_outcomes_by_left_eigen(node_list, actual_beliefs, left_eigen)
     
     # 2. Root-based prediction (if roots exist)
     if model.root_analysis and model.root_analysis['n_roots'] > 0:
@@ -458,10 +469,10 @@ def run_single_analysis(network_name, network_info, n_steps=50000, uncertainty=0
         root_prediction = None
     
     # 3. Katz-weighted prediction
-    katz_prediction = predict_outcomes_by_left_eigen(G, actual_beliefs, katz)
+    katz_prediction = predict_outcomes_by_left_eigen(node_list, actual_beliefs, katz)
     
     # Node-level analysis
-    node_predictions_le = predict_node_outcomes_by_influence(G, actual_beliefs, left_eigen)
+    node_predictions_le = predict_node_outcomes_by_influence(G, node_list, actual_beliefs, left_eigen)
     node_accuracy_le = np.mean(node_predictions_le == actual_beliefs)
     
     results = {
@@ -692,7 +703,8 @@ def run_convergence_analysis(G, network_name, step_counts=[1000, 5000, 10000, 50
             actual_beliefs = model.credences[:, 1] > model.credences[:, 0]
             actual = np.mean(actual_beliefs)
             
-            le_pred = predict_outcomes_by_left_eigen(G, actual_beliefs, left_eigen)
+            # Use model.nodes for consistent ordering
+            le_pred = predict_outcomes_by_left_eigen(model.nodes, actual_beliefs, left_eigen)
             le_errors.append(abs(actual - le_pred))
             
             if model.root_analysis and model.root_analysis['n_roots'] > 0:
