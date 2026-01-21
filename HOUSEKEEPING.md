@@ -40,25 +40,25 @@
 *   **Unit Tests (`tests/unit_tests.py`):** PASSED (8/8 tests)
     - All Bandit and BetaAgent tests passed successfully
     - Test coverage: initialization, experiment execution, beta updates, greedy choice
-    - Execution time: 1.53s
+    - Execution time: 4.96s
 
 *   **Vectorization Tests (`tests/test_vectorization.py`):** PASSED (4/4 tests)
     - Legacy vs Vectorized implementation equivalence verified
     - Beta and Bayes agent initialization and update logic match
-    - Execution time: 1.50s
+    - Execution time: 2.91s
 
 *   **Markov Chain Analysis Tests (`tests/test_mc_analysis.py`):** PASSED (12/12 tests)
     - StateSnapshot fingerprint generation and consistency verified
     - MarkovChainAnalyzer core functionality validated
     - Convergence diagnostics, trajectory summaries, and Markov property checks working
     - Support for both Beta and Bayes agents confirmed
-    - Execution time: 1.52s
+    - Execution time: 3.15s
 
 **Summary:**
 Complete test suite passes with 100% success rate (24/24 tests). All core functionality verified:
 - Legacy agent implementation working correctly
 - Vectorized implementation maintains equivalence with legacy code
 - Markov Chain analysis module fully functional
-- Total execution time: ~4.5s
+- Total execution time: ~11s
 
 **System Status:** All systems operational. No errors detected.
