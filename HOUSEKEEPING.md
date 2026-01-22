@@ -1,4 +1,5 @@
 # Housekeeping Protocol
+- status: active
 
 1. Read the AGENTS.md file.
 2. Look at the dependency network of the project, namely which script refers to which one.
@@ -7,8 +8,10 @@
 5. Add that report to the AGENTS_LOG.md
 
 # Current Project Housekeeping
+- status: active
 
 ## Dependency Network
+- status: active
 
 - **Core Dependencies**:
     - `src/net_epistemology/utils/imports.py`: Used by all other modules.
@@ -32,6 +35,7 @@
     - `tests/test_mc_analysis.py`: Depends on `core.vectorized_model`, `analysis.mc_analysis`.
 
 ## Latest Report
+- status: active
 
 **Execution Date:** 2026-01-21 (Latest Run)
 
