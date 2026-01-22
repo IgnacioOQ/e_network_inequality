@@ -4,11 +4,13 @@
 ## SHORT ADVICE
 - status: active
 - The whole trick is providing the AI Assistants with context, and this is done using the *.md files (AGENTS.md, AGENTS_LOG.md, and the AI_AGENTS folder)
+- Make sure that when writing *.md files, you use the proper syntax protocol as defined in MD_REPRESENTATION_CONVENTIONS.md. If necessary, you can always use the scripts in the language folder to help you with this.
 - Learn how to work the Github, explained below.
 - Keep logs of changes in AGENTS_LOG.md
+- Make sure to execute the HOUSEKEEPING.md protocol often.
 - Always ask several forms of verification, so because the self-loop of the chain of thought improves performance.
 - Impose restrictions and constraints explicitly in the context.
-
+- 
 ## HUMAN-ASSISTANT WORKFLOW
 - status: active
 1. Open the assistant and load the ai-agents-branch into their local repositories. Do this by commanding them to first of all read the AGENTS.md file.
