@@ -5,7 +5,7 @@
 2. Look at the dependency network of the project, namely which script refers to which one.
 3. Proceed doing different sanity checks and unit tests from root scripts to leaves.
 4. Compile all errors and tests results into a report. And print that report in the Latest Report subsection below, overwriting previous reports.
-5. Add that report to the AGENTS_LOG.md
+5. Add that report to the AGENTS_LOG.md.
 
 # Current Project Housekeeping
 - status: active
