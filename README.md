@@ -1,35 +1,8 @@
-# Basic Code Structure
+# AI Agents Context Folder
+- status: active
 
-Besides the imports.py, the code is organized in groups:
+This directory contains specialized context files (Markdown) for specific AI sub-agents or specific tasks within the project.
 
-1. Basic Model
-
-This includes agents.py, model.py, and basic_model_testing.ipynb notebook.
-
-To note: The code is constructed so that it works both for directed and undirected networks. Agents get observations from who they are pointing to (i.e. their neighbors). 
-This means that the directed networks we are going to use are inverse of the direction flow: A points to B if A cites B (and hence A gets observations from B).
-
-2. Networks
-
-- network_utils.py where all the functions corresponding to networks are defined: cleaning functions, plotting functions, and variation functions (randomization, equalize, densify).
-  - Since we want to make it compatible with both directed and undirected most functions have a "directed" input parameter set as default as True.
-  - Since we constructed the networks inverse to the direction of flow, the relevant degree (for gini, entropy, etc.) is the in_degree.
-  - Since some network properties might not be defined, there are some ad-hoc definitions to deal with this.
-  - Advanced network plotting functions are not defined.
-- network_generation.py defines the generative models that we are going to use. We need to continue working on this.
-- network_randomization.py is a single file containing the network randomization function that is at the core of our project.
-- getting_citations_networks.ipynb (still unclean) is a self contained notebook that we used to generate the empirical networks used for the study.
-- Both the (clean) peptic ulcer and the perceptron networks are in the empirical_networks directory.
-- network_testing.ipynb tests the functions defined here.
-
-3. Simulations
-
-- simulation_functions.py defines the simulation function, to parallelize in Google Colab.
-- There is a simulation testing file for sanity.
-- The relevant Colab Notebook is this one: https://drive.google.com/file/d/1Af7uPiSDVF7s-ytO0fP4rIySoJVZIkoL/view?usp=sharing
-  - There there are parallel simulations for Generated Networks, Perceptron, and Peptic Ulcer.
-  - Several variations can be done from the Google Colab, changing uncertainty of the problem, number of experiments, etc.
-
-4. Results Analysis
-
-- Here the regression analysis.
+## Purpose
+- status: active
+While the root `AGENTS.md` provides high-level project context and rules, the files in this folder will detail specific logic, mathematical derivations, or sub-module documentation to help specialized agents perform their tasks accurately without overloading the main context.

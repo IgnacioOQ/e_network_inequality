@@ -1,6 +1,8 @@
 # AGENTS.md
+- status: active
 
 ## SHORT ADVICE
+- status: active
 - The whole trick is providing the AI Assistants with context, and this is done using the *.md files (AGENTS.md, AGENTS_LOG.md, and the AI_AGENTS folder)
 - Learn how to work the Github, explained below.
 - Keep logs of changes in AGENTS_LOG.md
@@ -8,6 +10,7 @@
 - Impose restrictions and constraints explicitly in the context.
 
 ## HUMAN-ASSISTANT WORKFLOW
+- status: active
 1. Open the assistant and load the ai-agents-branch into their local repositories. Do this by commanding them to first of all read the AGENTS.md file.
 2. Work on the ASSISTANT, making requests, modifying code, etc.
 3. IMPORTANT: GIT MECHANISM
@@ -20,6 +23,7 @@
 4. Enjoy!
 
 ## WORKFLOW & TOOLING
+- status: active
 *   **PostToolUse Hook (Code Formatting):**
     *   **Context:** A "hook" is configured to run automatically after specific events.
     *   **The Event:** "PostToolUse" triggers immediately after an agent uses a tool to modify a file (e.g., writing code or applying an edit).
@@ -36,12 +40,14 @@
     *   **Action:** Append a new entry under the "Intervention History" section summarizing the task, the changes made, and the date.
 
 ## DEVELOPMENT RULES & CONSTRAINTS
+- status: active
 1.  **Immutable Core Files:** Do not modify `agents.py`, `model.py`, or `simulation_functions.py`.
     *   If you need to change the logic of an agent or the model, you must create a **new version** (e.g., a subclass or a new file) rather than modifying the existing classes in place.
 2.  **Consistency:** Ensure any modifications or new additions remain as consistent as possible with the logic and structure of the `main` branch.
 3.  **Coding Conventions:** Always keep the coding conventions pristine.
 
 ## CONTEXT FINE-TUNING
+- status: active
 You cannot "fine-tune" an AI agent (change its underlying neural network weights) with files in this repository. **However**, you **CAN** achieve a similar result using **Context**.
 
 **How it works (The "Context" Approach):**
@@ -60,17 +66,22 @@ If you want to teach an agent a new language (like JAX) or technique:
 3.  Ask the agent to "Refactor the code using the techniques in [File X]".
 
 ## LOCAL PROJECT DESCRIPTION
+- status: active
 
 ### Project Overview
+- status: active
 This project is a simulation framework for agent-based models on various network structures, specifically focusing on network epistemology and theory choice using Bandit problems.
 
 ### Setup & Testing
+- status: active
 *   **Install Dependencies:** `pip install -r requirements.txt` (or manually install `numpy`, `scipy`, `pandas`, `networkx`, `tqdm`, `matplotlib`, `seaborn`, `dill`).
 *   **Run Tests:** `python -m unittest unit_tests.py`
 
 ### Key Architecture & Logic
+- status: active
 
 #### 1. Directed Graphs & Information Flow
+- status: active
 *   The simulation uses **NetworkX** graphs.
 *   **Directionality:** The graph is treated as **Directed** (`nx.DiGraph`).
 *   **Interpretation of Edges (`A -> B`):**
@@ -83,6 +94,7 @@ This project is a simulation framework for agent-based models on various network
     *   **Summary:** If A observes B, the graph should have an edge `A -> B` (A is the source, B is the target, but information flows B -> A in terms of observation).
 
 #### 2. Agents
+- status: active
 *   **`Bandit`:** The environment. Returns success/failure based on probabilities.
 *   **`BetaAgent`:** Uses Beta distributions to model beliefs about two theories (0 and 1).
     *   `alphas_betas`: Stores `[alpha, beta]` for both theories.
@@ -90,14 +102,17 @@ This project is a simulation framework for agent-based models on various network
     *   `choice`: Epsilon-greedy.
 
 #### 3. Simulation Loop (`Model` class)
+- status: active
 *   **Step:**
     1.  **Experiment:** Every agent chooses a theory and runs an experiment (getting success/failure).
     2.  **Update:** Every agent observes the results of their **predecessors** (neighbors who point to them).
     3.  **Bayesian Update:** Agents update their Alpha/Beta parameters based on their own *and* their neighbors' results.
 
 ### Key Files and Directories
+- status: active
 
 #### Directory Structure
+- status: active
 ```
 e_network_inequality/
 ├── AGENTS.md                    # This file - AI agent context
@@ -148,6 +163,7 @@ e_network_inequality/
 ```
 
 #### File Dependencies & Logic
+- status: active
 The project relies on a central imports file to manage dependencies across modules.
 *   **`imports.py`**: Imports all necessary external libraries (`numpy`, `scipy`, `networkx`, `pandas`, etc.) and sets up seeds. It is imported by `agents.py`, `model.py`, and simulation scripts.
 
