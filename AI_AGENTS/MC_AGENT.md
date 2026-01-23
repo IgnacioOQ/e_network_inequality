@@ -12,11 +12,13 @@ The network epistemology simulation is fundamentally a **Markov Chain** where:
 
 ### State Space
 - status: active
+
 - **Beta Agent:** The state is the collection of all agents' credence pairs: $S_t = \{(\alpha_i^{(0)}, \beta_i^{(0)}, \alpha_i^{(1)}, \beta_i^{(1)})\}_{i=1}^N$. Since these are continuous parameters updated via Bayesian learning, the state space is a subset of $\mathbb{R}^{4N}$.
 - **Bayes Agent:** The state is the collection of all agents' scalar credences: $S_t = \{c_i\}_{i=1}^N \in [0,1]^N$.
 
 ### Transition Dynamics
 - status: active
+
 At each time step:
 1. **Experiment Phase:** Each agent $i$ chooses a theory based on current credences and runs $n$ experiments, getting outcomes drawn from $\text{Binomial}(n, p_{\text{theory}})$.
 2. **Observation Phase:** Each agent $i$ observes the experimental outcomes of agents it "listens to" (predecessors in the directed graph).
@@ -58,6 +60,7 @@ The randomness comes from:
 
 ### 1. Verify Markov Property Preservation
 - status: active
+
 The simulation MUST maintain the Markov property: the future state depends only on the current state, not on the history of how we got there.
 
 **Checks:**
@@ -67,6 +70,7 @@ The simulation MUST maintain the Markov property: the future state depends only 
 
 ### 2. State Space Tracking
 - status: active
+
 Ensure the codebase exposes sufficient information to reconstruct the full state at any time step.
 
 **Current Capabilities (in `VectorizedModel`):**
@@ -81,6 +85,7 @@ Ensure the codebase exposes sufficient information to reconstruct the full state
 
 ### 3. Convergence Analysis Infrastructure
 - status: active
+
 Build on existing convergence tracking to provide deeper MC insights.
 
 **Current Capabilities:**
@@ -95,6 +100,7 @@ Build on existing convergence tracking to provide deeper MC insights.
 
 ### 4. Root Influence as Markov Structure
 - status: active
+
 The root node analysis reveals structural properties of the Markov Chain.
 
 **Key Insight:** 
@@ -238,6 +244,7 @@ When implementing MC analysis features, log in `AGENTS_LOG.md`:
 ```markdown
 ### [DATE] - Markov Chain Analysis Implementation (MC Agent)
 - status: active
+
 *   **Task:** [Specific MC feature implemented]
 *   **Actions:**
     *   [File created/modified]
