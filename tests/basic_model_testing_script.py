@@ -87,8 +87,8 @@ df.head(3)
 
 
 #Extract the first coordinate (x) for each pair and calculate column-wise mean
-x_means = df.applymap(lambda pair: pair[0]).mean()
-y_means = df.applymap(lambda pair: pair[1]).mean()
+x_means = df.map(lambda pair: pair[0]).mean()
+y_means = df.map(lambda pair: pair[1]).mean()
 plt.plot(x_means)
 plt.plot(y_means)
 
@@ -97,7 +97,7 @@ plt.plot(y_means)
 
 
 # Extract the first coordinate (x) for each pair
-x_values = df.applymap(lambda pair: pair[0])
+x_values = df.map(lambda pair: pair[0])
 
 # Plot the first coordinate for each row
 plt.figure(figsize=(10, 6))
