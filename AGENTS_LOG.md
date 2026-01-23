@@ -395,3 +395,17 @@ When submitting changes, please use the following structure:
         *   TestBayesAgent: convergence_bayes, snapshot_bayes
     *   **Documentation:** Updated `HOUSEKEEPING.md` with latest test execution times.
 *   **System Status:** All 24/24 tests passed. Total execution time: ~11s. No errors detected. All systems operational.
+
+### [2026-01-23] - Housekeeping Protocol (Jules)
+- status: active
+*   **Task:** Execute housekeeping protocol per `HOUSEKEEPING.md` instructions.
+*   **Actions:**
+    *   **Dependency Network Review:** Verified current project structure matches documented dependencies.
+    *   **Unit Tests:** Ran `tests/unit_tests.py` - 8/8 tests PASSED (~0.003s).
+    *   **Vectorization Tests:** Ran `tests/test_vectorization.py` - 4/4 tests PASSED (~0.011s).
+    *   **Markov Chain Analysis Tests:** Ran `tests/test_mc_analysis.py` - 12/12 tests PASSED (~0.162s).
+    *   **Basic Verification Scripts:**
+        *   `tests/basic_model_testing_script.py`: Failed initially with `AttributeError: 'DataFrame' object has no attribute 'applymap'`. Fixed by replacing `applymap` with `map` (deprecated in pandas 3.0.0). PASSED after fix.
+        *   `tests/vectorized_basic_model_testing_script.py`: PASSED.
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with latest report.
+*   **System Status:** All tests passed. Fixed deprecation issue in `tests/basic_model_testing_script.py`.
