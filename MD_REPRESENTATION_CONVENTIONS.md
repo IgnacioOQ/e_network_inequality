@@ -13,6 +13,7 @@ The system uses a **Markdown headers** to define the structural hierarchy (the n
 
 ### 1. Hierarchy & Nodes
 - status: active
+
 - **Headers**: Use standard Markdown headers (`#`, `##`, `###`) to define the hierarchy.
 - **Nesting**: 
     - `#` is the Root/Document Title (usually only one per file).
@@ -27,6 +28,7 @@ The system uses a **Markdown headers** to define the structural hierarchy (the n
 
 ### 2. Metadata Blocks
 - status: active
+
 - **Location**: Metadata MUST be placed **immediately** after the header, before any free-form text.
 - **Format**: A YAML block. It works best as a bulleted list of key-value pairs, which most parsers can interpret as YAML (or we can use strict YAML blocks if preferred, but the spec suggests "YAML Key-Value Pairs (immediately following header)"). 
 - **Preferred Format**: A strict list of key-value pairs.
@@ -40,6 +42,7 @@ The system uses a **Markdown headers** to define the structural hierarchy (the n
 - owner: dev-1
 - estimate: 3d
 - blocked_by: []
+
 ```
 
 ### 3. Allowed Fields
@@ -59,6 +62,7 @@ The following fields are standard, but the schema allows extensibility.
 
 ### 4. Context & Description
 - status: active
+
 - Any text following the metadata block is considered "Context" or "Description".
 - It can contain free-form Markdown, code blocks, images, etc.
 
@@ -67,6 +71,7 @@ The following fields are standard, but the schema allows extensibility.
 
 ### Valid Node
 - status: active
+
 ```markdown
 ### Database Schema
 - status: done
@@ -78,6 +83,7 @@ Set up PostgreSQL schema for users and sessions.
 
 ### Invalid Node (Metadata not immediate)
 - status: active
+
 ```markdown
 ### Database Schema
 - status: active
@@ -90,10 +96,12 @@ Some text here first.
 
 ### Invalid Node (Bad indentation/YAML)
 - status: active
+
 ```markdown
 ### Database Schema
 status: done
 owner: dev-2
+
 ```
 *Warning: While some parsers might handle this, prefer bullet points `- key: value` for readability and stricter parsing.*
 
@@ -112,18 +120,21 @@ The following Python scripts are available in `language/` to interact with this 
 
 ### 1. `language/md_parser.py`
 - status: active
+
 - **Purpose**: Parses `.md` files into a Python object tree and validates schema compliance.
 - **Usage**: `python3 language/md_parser.py <file.md>`
 - **Output**: JSON representation of the tree or validation errors.
 
 ### 2. `language/visualization.py`
 - status: active
+
 - **Purpose**: Visualizes the task tree in the terminal with metadata.
 - **Usage**: `python3 language/visualization.py <file.md>`
 - **Output**: Unicode tree visualization.
 
 ### 3. `language/operations.py`
 - status: active
+
 - **Purpose**: Manipulate task trees (merge, extend).
 - **Usage**:
     - **Merge**: `python3 language/operations.py merge <target.md> <source.md> "<Target Node Title>" [--output <out.md>]`
@@ -133,11 +144,13 @@ The following Python scripts are available in `language/` to interact with this 
 
 ### 4. `language/migrate.py`
 - status: active
+
 - **Purpose**: Heuristically adds default metadata to standard Markdown headers to make them schema-compliant.
 - **Usage**: `python3 language/migrate.py <file.md> [file2.md ...]`
 - **Effect**: Modifies files in-place by injecting `- status: active` after headers that lack metadata.
 ### 5. `language/importer.py`
 - status: active
+
 - **Purpose**: Converts legacy documents (`.docx`, `.pdf`, `.doc`) into Markdown and auto-applies the Protocol.
 - **Usage**: `python3 language/importer.py <file.docx> [file.pdf ...]`
 - **Capabilities**:

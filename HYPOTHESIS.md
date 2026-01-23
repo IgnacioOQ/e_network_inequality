@@ -28,6 +28,7 @@ The simulation has **four sources of randomness**:
 
 #### 1. Initial State (Random Priors)
 - status: active
+
 ```
 α_i^(k), β_i^(k) ~ Uniform(0, 4)  independently for each agent i, theory k
 ```
@@ -35,6 +36,7 @@ This determines the initial credences and the "confidence" (sum α+β) each agen
 
 #### 2. Theory Choice (ε-greedy)
 - status: active
+
 ```
 With probability ε: choose randomly
 With probability 1-ε: choose argmax_k c_i^(k)
@@ -43,6 +45,7 @@ Default is ε=0 (pure greedy), making this deterministic given credences.
 
 #### 3. Experimental Outcomes (Binomial Sampling) — PRIMARY SOURCE
 - status: active
+
 ```
 S_i^(t) ~ Binomial(n_experiments, p_theory)
 where p_theory = 0.5 + uncertainty  if theory=1 (truth)
@@ -52,6 +55,7 @@ This is the main ongoing stochasticity driving belief updates.
 
 #### 4. Optional Sampling Update
 - status: active
+
 ```
 If sampling_update=True:
     c_i^(k) ~ Beta(α_i^(k), β_i^(k))  (sample from posterior)
@@ -135,18 +139,21 @@ The final outcome depends on three separable components:
 
 #### Component 1: Network Structure → Left Eigenvector $\pi$
 - status: active
+
 - Determined entirely by the directed graph topology
 - Captures "who influences whom" in the long run
 - For DAGs, equivalent to root-based reachability analysis
 
 #### Component 2: Initial Conditions → Prior Advantage
 - status: active
+
 - Random priors create initial bias toward one theory
 - Agents with higher initial $c_i^{(1)}$ are more likely to test theory 1
 - This interacts with the uncertainty parameter
 
 #### Component 3: Stochastic Evidence Accumulation
 - status: active
+
 - Binomial sampling creates variance in belief trajectories
 - Theory 1 (truth) has higher expected successes: $E[S] = n \cdot (0.5 + u)$
 - Over time, truth-testing agents accumulate evidence favoring truth
@@ -166,20 +173,24 @@ The **expected evidence flow** follows the network structure, with the left eige
 
 ### Prediction 1: Left Eigenvector Accuracy
 - status: active
+
 For networks with roots, left eigenvector prediction should match root-based prediction.
 For cyclic networks, left eigenvector provides unique predictive value.
 
 ### Prediction 2: Variance Decomposition
 - status: active
+
 Total variance in outcomes = f(initial priors) + g(binomial sampling) + h(network structure)
 The network structure component should be captured by spectral properties of $W$.
 
 ### Prediction 3: Convergence Time
 - status: active
+
 Mixing time should relate to the **spectral gap** $(1 - \lambda_2)$ where $\lambda_2$ is the second-largest eigenvalue of $W$.
 
 ### Prediction 4: Initial Condition Sensitivity
 - status: active
+
 Agents with high $\pi_i$ should have disproportionate influence on final outcomes.
 Perturbing their initial beliefs should have larger effects than perturbing low-$\pi$ agents.
 
