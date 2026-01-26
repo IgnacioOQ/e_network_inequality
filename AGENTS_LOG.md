@@ -196,7 +196,7 @@ When submitting changes, please use the following structure:
         *   Verified execution via extracted script.
     *   **`vectorized_basic_model_testing.ipynb` Fix:**
         *   Identified `KeyError: 'edges'` due to JSON format mismatch (`links` vs `edges`).
-        *   Patched `notebooks/vectorized_basic_model_testing.ipynb`: Added logic to rename `links` key to `edges` before loading into NetworkX.
+        *   Patched `notebooks/vectorized_basic_model_testing.ipynb`: Added logic to rename `links` to `edges` before loading into NetworkX.
         *   Verified execution via extracted script.
     *   **Housekeeping:** Updated `HOUSEKEEPING.md` with fully passing report.
     *   **Clean Up:** Removed temporary scripts.
@@ -457,3 +457,18 @@ When submitting changes, please use the following structure:
             *   `tests/basic_model_testing_script.py`: PASSED Phase 1 (Conclusion: 0.99). Phase 2 was running successfully but was manually interrupted to save time after confirming stability.
         *   **Reporting:** Updated `HOUSEKEEPING.md` with the latest report.
 *   **System Status:** All 24/24 unit tests passed. Documentation is now accurate and convention-compliant. System is stable.
+
+### [2026-01-26] - Housekeeping Protocol (Jules)
+- status: active
+
+*   **Task:** Execute housekeeping protocol per `HOUSEKEEPING.md` instructions.
+*   **Actions:**
+    *   **Dependency Network Review:** Verified current project structure matches documented dependencies.
+    *   **Unit Tests:** Ran `tests/unit_tests.py` - 8/8 tests PASSED.
+    *   **Vectorization Tests:** Ran `tests/test_vectorization.py` - 4/4 tests PASSED.
+    *   **Markov Chain Analysis Tests:** Ran `tests/test_mc_analysis.py` - 12/12 tests PASSED.
+    *   **Smoke Tests:**
+        *   `tests/basic_model_testing_script.py`: PASSED (Beta: 0.87, Bayes: 0.85).
+        *   `tests/vectorized_basic_model_testing_script.py`: PASSED (Beta: 0.96, Bayes: 0.72).
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with latest report.
+*   **System Status:** All 24/24 unit tests passed. System is stable.
