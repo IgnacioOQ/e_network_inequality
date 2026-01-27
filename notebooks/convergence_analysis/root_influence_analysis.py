@@ -33,10 +33,24 @@ network_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'empi
 with open(network_path, 'r') as f:
     network_data = json.load(f)
 
+# Handle 'links' vs 'edges' key discrepancy
 if 'links' in network_data:
-    network_data['edges'] = network_data.pop('links')
+    pass # node_link_graph defaults to 'links'
+elif 'edges' in network_data:
+    network_data['links'] = network_data['edges'] # node_link_graph expects 'links' by default usually, or we can specify `edges='edges'`
+else:
+    # If neither, it might be adjacency data which this function doesn't handle, but let's assume it's node-link
+    pass
 
-network = nx.node_link_graph(network_data)
+try:
+    network = nx.node_link_graph(network_data)
+except KeyError:
+    # Fallback: maybe it wants 'edges' specified explicitly or the data structure is slightly off
+    # If 'links' is missing but 'edges' exists, we can try alerting it
+    if 'edges' in network_data:
+        network = nx.node_link_graph(network_data, edges='edges')
+    else:
+        raise
 n_agents = len(network.nodes())
 print(f"Network: {n_agents} nodes, {len(network.edges())} edges")
 
