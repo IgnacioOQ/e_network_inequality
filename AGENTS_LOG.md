@@ -457,3 +457,18 @@ When submitting changes, please use the following structure:
             *   `tests/basic_model_testing_script.py`: PASSED Phase 1 (Conclusion: 0.99). Phase 2 was running successfully but was manually interrupted to save time after confirming stability.
         *   **Reporting:** Updated `HOUSEKEEPING.md` with the latest report.
 *   **System Status:** All 24/24 unit tests passed. Documentation is now accurate and convention-compliant. System is stable.
+
+### [2026-01-27] - Housekeeping and Simulation Verification (Jules)
+- status: active
+
+*   **Task:** Execute housekeeping protocol, map dependencies, and verify system stability, including restoring missing simulation tests.
+*   **Actions:**
+    *   **Dependency Review:** Verified project structure matches `HOUSEKEEPING.md`.
+    *   **Unit Tests:** Ran `tests/unit_tests.py` (8/8 PASSED), `tests/test_vectorization.py` (4/4 PASSED), `tests/test_mc_analysis.py` (12/12 PASSED).
+    *   **Verification Scripts:**
+        *   `tests/basic_model_testing_script.py`: PASSED.
+        *   `tests/vectorized_basic_model_testing_script.py`: PASSED.
+    *   **Restoration:** Created `tests/run_simulations_test_script.py` by converting `notebooks/basic_testing/run_simulations_test.ipynb`, fixing imports (`run_simulation_with_params`), and enabling headless execution.
+    *   **Simulation Test:** Executed `tests/run_simulations_test_script.py` (PASSED).
+    *   **Documentation:** Updated `HOUSEKEEPING.md` with full report.
+*   **System Status:** All 24/24 unit tests passed. All smoke tests passed.
