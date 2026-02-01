@@ -7,15 +7,39 @@ This project is a simulation framework for agent-based models on various network
 ## Project Overview
 - status: active
 
-The core of this project simulates a population of agents connected via a directed graph. Agents are faced with a "Two-Armed Bandit" problem (Theory 0 or Theory 1). They perform experiments, observe the results of their neighbors (predecessors), and update their beliefs (Alpha/Beta parameters) accordingly.
+## Project Overview
+- status: active
 
-Key features include:
-- **Directed Graphs**: Modeled using `networkx`. Edges represent information flow (e.g., A -> B means A listens to B).
-- **Bayesian Agents**: Agents use Beta distributions to model their credence in the theories.
-- **Dual Implementations**:
-    - **Object-Oriented**: Easy to understand, flexible agents (`src/net_epistemology/core/agents.py`).
-    - **Vectorized**: High-performance, matrix-based implementation for large-scale simulations (`src/net_epistemology/core/vectorized_model.py`).
-- **Analysis Tools**: Built-in tools for Markov Chain analysis and convergence studies.
+### Simulation Core
+- status: active
+
+The core of this project is a flexible agent-based modeling framework designed to simulate the spread of beliefs and the evolution of scientific consensus in networked communities.
+
+- **Bayesian Agents**: Agents model their beliefs using Beta distributions (Beta(α, β)), representing their confidence in two competing theories (Theory 0 vs. Theory 1).
+- **Network Structure**: The population is structured as a directed graph where edges represent observational channels (e.g., Agent A listens to Agent B).
+- **Simulation Loop**:
+    1.  **Experiment**: Agents perform "experiments" on their chosen theory (Two-Armed Bandit problem).
+    2.  **Observation**: Agents observe the success/failure outcomes of their neighbors (predecessors in the graph).
+    3.  **Update**: Agents update their belief parameters (α/β) using Bayesian inference based on their own results and the observed evidence.
+
+Two parallel implementations exist to balance flexibility and performance:
+- **Object-Oriented**: Logical, easy to extend (`src/net_epistemology/core/agents.py`).
+- **Vectorized**: High-performance, matrix-based implementation using NumPy for large-scale simulations (`src/net_epistemology/core/vectorized_model.py`).
+
+### Empirical Networks
+- status: active
+
+To validate the models against real-world scientific dynamics, the project incorporates empirical datasets derived from bibliometric data.
+
+- **Source**: Data is obtained from **OpenAlex**, specifically focusing on the history of **Peptic Ulcer Disease (PUD)** research (1900-1978).
+- **Network Construction**:
+    - **Nodes**: Authors working on the topic.
+    - **Edges**: Citations between authors (directed from cited to citing).
+- **Processing**: The raw data undergoes rigorous cleaning:
+    - Pruning of "twins" (authors who always co-author, treated as a single epistemic unit).
+    - Extraction of the **Largest Weakly Connected Component (LCC)** to ensure network integrity.
+    - Removal of self-loops.
+- **Purpose**: These networks serve as realistic topologies for running the belief dynamics simulations, allowing for the comparison of theoretical predictions with historical consensus shifts.
 
 ## Installation
 - status: active
@@ -73,7 +97,8 @@ Refer to the `notebooks/` directory for examples of how to set up and run simula
 ## Development & Conventions
 - status: active
 
-- **Markdown Conventions**: All `.md` files must follow the [Markdown-METADATA Hybrid Schema](AI_AGENTS/MD_CONVENTIONS.md).
+- **Markdown Conventions**: All `.md` files must follow the [Markdown-JSON Hybrid Schema](AI_AGENTS/MD_CONVENTIONS.md).
     - Headers must be immediately followed by a metadata block (bulleted list).
-    - There must be a blank line between metadata and content.
+    - Metadata blocks must be separated from content by a `<!-- content -->` line.
+    - This schema allows for bidirectional conversion between Markdown and JSON for programmatic task management.
 - **AI Agents**: If you are an AI assistant, primarily rely on `AI_AGENTS/AGENTS.md` and the `AI_AGENTS/` folder for context.
