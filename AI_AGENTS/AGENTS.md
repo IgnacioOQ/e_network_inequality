@@ -128,17 +128,17 @@ This project is a simulation framework for agent-based models on various network
 
 ```
 e_network_inequality/
-├── AGENTS.md                    # This file - AI agent context
-├── AGENTS_LOG.md                # Log of AI interventions
-├── HOUSEKEEPING.md              # Housekeeping protocol & reports
-├── README.md                    # Project readme
-├── requirements.txt             # Python dependencies
-├── setup.py                     # Package installation
-│
 ├── AI_AGENTS/                   # Context files for specialized AI agents
+│   ├── AGENTS.md                # This file - AI agent context
+│   ├── AGENTS_LOG.md            # Log of AI interventions
+│   ├── HOUSEKEEPING.md          # Housekeeping protocol & reports
 │   ├── LINEARIZE_AGENT.md       # Vectorization specialist instructions
 │   ├── MC_AGENT.md              # Markov Chain analysis agent instructions
 │   └── README.md
+│
+├── README.md                    # Project readme
+├── requirements.txt             # Python dependencies
+├── setup.py                     # Package installation
 │
 ├── src/net_epistemology/        # Main source package
 │   ├── core/                    # Core simulation classes
