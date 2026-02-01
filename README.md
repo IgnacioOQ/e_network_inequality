@@ -56,17 +56,19 @@ Refer to the `notebooks/` directory for examples of how to set up and run simula
 ## Directory Structure
 - status: active
 
-- **`AI_AGENTS/`**: Context files for specialized AI agents.
-    - `AGENTS.md`: Main context file for AI agents.
-    - `MD_CONVENTIONS.md`: Markdown conventions for the project.
-    - `LINEARIZE_AGENT.md`, `MC_AGENT.md`, etc.
-- **`src/net_epistemology/`**: Source code.
-    - `core/`: Core classes (`Model`, `BetaAgent`, `vectorized_model`).
-    - `simulation/`: Helper functions to run simulations.
-    - `utils/`: Network generation (`network_generation.py`) and import management.
-    - `analysis/`: Tools for analyzing simulation results.
-- **`notebooks/`**: Jupyter notebooks for testing, variations, and analysis.
-- **`tests/`**: Unit tests.
+- **`src/net_epistemology/`**: The core package containing the simulation logic.
+    - `core/`: Contains the primary classes for the model (`Model`, `VectorizedModel`) and agents (`BetaAgent`, `BayesAgent`). This is where the Bayesian update logic and network interactions are defined.
+    - `simulation/`: Helper functions and wrappers to run large-scale simulations, including parallel execution tools.
+    - `data/`: Modules for handling data loading and processing.
+    - `utils/`: Utilities for network generation (e.g., scale-free, small-world graphs) and dependency management.
+    - `analysis/`: Tools for analyzing simulation results, including Markov Chain analysis and convergence diagnostics.
+- **`data/`**: Storage for input and output data.
+    - `empirical_networks/`: JSON files representing real-world networks used for empirical validation of the models.
+    - `results_data_sets/`: Generated datasets from simulations, often used for plotting and analysis in notebooks.
+- **`notebooks/`**: Jupyter notebooks for interactive testing, visualization, and deep-dive analysis (e.g., convergence studies, root influence).
+- **`tests/`**: Unit tests ensuring the stability and correctness of the core logic, vectorization, and analysis tools.
+- **`AI_AGENTS/`**: Documentation and context files specifically designed for AI assistants (like this one) to understand the project architecture, rules, and specialized tasks.
+    - `AGENTS.md`, `MD_CONVENTIONS.md`, etc.
 
 ## Development & Conventions
 - status: active
