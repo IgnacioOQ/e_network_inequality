@@ -56,7 +56,10 @@ Refer to the `notebooks/` directory for examples of how to set up and run simula
 ## Directory Structure
 - status: active
 
-- **`AGENTS.md`**: Main context file for AI agents, detailing the project architecture and rules.
+- **`AI_AGENTS/`**: Context files for specialized AI agents.
+    - `AGENTS.md`: Main context file for AI agents.
+    - `MD_CONVENTIONS.md`: Markdown conventions for the project.
+    - `LINEARIZE_AGENT.md`, `MC_AGENT.md`, etc.
 - **`src/net_epistemology/`**: Source code.
     - `core/`: Core classes (`Model`, `BetaAgent`, `vectorized_model`).
     - `simulation/`: Helper functions to run simulations.
@@ -68,7 +71,7 @@ Refer to the `notebooks/` directory for examples of how to set up and run simula
 ## Development & Conventions
 - status: active
 
-- **Markdown Conventions**: All `.md` files must follow the [Markdown-METADATA Hybrid Schema](MD_REPRESENTATION_CONVENTIONS.md).
+- **Markdown Conventions**: All `.md` files must follow the [Markdown-METADATA Hybrid Schema](AI_AGENTS/MD_CONVENTIONS.md).
     - Headers must be immediately followed by a metadata block (bulleted list).
     - There must be a blank line between metadata and content.
-- **AI Agents**: If you are an AI assistant, primarily rely on `AGENTS.md` and the `AI_AGENTS/` folder for context.
+- **AI Agents**: If you are an AI assistant, primarily rely on `AI_AGENTS/AGENTS.md` and the `AI_AGENTS/` folder for context.
