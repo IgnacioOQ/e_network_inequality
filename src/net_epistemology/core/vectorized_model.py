@@ -1,5 +1,4 @@
-from net_epistemology.utils.imports import beta, np, nx, rd, tqdm
-
+from ..utils.imports import beta, np, nx, rd, tqdm
 from .vectorized_agents import VectorizedBandit
 
 

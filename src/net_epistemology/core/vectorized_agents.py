@@ -1,4 +1,4 @@
-from net_epistemology.utils.imports import np, rd
+from ..utils.imports import np, rd
 
 
 class VectorizedBandit:

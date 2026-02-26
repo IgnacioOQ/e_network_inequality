@@ -1,8 +1,7 @@
 # import numpy as np
 # import tqdm
 # import pandas as pd
-from net_epistemology.utils.imports import np, nx, rd, tqdm
-
+from ..utils.imports import np, nx, rd, tqdm
 from .agents import Bandit, BayesAgent, BetaAgent
 
 
