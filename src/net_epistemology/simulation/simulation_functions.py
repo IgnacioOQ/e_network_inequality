@@ -1,10 +1,10 @@
-from net_epistemology.utils.imports import *
-from net_epistemology.core.agents import BetaAgent, BayesAgent
-from net_epistemology.core.model import Model
-from net_epistemology.utils.network_utils import *
+from ..core.agents import BayesAgent, BetaAgent
+from ..core.model import Model
+from ..utils.imports import *
 
 # from network_randomization import *
-from net_epistemology.utils.network_generation import *
+from ..utils.network_generation import *
+from ..utils.network_utils import *
 
 G_default = barabasi_albert_directed(100, 5)
 

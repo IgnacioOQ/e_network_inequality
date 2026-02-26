@@ -1,7 +1,7 @@
-from net_epistemology.utils.imports import *
-from net_epistemology.core.vectorized_model import VectorizedModel
-from net_epistemology.utils.network_utils import *
-from net_epistemology.utils.network_generation import *
+from ..core.vectorized_model import VectorizedModel
+from ..utils.imports import *
+from ..utils.network_generation import *
+from ..utils.network_utils import *
 
 G_default = barabasi_albert_directed(100, 5)
 
@@ -45,11 +45,11 @@ def run_vectorized_simulation_with_params(
     )
 
     my_model.run_simulation(
-        number_of_steps=number_of_steps, 
+        number_of_steps=number_of_steps,
         show_bar=show_bar,
         auc_stopping=auc_stopping,
         auc_threshold=auc_threshold,
-        auc_check_interval=auc_check_interval
+        auc_check_interval=auc_check_interval,
     )
 
     result_dict = {
@@ -65,11 +65,19 @@ def run_vectorized_simulation_with_params(
 
     # Add convergence metrics if computed (Beta agent only)
     if compute_convergence and my_model.belief_change_abs is not None:
-        result_dict["avg_belief_change_abs_theory_0"] = np.mean(my_model.belief_change_abs[:, 0])
-        result_dict["avg_belief_change_abs_theory_1"] = np.mean(my_model.belief_change_abs[:, 1])
+        result_dict["avg_belief_change_abs_theory_0"] = np.mean(
+            my_model.belief_change_abs[:, 0]
+        )
+        result_dict["avg_belief_change_abs_theory_1"] = np.mean(
+            my_model.belief_change_abs[:, 1]
+        )
         result_dict["avg_belief_change_abs"] = np.mean(my_model.belief_change_abs)
-        result_dict["avg_belief_change_kl_theory_0"] = np.mean(my_model.belief_change_kl[:, 0])
-        result_dict["avg_belief_change_kl_theory_1"] = np.mean(my_model.belief_change_kl[:, 1])
+        result_dict["avg_belief_change_kl_theory_0"] = np.mean(
+            my_model.belief_change_kl[:, 0]
+        )
+        result_dict["avg_belief_change_kl_theory_1"] = np.mean(
+            my_model.belief_change_kl[:, 1]
+        )
         result_dict["avg_belief_change_kl"] = np.mean(my_model.belief_change_kl)
         # Store full arrays for detailed analysis (optional)
         result_dict["belief_change_abs_per_agent"] = my_model.belief_change_abs
@@ -93,5 +101,3 @@ def run_vectorized_simulation_with_params(
         result_dict["sim_index"] = param_dict["sim_index"]
 
     return result_dict
-
-
