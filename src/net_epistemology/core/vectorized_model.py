@@ -4,7 +4,99 @@ from .vectorized_agents import VectorizedBandit
 
 class VectorizedModel:
     """
-    Vectorized version of the Model class.
+    Vectorized network, bandit model for efficient multi-agent simulation.
+
+    This class implements a vectorized version of the network, bandit model,
+    where agents are arranged in a network and learn about theories through
+    experimentation and social learning from neighbors. The vectorized implementation
+    uses NumPy arrays for efficient computation with many agents.
+
+    The model supports two theories with different success rates:
+    - Theory 0 (bad): success rate = 0.5
+    - Theory 1 (good): success rate = 0.5 + uncertainty
+
+    Agents can be of two types:
+    - Beta agents: Maintain Beta distributions over theory credences, updated via
+      Bayesian inference. Can use epsilon-greedy exploration.
+    - Bayes agents: Maintain single credence values, updated via Bayesian updating.
+      Only consider evidence for the "good" theory (Theory 1).
+
+    Args:
+        network: NetworkX graph representing agent connections. Directed edges
+            indicate information flow (if A->B, B observes A's results).
+        n_experiments: Number of experiments each agent performs per step.
+        agent_type: Type of agents - "beta" or "bayes". Default: "beta".
+        uncertainty: Difference in success probability between theories.
+            Default: 0.001.
+        tolerance: Convergence tolerance for stopping condition.
+            Default: 0.005.
+        histories: Whether to track credence history for each agent.
+            Default: False.
+        sampling_update: If True, Beta agents sample from posterior; if False,
+            use mean. Default: False.
+        variance_stopping: (Unused) Placeholder for variance-based stopping.
+            Default: False.
+        tstep_stopping: If True, only stops at max steps (no convergence
+            check). Default: True.
+        directed_network: Whether network is directed. Default: True.
+        seed: Random seed for reproducibility. If None and seeded=True,
+            generates random seed.
+        seeded: Whether to use seeded randomness. Default: False.
+        compute_convergence: If True, compute belief change metrics during
+            simulation. Default: False.
+        compute_root_analysis: If True, analyze root nodes and their influence
+            after simulation. Default: False.
+
+    Attributes:
+        network: The agent network graph.
+        n_agents (int): Number of agents.
+        nodes (list): List of node IDs.
+        id_to_index_map (dict): Mapping from node IDs to array indices.
+        n_experiments (int): Experiments per agent per step.
+        agent_type (str): "beta" or "bayes".
+        epsilon (float): Exploration rate for epsilon-greedy (Beta agents).
+        tolerance (float): Convergence tolerance.
+        bandit (VectorizedBandit): Bandit model.
+        alphas_betas (ndarray): Shape (n_agents, 2, 2). Beta distribution
+            parameters for Beta agents. [agent, theory, param] where
+            param 0=alpha, 1=beta.
+        credences (ndarray): Current agent beliefs. Shape (n_agents, 2) for
+            Beta agents (credences for both theories), (n_agents,) for Bayes
+            agents (credence for Theory 1).
+        adj_matrix (sparse matrix): Network adjacency matrix for vectorized
+            operations.
+        n_steps (int): Current simulation step count.
+        conclusion (float): Proportion of agents believing truth at simulation
+            end.
+        conclusion_core (float): Proportion of core agents (in-degree > 1)
+            believing truth.
+        proportion_reached_by_truth (float): Proportion of network reachable
+            from truthful root nodes.
+        credences_history (list): History of credences if histories=True.
+        credences_prior_final (ndarray): Credences from penultimate step
+            (for convergence).
+        belief_change_abs (ndarray): Absolute belief change in final step
+            (Beta only).
+        belief_change_kl (ndarray): KL divergence of beliefs in final step
+            (Beta only).
+        belief_change_history (list): Per-step mean belief changes
+            (if compute_convergence=True).
+        root_analysis (dict): Analysis of root nodes and their influence
+            (if compute_root_analysis=True).
+
+    Methods:
+        step(): Execute one simulation step (experiment + update).
+        run_simulation(number_of_steps, show_bar, auc_stopping,
+            auc_threshold, auc_check_interval): Run full simulation with
+            optional stopping conditions.
+
+    Example:
+        >>> import networkx as nx
+        >>> G = nx.erdos_renyi_graph(100, 0.05, directed=True)
+        >>> model = VectorizedModel(G, n_experiments=10, agent_type="beta",
+        ...                         uncertainty=0.05)
+        >>> model.run_simulation(number_of_steps=1000)
+        >>> print(f"Conclusion: {model.conclusion:.2%}")
     """
 
     def __init__(
@@ -16,15 +108,15 @@ class VectorizedModel:
         tolerance=5 * 1e-03,
         histories=False,
         sampling_update=False,
-        variance_stopping=False,
+        # variance_stopping=False,
         tstep_stopping=True,
-        directed_network=True,
+        # directed_network=True,
         seed=None,
         seeded=False,
         compute_convergence=False,
         compute_root_analysis=False,
-        *args,
-        **kwargs
+        # *args,
+        # **kwargs
     ):
         self.network = network
         self.n_agents = len(network.nodes)
@@ -80,28 +172,36 @@ class VectorizedModel:
         )
 
         if self.agent_type == "beta":
-            for i in range(self.n_agents):
-                prior_T1 = rd.uniform(0, 4, size=2)
-                prior_T2 = rd.uniform(0, 4, size=2)
-                self.alphas_betas[i] = np.array([prior_T1, prior_T2])
+            priors = rd.uniform(0, 4, size=(self.n_agents, 2, 2))
+            self.alphas_betas = priors.copy()
+            if self.sampling_update:
+                self.credences = rd.beta(priors[:, :, 0], priors[:, :, 1])
+            else:
+                # Mean of Beta(a, b) = a / (a + b)
+                a = priors[:, :, 0]
+                b = priors[:, :, 1]
+                self.credences = a / (a + b)
+            # for i in range(self.n_agents):
+            #     prior_T1 = rd.uniform(0, 4, size=2)
+            #     prior_T2 = rd.uniform(0, 4, size=2)
+            #     self.alphas_betas[i] = np.array([prior_T1, prior_T2])
 
-                mean_T1 = beta.stats(prior_T1[0], prior_T1[1], moments="m")
-                mean_T2 = beta.stats(prior_T2[0], prior_T2[1], moments="m")
-
-                if self.sampling_update:
-                    self.credences[i] = np.array(
-                        [
-                            rd.beta(prior_T1[0], prior_T1[1], size=1)[0],
-                            rd.beta(prior_T2[0], prior_T2[1], size=1)[0],
-                        ]
-                    )
-                else:
-                    self.credences[i] = np.array([mean_T1, mean_T2])
+            #     if self.sampling_update:
+            #         self.credences[i] = np.array(
+            #             [
+            #                 rd.beta(prior_T1[0], prior_T1[1], size=1)[0],
+            #                 rd.beta(prior_T2[0], prior_T2[1], size=1)[0],
+            #             ]
+            #         )
+            #     else:
+            #         mean_T1 = beta.stats(prior_T1[0], prior_T1[1], moments="m")
+            #         mean_T2 = beta.stats(prior_T2[0], prior_T2[1], moments="m")
+            #         self.credences[i] = np.array([mean_T1, mean_T2])
 
         elif self.agent_type == "bayes":
-            self.credences = np.zeros(self.n_agents)  # redundant?
-            for i in range(self.n_agents):
-                self.credences[i] = rd.uniform(0, 1)
+            self.credences = rd.uniform(0, 1, size=self.n_agents)
+            # for i in range(self.n_agents):
+            #     self.credences[i] = rd.uniform(0, 1)
 
         # History
         if self.histories:
@@ -120,10 +220,10 @@ class VectorizedModel:
         # Result[v] = Sum_u (A_adj[u, v] * Outcomes[u]).
         # Vector form: Result = A_adj.T @ Outcomes.
 
-        self.adj_matrix = nx.to_numpy_array(self.network, nodelist=self.nodes)
-        if not directed_network:  # Hein: remove redundancy?
-            # If undirected, A_adj is symmetric, so A.T == A.
-            pass
+        self.adj_matrix = nx.to_scipy_sparse_array(self.network, nodelist=self.nodes)
+        # if not directed_network:  # Hein: remove redundancy?
+        #     # If undirected, A_adj is symmetric, so A.T == A.
+        #     pass
 
         # Convert to sparse if large? For now dense is fine for 100 agents.
         # Hein: Yes, I would opt for sparse: nx.to_scipy_sparse_array(self.network)
@@ -144,14 +244,13 @@ class VectorizedModel:
         theory_indices = np.zeros(self.n_agents, dtype=int)
 
         if self.agent_type == "beta":
-            rand_epsilon = rd.rand(self.n_agents)
-            explore_mask = rand_epsilon < self.epsilon
+            explore_mask = rd.rand(self.n_agents) < self.epsilon
             exploit_mask = ~explore_mask
 
             # Explore: Random choice
             if np.any(explore_mask):
                 theory_indices[explore_mask] = rd.randint(
-                    0, 2, size=np.sum(explore_mask)
+                    0, 2, size=int(np.sum(explore_mask))
                 )
 
             # Exploit: Best credence
@@ -165,13 +264,13 @@ class VectorizedModel:
                 # But floating point equality is rare unless initialized same.
                 # Standard argmax:
                 theory_indices[exploit_mask] = np.argmax(
-                    self.credences[exploit_mask], axis=1
+                    self.credences[exploit_mask], axis=1  # type: ignore[index]
                 )
 
         elif self.agent_type == "bayes":
             # Bayes Agent Choice: if cred > 0.5 -> 1 (Good), else 0 (Bad)
             # self.credences is shape (N,)
-            theory_indices = (self.credences > 0.5).astype(int)
+            theory_indices = (self.credences > 0.5).astype(int)  # type: ignore
 
         # 2. Run Experiments
         # BayesAgent logic in agents.py: if choice is 0, return 0,0,0.
@@ -184,7 +283,13 @@ class VectorizedModel:
         # But BayesAgent DOES NOT run experiment if choice is 0.
         # So for Bayes, we must set success/failure to 0 if choice is 0.
 
-        if self.agent_type == "bayes":
+        if self.agent_type == "beta":
+            n_success, n_total = self.bandit.experiment(
+                theory_indices, self.n_experiments
+            )
+            n_failures = n_total - n_success
+
+        elif self.agent_type == "bayes":
             # Only run experiments for those who chose 1
             # But VectorizedBandit runs for all.
             # We can run for all and then mask.
@@ -197,13 +302,6 @@ class VectorizedModel:
             mask_0 = theory_indices == 0
             n_success[mask_0] = 0
             n_failures[mask_0] = 0
-            # n_total[mask_0] = 0 # Not strictly needed but cleaner
-
-        else:  # Beta
-            n_success, n_total = self.bandit.experiment(
-                theory_indices, self.n_experiments
-            )
-            n_failures = n_total - n_success
 
         # Store results for update
         # experiments_results: matrix of shape (N, 2, 2) ->
@@ -223,14 +321,14 @@ class VectorizedModel:
         # Outcome_Success[i, t] = successes of agent i on theory t (0 otherwise)
         # Outcome_Failure[i, t] = failures of agent i on theory t
 
-        outcome_success = np.zeros((self.n_agents, 2))
-        outcome_failure = np.zeros((self.n_agents, 2))
+        individual_success = np.zeros((self.n_agents, 2), dtype=int)
+        individual_failure = np.zeros((self.n_agents, 2), dtype=int)
 
         # Fill them
         # theory_indices is (N,). n_success is (N,).
         rows = np.arange(self.n_agents)
-        outcome_success[rows, theory_indices] = n_success
-        outcome_failure[rows, theory_indices] = n_failures
+        individual_success[rows, theory_indices] = n_success  # type: ignore
+        individual_failure[rows, theory_indices] = n_failures  # type: ignore
 
         # Aggregate from neighbors
         # Aggregated_Success = A.T @ Outcome_Success
@@ -243,8 +341,8 @@ class VectorizedModel:
         # And we established A.T sums over predecessors (incoming edges).
         # For undirected, A.T = A, sums over neighbors. Correct.
 
-        agg_success = self.adj_matrix.T @ outcome_success
-        agg_failure = self.adj_matrix.T @ outcome_failure
+        communicate_success = self.adj_matrix.T @ individual_success
+        communicate_failure = self.adj_matrix.T @ individual_failure
 
         # Add OWN results?
         # Original code:
@@ -252,8 +350,8 @@ class VectorizedModel:
         # for id in neighbors: ... += results (neighbor)
         # So YES, add own results.
 
-        total_success = agg_success + outcome_success
-        total_failure = agg_failure + outcome_failure
+        total_success = communicate_success + individual_success
+        total_failure = communicate_failure + individual_failure
 
         if self.agent_type == "beta":
             # Update Alphas/Betas
@@ -279,8 +377,7 @@ class VectorizedModel:
                     self.alphas_betas[:, :, 0], self.alphas_betas[:, :, 1]
                 )
             else:
-                # Mean
-                # beta.stats(moment='m') is basically a / (a+b) for beta dist.
+                # Mean of Beta(a, b) = a / (a + b)
                 a = self.alphas_betas[:, :, 0]
                 b = self.alphas_betas[:, :, 1]
                 self.credences = a / (a + b)
@@ -297,8 +394,8 @@ class VectorizedModel:
             # It only updates for Theory 1.
 
             # Evidence for Theory 1:
-            S1 = total_success[:, 1]
-            F1 = total_failure[:, 1]
+            successes_1 = total_success[:, 1]
+            failures_1 = total_failure[:, 1]
 
             # Bayes formula:
             # new_C = 1 / (1 + (1-C)/C * L^k)
@@ -308,8 +405,8 @@ class VectorizedModel:
             uncertainty = (
                 self.bandit.uncertainty
             )  # Assuming all agents share uncertainty (Model param)
-            L = (0.5 - uncertainty) / (0.5 + uncertainty)
-            k = S1 - F1
+            factor_per_observation = (0.5 - uncertainty) / (0.5 + uncertainty)
+            net_score = successes_1 - failures_1
 
             # We only update if k != 0? Or always?
             # If S1=0, F1=0, k=0. L^0 = 1.
@@ -320,11 +417,13 @@ class VectorizedModel:
             # C is in (0, 1) initially (uniform).
             # It might reach boundaries.
             # Clip C to epsilon?
-            epsilon = 1e-9
-            C = np.clip(self.credences, epsilon, 1 - epsilon)
+            credence_clipped = np.clip(self.credences, 1e-9, 1 - 1e-9)
 
-            term = ((1 - C) / C) * (L**k)
-            self.credences = 1 / (1 + term)
+            self.credences = 1 / (
+                1
+                + ((1 - credence_clipped) / credence_clipped)
+                * (factor_per_observation**net_score)
+            )
 
         if self.histories:
             for i in range(self.n_agents):
@@ -356,9 +455,7 @@ class VectorizedModel:
             # Original: np.allclose(prior, post) with tolerance.
             # But here just return False or implement check.
             if self.agent_type == "bayes":
-                # Bayes stop: all credences <= 0.5 or > 0.99 (Consensus)
-                # Model.py uses: all(credences <= 0.5) or all(credences > 0.99)
-                return np.all(self.credences <= 0.5) or np.all(self.credences > 0.99)
+                return np.all(self.credences <= 0.5) or np.all(self.credences > 0.99)  # type: ignore
             if self.agent_type == "beta":
                 # Beta convergence check: np.allclose(prior, post)
                 return np.allclose(
@@ -466,7 +563,7 @@ class VectorizedModel:
 
         iterable = range(number_of_steps)
         if show_bar:
-            iterable = tqdm.tqdm(iterable)
+            iterable = tqdm(iterable)
 
         credences_prior = self.credences.copy()
         alphas_betas_prior = (
