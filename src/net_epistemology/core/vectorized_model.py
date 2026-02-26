@@ -1,6 +1,6 @@
-from net_epistemology.utils.imports import *
+from net_epistemology.utils.imports import beta, np, nx, rd, tqdm
+
 from .vectorized_agents import VectorizedBandit
-from scipy.stats import beta
 
 
 class VectorizedModel:
@@ -41,14 +41,20 @@ class VectorizedModel:
         self.tstep_stopping = tstep_stopping
         self.compute_convergence = compute_convergence
         self.compute_root_analysis = compute_root_analysis
-        
-        # Convergence tracking attributes (populated after simulation if compute_convergence=True)
+
+        # Convergence tracking attributes (populated after simulation if
+        # compute_convergence=True)
         self.credences_prior_final = None  # Beliefs at step N-1
-        self.belief_change_abs = None  # Per-agent, per-theory absolute difference (final step)
+        self.belief_change_abs = (
+            None  # Per-agent, per-theory absolute difference (final step)
+        )
         self.belief_change_kl = None  # Per-agent, per-theory KL divergence (final step)
-        self.belief_change_history = None  # Per-step mean belief change: list of (mean_T0, mean_T1)
-        
-        # Root analysis attributes (populated after simulation if compute_root_analysis=True)
+        self.belief_change_history = (
+            None  # Per-step mean belief change: list of (mean_T0, mean_T1)
+        )
+
+        # Root analysis attributes (populated after simulation
+        # if compute_root_analysis=True)
         self.root_analysis = None
         if seeded:
             if seed is None:
@@ -94,7 +100,7 @@ class VectorizedModel:
                     self.credences[i] = np.array([mean_T1, mean_T2])
 
         elif self.agent_type == "bayes":
-            self.credences = np.zeros(self.n_agents)
+            self.credences = np.zeros(self.n_agents)  # redundant?
             for i in range(self.n_agents):
                 self.credences[i] = rd.uniform(0, 1)
 
@@ -116,11 +122,12 @@ class VectorizedModel:
         # Vector form: Result = A_adj.T @ Outcomes.
 
         self.adj_matrix = nx.to_numpy_array(self.network, nodelist=self.nodes)
-        if not directed_network:
+        if not directed_network:  # Hein: remove redundancy?
             # If undirected, A_adj is symmetric, so A.T == A.
             pass
 
         # Convert to sparse if large? For now dense is fine for 100 agents.
+        # Hein: Yes, I would opt for sparse: nx.to_scipy_sparse_array(self.network)
 
         self.n_steps = 0
         self.conclusion = 0.0
@@ -200,7 +207,8 @@ class VectorizedModel:
             n_failures = n_total - n_success
 
         # Store results for update
-        # experiments_results: matrix of shape (N, 2, 2) -> (success, failure) for theory 0 and 1?
+        # experiments_results: matrix of shape (N, 2, 2) ->
+        # (success, failure) for theory 0 and 1?
         # Actually, each agent only tested ONE theory.
         # So agent i has result for theory T_i.
         # We need to construct the update vector.
@@ -283,7 +291,8 @@ class VectorizedModel:
             # Only update if Evidence for Theory 1 is present.
             # Wait, agents.py says: if theory_index != good_theory_id: pass.
             # This refers to the theory index OF THE AGENT providing the evidence?
-            # No, 'update(theory_index, n_s, n_f)' means "Update belief given evidence for theory_index".
+            # No, 'update(theory_index, n_s, n_f)' means "Update belief given evidence
+            # for theory_index".
             # In agents_update (model.py), it calls update(0, ...) then update(1, ...).
             # So BayesAgent ignores evidence for Theory 0.
             # It only updates for Theory 1.
@@ -323,13 +332,18 @@ class VectorizedModel:
                 self.credences_history[i].append(self.credences[i])
 
     def run_simulation(
-        self, number_of_steps: int = 10**6, show_bar: bool = False,
-        auc_stopping: bool = False, auc_threshold: float = 0.95, 
-        auc_check_interval: int = 500, *args, **kwargs
+        self,
+        number_of_steps: int = 10**6,
+        show_bar: bool = False,
+        auc_stopping: bool = False,
+        auc_threshold: float = 0.95,
+        auc_check_interval: int = 500,
+        *args,
+        **kwargs
     ):
         """
         Run the simulation.
-        
+
         Args:
             number_of_steps: Maximum number of steps to run
             show_bar: Whether to show progress bar
@@ -401,42 +415,52 @@ class VectorizedModel:
             degrees = np.sum(self.adj_matrix, axis=0)
             root_mask = degrees == 0
             root_indices = np.where(root_mask)[0]
-            
+
             if len(root_indices) == 0:
                 return None, False
-            
+
             # Get which roots believe truth
             if self.agent_type == "beta":
-                root_believes_truth = self.credences[root_indices, 1] > self.credences[root_indices, 0]
+                root_believes_truth = (
+                    self.credences[root_indices, 1] > self.credences[root_indices, 0]
+                )
             else:
                 root_believes_truth = self.credences[root_indices] > 0.5
-            
+
             # Compute node predictions based on reachability from truthful roots
             node_predictions = np.zeros(self.n_agents)
             root_node_ids = [self.nodes[i] for i in root_indices]
-            
-            for i, (node_id, believes_truth) in enumerate(zip(root_node_ids, root_believes_truth)):
+
+            for i, (node_id, believes_truth) in enumerate(
+                zip(root_node_ids, root_believes_truth)
+            ):
                 if believes_truth:
                     desc_set = nx.descendants(self.network, node_id)
                     desc_set.add(node_id)
                     for n in desc_set:
                         if n in self.id_to_index_map:
                             node_predictions[self.id_to_index_map[n]] = 1.0
-            
+
             # Get actual outcomes
             if self.agent_type == "beta":
-                node_actuals = (self.credences[:, 1] > self.credences[:, 0]).astype(float)
+                node_actuals = (self.credences[:, 1] > self.credences[:, 0]).astype(
+                    float
+                )
             else:
                 node_actuals = (self.credences > 0.5).astype(float)
-            
+
             # Try to compute AUC-ROC first
             try:
                 from sklearn.metrics import roc_auc_score
-                if len(np.unique(node_actuals)) > 1 and len(np.unique(node_predictions)) > 1:
+
+                if (
+                    len(np.unique(node_actuals)) > 1
+                    and len(np.unique(node_predictions)) > 1
+                ):
                     return roc_auc_score(node_actuals, node_predictions), True
             except Exception:
                 pass
-            
+
             # Fallback to node_accuracy if AUC not computable
             node_accuracy = np.mean(node_predictions == node_actuals)
             return node_accuracy, False
@@ -446,12 +470,16 @@ class VectorizedModel:
             iterable = tqdm.tqdm(iterable)
 
         credences_prior = self.credences.copy()
-        alphas_betas_prior = self.alphas_betas.copy() if self.agent_type == "beta" and self.compute_convergence else None
-        
+        alphas_betas_prior = (
+            self.alphas_betas.copy()
+            if self.agent_type == "beta" and self.compute_convergence
+            else None
+        )
+
         # Track per-step belief change if computing convergence
         if self.compute_convergence and self.agent_type == "beta":
             self.belief_change_history = []
-        
+
         # Track AUC stopping
         auc_stopped = False
 
@@ -459,26 +487,28 @@ class VectorizedModel:
             credences_prior = self.credences.copy()
             if self.agent_type == "beta" and self.compute_convergence:
                 alphas_betas_prior = self.alphas_betas.copy()
-            
+
             self.step()
-            
+
             # Compute per-step belief change for convergence tracking
             if self.compute_convergence and self.agent_type == "beta":
                 # Compute mean of prior and posterior
                 a_prior = alphas_betas_prior[:, :, 0]
                 b_prior = alphas_betas_prior[:, :, 1]
                 mean_prior = a_prior / (a_prior + b_prior)
-                
+
                 a_post = self.alphas_betas[:, :, 0]
                 b_post = self.alphas_betas[:, :, 1]
                 mean_post = a_post / (a_post + b_post)
-                
+
                 # Mean absolute change across agents for each theory
                 abs_change = np.abs(mean_post - mean_prior)
-                self.belief_change_history.append((
-                    np.mean(abs_change[:, 0]),  # Theory 0
-                    np.mean(abs_change[:, 1])   # Theory 1
-                ))
+                self.belief_change_history.append(
+                    (
+                        np.mean(abs_change[:, 0]),  # Theory 0
+                        np.mean(abs_change[:, 1]),  # Theory 1
+                    )
+                )
 
             # AUC-based stopping (check every auc_check_interval steps)
             if auc_stopping and (step_num + 1) % auc_check_interval == 0:
@@ -494,7 +524,7 @@ class VectorizedModel:
                 continue  # tstep mode: run for fixed number of steps
             elif stop_condition(credences_prior):
                 break  # Old convergence-based stopping
-        
+
         # Store final prior for convergence analysis
         if self.compute_convergence:
             self.credences_prior_final = credences_prior
@@ -535,23 +565,27 @@ class VectorizedModel:
                 )
             else:
                 self.proportion_reached_by_truth = 0.0
-        
+
         # Compute convergence metrics if requested (Beta agent only)
-        if self.compute_convergence and self.agent_type == "beta" and alphas_betas_prior is not None:
+        if (
+            self.compute_convergence
+            and self.agent_type == "beta"
+            and alphas_betas_prior is not None
+        ):
             self._compute_convergence_metrics(alphas_betas_prior)
-        
+
         # Compute root node analysis if requested
         if self.compute_root_analysis:
             self._compute_root_analysis()
-    
+
     def _compute_convergence_metrics(self, alphas_betas_prior):
         """
         Compute belief change metrics between last two steps.
-        
+
         For Beta distributions:
         - Absolute difference: |mean_final - mean_prior|
         - KL divergence: KL(prior || posterior) using scipy.stats.entropy
-        
+
         Args:
             alphas_betas_prior: (N, 2, 2) array of prior alpha/beta values
         """
@@ -560,35 +594,38 @@ class VectorizedModel:
         a_prior = alphas_betas_prior[:, :, 0]
         b_prior = alphas_betas_prior[:, :, 1]
         mean_prior = a_prior / (a_prior + b_prior)
-        
+
         a_post = self.alphas_betas[:, :, 0]
         b_post = self.alphas_betas[:, :, 1]
         mean_post = a_post / (a_post + b_post)
-        
+
         # Absolute difference in means: shape (N, 2)
         self.belief_change_abs = np.abs(mean_post - mean_prior)
-        
+
         # KL divergence for Beta distributions
-        # KL(Beta(a1,b1) || Beta(a2,b2)) = log(B(a2,b2)/B(a1,b1)) 
+        # KL(Beta(a1,b1) || Beta(a2,b2)) = log(B(a2,b2)/B(a1,b1))
         #   + (a1-a2)*psi(a1) + (b1-b2)*psi(b1) + (a2-a1+b2-b1)*psi(a1+b1)
         # where B is beta function and psi is digamma
         from scipy.special import betaln, digamma
-        
+
         # Prior is P, Posterior is Q, we compute KL(P || Q)
         a1, b1 = a_prior, b_prior  # Prior
-        a2, b2 = a_post, b_post    # Posterior
-        
-        kl = (betaln(a2, b2) - betaln(a1, b1) +
-              (a1 - a2) * digamma(a1) +
-              (b1 - b2) * digamma(b1) +
-              (a2 - a1 + b2 - b1) * digamma(a1 + b1))
-        
+        a2, b2 = a_post, b_post  # Posterior
+
+        kl = (
+            betaln(a2, b2)
+            - betaln(a1, b1)
+            + (a1 - a2) * digamma(a1)
+            + (b1 - b2) * digamma(b1)
+            + (a2 - a1 + b2 - b1) * digamma(a1 + b1)
+        )
+
         self.belief_change_kl = kl  # Shape (N, 2)
-    
+
     def _compute_root_analysis(self):
         """
         Analyze root nodes (nodes with no incoming edges) and their influence.
-        
+
         Computes:
         - Which nodes are roots
         - Their final credences
@@ -601,25 +638,25 @@ class VectorizedModel:
         degrees = np.sum(self.adj_matrix, axis=0)  # In-degree
         root_mask = degrees == 0
         root_indices = np.where(root_mask)[0]
-        
+
         if len(root_indices) == 0:
             self.root_analysis = {
-                'n_roots': 0,
-                'root_indices': np.array([]),
-                'root_node_ids': [],
-                'root_credences': np.array([]),
-                'root_believes_truth': np.array([]),
-                'descendant_counts': np.array([]),
-                'descendants': [],
-                'weighted_truth_share': None,
-                'unweighted_truth_share': None,
-                'node_predictions': np.array([]),
-                'node_actuals': np.array([]),
-                'node_accuracy': None,
-                'node_auc_roc': None,
+                "n_roots": 0,
+                "root_indices": np.array([]),
+                "root_node_ids": [],
+                "root_credences": np.array([]),
+                "root_believes_truth": np.array([]),
+                "descendant_counts": np.array([]),
+                "descendants": [],
+                "weighted_truth_share": None,
+                "unweighted_truth_share": None,
+                "node_predictions": np.array([]),
+                "node_actuals": np.array([]),
+                "node_accuracy": None,
+                "node_auc_roc": None,
             }
             return
-        
+
         # Get root credences
         if self.agent_type == "beta":
             root_credences = self.credences[root_indices]  # Shape (n_roots, 2)
@@ -628,53 +665,61 @@ class VectorizedModel:
         elif self.agent_type == "bayes":
             root_credences = self.credences[root_indices]  # Shape (n_roots,)
             root_believes_truth = root_credences > 0.5
-        
+
         # Compute descendants for each root
         root_node_ids = [self.nodes[i] for i in root_indices]
         descendants = []
         descendant_counts = []
-        
+
         for node_id in root_node_ids:
             desc_set = nx.descendants(self.network, node_id)
             desc_set.add(node_id)  # Include the root itself
             # Convert to indices
-            desc_indices = [self.id_to_index_map[n] for n in desc_set if n in self.id_to_index_map]
+            desc_indices = [
+                self.id_to_index_map[n] for n in desc_set if n in self.id_to_index_map
+            ]
             descendants.append(set(desc_indices))
             descendant_counts.append(len(desc_indices))
-        
+
         descendant_counts = np.array(descendant_counts)
-        
+
         # Compute weighted truth share
         # Weight = proportion of network each root influences
         weights = descendant_counts / descendant_counts.sum()
         weighted_truth_share = np.sum(weights * root_believes_truth.astype(float))
         unweighted_truth_share = np.mean(root_believes_truth.astype(float))
-        
+
         # ─── NODE-LEVEL PREDICTIONS ───
         # Prediction: A node will believe truth if it's reachable from ANY truthful root
         node_predictions = np.zeros(self.n_agents)
-        
-        for i, (root_idx, believes_truth) in enumerate(zip(root_indices, root_believes_truth)):
+
+        for i, (root_idx, believes_truth) in enumerate(
+            zip(root_indices, root_believes_truth)
+        ):
             if believes_truth:
                 # Mark all descendants of this truthful root as predicted to believe truth
                 for desc_idx in descendants[i]:
                     node_predictions[desc_idx] = 1.0
-        
+
         # Get actual outcomes (which nodes actually believe truth)
         if self.agent_type == "beta":
             node_actuals = (self.credences[:, 1] > self.credences[:, 0]).astype(float)
         else:  # bayes
             node_actuals = (self.credences > 0.5).astype(float)
-        
+
         # Compute accuracy metrics
         node_accuracy = np.mean(node_predictions == node_actuals)
-        
+
         # Compute AUC-ROC (handle edge case where all predictions are same class)
         node_auc_roc = None
         try:
             from sklearn.metrics import roc_auc_score
+
             # AUC-ROC requires both classes in y_true
-            if len(np.unique(node_actuals)) > 1 and len(np.unique(node_predictions)) > 1:
+            if (
+                len(np.unique(node_actuals)) > 1
+                and len(np.unique(node_predictions)) > 1
+            ):
                 node_auc_roc = roc_auc_score(node_actuals, node_predictions)
             elif len(np.unique(node_actuals)) > 1:
                 # Predictions all same, but actuals vary - still informative
@@ -682,21 +727,20 @@ class VectorizedModel:
         except Exception:
             # sklearn not available or other error
             node_auc_roc = None
-        
-        self.root_analysis = {
-            'n_roots': len(root_indices),
-            'root_indices': root_indices,
-            'root_node_ids': root_node_ids,
-            'root_credences': root_credences,
-            'root_believes_truth': root_believes_truth,
-            'descendant_counts': descendant_counts,
-            'descendants': descendants,
-            'weighted_truth_share': weighted_truth_share,
-            'unweighted_truth_share': unweighted_truth_share,
-            # Node-level prediction metrics
-            'node_predictions': node_predictions,
-            'node_actuals': node_actuals,
-            'node_accuracy': node_accuracy,
-            'node_auc_roc': node_auc_roc,
-        }
 
+        self.root_analysis = {
+            "n_roots": len(root_indices),
+            "root_indices": root_indices,
+            "root_node_ids": root_node_ids,
+            "root_credences": root_credences,
+            "root_believes_truth": root_believes_truth,
+            "descendant_counts": descendant_counts,
+            "descendants": descendants,
+            "weighted_truth_share": weighted_truth_share,
+            "unweighted_truth_share": unweighted_truth_share,
+            # Node-level prediction metrics
+            "node_predictions": node_predictions,
+            "node_actuals": node_actuals,
+            "node_accuracy": node_accuracy,
+            "node_auc_roc": node_auc_roc,
+        }

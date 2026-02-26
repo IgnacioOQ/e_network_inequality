@@ -1,4 +1,4 @@
-from net_epistemology.utils.imports import *
+from net_epistemology.utils.imports import np, rd
 
 
 class VectorizedBandit:
@@ -29,7 +29,8 @@ class VectorizedBandit:
 
         # Generate outcomes
         # n_success = np.random.binomial(n_experiments, probs)
-        # However, to match the original code's randomness structure exactly (if possible),
+        # However, to match the original code's randomness structure exactly
+        # (if possible),
         # we might need to be careful. But for 'statistically equivalent',
         # using vectorized operations is the goal.
 
