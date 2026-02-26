@@ -1,3 +1,7 @@
+from typing import Tuple
+
+from numpy.typing import ArrayLike, NDArray
+
 from ..utils.imports import np, rd
 
 
@@ -6,23 +10,27 @@ class VectorizedBandit:
     Vectorized version of the Bandit class.
     """
 
-    def __init__(self, uncertainty=0.1, n_agents=1):
-        self.uncertainty = uncertainty
-        self.p_bad_theory = 0.5
-        self.p_good_theory = 0.5 + uncertainty
-        self.n_agents = n_agents
+    def __init__(self, uncertainty: float = 0.1, n_agents: int = 1) -> None:
+        self.uncertainty: float = uncertainty
+        self.p_bad_theory: float = 0.5
+        self.p_good_theory: float = 0.5 + uncertainty
+        self.n_agents: int = n_agents
 
-    def experiment(self, theory_indices, n_experiments):
+    def experiment(
+        self, theory_indices: ArrayLike, n_experiments: int
+    ) -> Tuple[NDArray[np.int_], int]:
         """
         Vectorized experiment.
 
         Args:
-            theory_indices: np.array of shape (n_agents,), containing 0 or 1.
-            n_experiments: int, number of experiments per agent.
+            theory_indices: Array-like of shape (n_agents,), containing 0 or 1.
+                Can be a list, tuple, or numpy array of integers.
+            n_experiments: Number of experiments per agent.s
 
         Returns:
-            n_success: np.array of shape (n_agents,)
-            n_total: int or np.array of shape (n_agents,)
+            Tuple containing:
+                - n_success: numpy array of shape (n_agents,) with number of successes per agent
+                - n_total: int, total number of experiments (same for all agents)
         """
         # Create an array of probabilities based on choices
         probs = np.where(theory_indices == 0, self.p_bad_theory, self.p_good_theory)
