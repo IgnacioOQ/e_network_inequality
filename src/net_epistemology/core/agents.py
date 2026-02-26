@@ -1,7 +1,4 @@
-# import numpy as np
-# import numpy.random as rd
-# from scipy.stats import beta
-from net_epistemology.utils.imports import *
+from net_epistemology.utils.imports import beta, np, rd
 
 bad_theory_id: int = 0
 good_theory_id: int = 1
@@ -41,7 +38,8 @@ class Bandit:
         Simulates a set of experiments based on the selected theory.
 
         Args:
-        - index (int): Indicates which theory to test (0 for bad theory, 1 for good theory).
+        - index (int): Indicates which theory to test (0 for bad theory, 1 for
+        good theory).
         - n_experiments (int): The number of experiments to run.
 
         Returns:
@@ -70,8 +68,10 @@ class BetaAgent:
     Attributes:
     - id (int): Unique identifier for the agent.
     - bandit (Bandit): An instance representing the environment providing experiments.
-    - alphas_betas (np.ndarray): A 2D array storing alpha (success) and beta (failure) parameters for each theory.
-    - credences (np.ndarray): The agent's belief in each theory, initialized as the mean of beta distributions.
+    - alphas_betas (np.ndarray): A 2D array storing alpha (success) and beta (failure)
+    parameters for each theory.
+    - credences (np.ndarray): The agent's belief in each theory, initialized as the
+    mean of beta distributions.
     - histories (bool): Whether to store the history of credences.
     - credences_history (list): A list storing past credences if histories are enabled.
 
@@ -81,14 +81,16 @@ class BetaAgent:
     - greedy_choice(self):
       Selects the theory with the highest credence (breaking ties randomly).
     - experiment(self, n_experiments: int):
-      Runs an experiment on the selected theory and returns the observed successes and failures.
+      Runs an experiment on the selected theory and returns the observed successes
+      and failures.
     - beta_update(self, theory_index, n_success, n_failures):
-      Updates the agent's belief using Bayesian updating based on observed successes and failures.
+      Updates the agent's belief using Bayesian updating based on observed successes
+      and failures.
     """
 
     def __init__(self, id, bandit, histories=False, sampling_update=False, epsilon=0):
         """
-        Initializes the BetaAgent with a given ID and an instance of the bandit environment.
+        Initializes the BetaAgent with a given ID and an instance of the bandit class.
 
         Parameters:
         - id (int): Unique identifier for the agent.
@@ -156,7 +158,8 @@ class BetaAgent:
 
     def update(self, theory_index, n_success, n_failures):
         """
-        Updates the agent's belief using Bayesian updating based on observed successes and failures.
+        Updates the agent's belief using Bayesian updating based on observed successes
+        and failures.
 
         Parameters:
         - theory_index (int): Index of the theory being updated.

@@ -1,8 +1,9 @@
 # import numpy as np
 # import tqdm
 # import pandas as pd
-from net_epistemology.utils.imports import *
-from .agents import BetaAgent, BayesAgent, Bandit
+from net_epistemology.utils.imports import np, nx, rd, tqdm
+
+from .agents import Bandit, BayesAgent, BetaAgent
 
 
 class Model:
@@ -75,14 +76,16 @@ class Model:
             ]
         else:
             raise ValueError("Agent type not recognized.")
-        # self.agents = [agent_class(u, self.bandit, histories=histories, sampling_update=sampling_update)
+        # self.agents = [agent_class(u, self.bandit, histories=histories,
+        # sampling_update=sampling_update)
         #   for u in self.nodes]
         # Assuming self.nodes is a list like ['id1', 'id2', 'id3', ...]
         self.id_to_index_map = {u: index for index, u in enumerate(self.nodes)}
 
         # self.id_to_index_map will be: {'id1': 0, 'id2': 1, 'id3': 2, ...}
         self.init_agents_alphas_betas = "here goes the list of initial alphas and betas"
-        # self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent in self.agents]
+        # self.init_agents_alphas_betas= [copy.deepcopy(agent.alphas_betas) for agent
+        # in self.agents]
 
         # agent.id is the name of the node in the network
         # Compute degree centrality
@@ -110,10 +113,12 @@ class Model:
 
         # def stop_condition(credences_prior, credences_post) -> bool:
         #     # the tolerance is too tight, originally: rtol=1e-05, atol=1e-08
-        #     return np.allclose(credences_prior, credences_post,rtol=self.tolerance, atol=self.tolerance)
+        #     return np.allclose(credences_prior, credences_post,rtol=self.tolerance,
+        # atol=self.tolerance)
 
         # def true_consensus_condition(credences: np.array) -> float:
-        #     # Count how many pairs have the second coordinate larger than the first (second coordinate is the second theory)
+        #     # Count how many pairs have the second coordinate larger than the first
+        #     # (second coordinate is the second theory)
         #     counts = np.sum([pair[1] > pair[0] for pair in credences])
         #     return counts/len(credences) #(second_coordinates > 0.5).mean()
 
@@ -174,8 +179,8 @@ class Model:
             # Lots of if elses but oh well
             # if self.variance_stopping:
             #     betas_prior = np.array([agent.alphas_betas for agent in self.agents])
-            #     # mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv') for
-            #     # prior in betas_prior])
+            #     # mv_prior = np.array([beta.stats(prior[0], prior[1], moments='mv')
+            #     # for prior in betas_prior])
             #     mv_prior = np.array(
             #         [
             #             [
@@ -192,7 +197,8 @@ class Model:
 
             # if self.variance_stopping:
             #     betas_post = np.array([agent.alphas_betas for agent in self.agents])
-            #     # mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for post in betas_post])
+            #     # mv_post = np.array([beta.stats(post[0], post[1], moments='mv') for
+            #     # post in betas_post])
             #     mv_post = np.array(
             #         [
             #             [
@@ -295,7 +301,8 @@ class Model:
             else:
                 neighbor_nodes = list(self.network.neighbors(agent.id))
             theories_exp_results = np.array([np.array([0, 0]), np.array([0, 0])])
-            # for reference: experiments_results[agent.id]=[theory_index, n_success, n_failures]
+            # for reference: experiments_results[agent.id]=[theory_index, n_success,
+            # n_failures]
             results = experiments_results[agent.id]
             theory_index = results[0]
             theories_exp_results[theory_index][0] += results[1]
