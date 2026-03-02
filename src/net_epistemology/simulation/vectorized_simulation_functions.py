@@ -9,7 +9,8 @@ G_default = barabasi_albert_directed(100, 5)
 def run_vectorized_simulation_with_params(
     param_dict,
     tolerance=5 * 1e-03,
-    tstep_stopping=True,
+    tolerance_stopping=True,
+    tstep_stopping=False,
     seed=420,
     seeded=False,
     number_of_steps=10000,
@@ -35,6 +36,7 @@ def run_vectorized_simulation_with_params(
         histories=False,
         sampling_update=False,
         variance_stopping=False,
+        tolerance_stopping=tolerance_stopping,
         tstep_stopping=tstep_stopping,
         directed_network=True,
         seed=seed,
