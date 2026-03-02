@@ -36,8 +36,10 @@ class VectorizedModel:
             use mean. Default: False.
         variance_stopping: (Unused) Placeholder for variance-based stopping.
             Default: False.
+        tolerance_stopping: If True, checks for tolerance-based convergence
+            every step and stops early if converged. Default: True.
         tstep_stopping: If True, only stops at max steps (no convergence
-            check). Default: True.
+            check). Default: False.
         directed_network: Whether network is directed. Default: True.
         seed: Random seed for reproducibility. If None and seeded=True,
             generates random seed.
@@ -109,7 +111,8 @@ class VectorizedModel:
         histories=False,
         sampling_update=False,
         # variance_stopping=False,
-        tstep_stopping=True,
+        tolerance_stopping=True,
+        tstep_stopping=False,
         # directed_network=True,
         seed=None,
         seeded=False,
@@ -129,6 +132,7 @@ class VectorizedModel:
         self.sampling_update = sampling_update
         self.epsilon = 0  # As per original code default
         self.tolerance = tolerance
+        self.tolerance_stopping = tolerance_stopping
         self.tstep_stopping = tstep_stopping
         self.compute_convergence = compute_convergence
         self.compute_root_analysis = compute_root_analysis
@@ -606,20 +610,19 @@ class VectorizedModel:
                     )
                 )
 
-            # AUC-based stopping (check every auc_check_interval steps)
-            if auc_stopping and (step_num + 1) % auc_check_interval == 0:
-                result = compute_current_auc()
-                if result[0] is not None and result[0] >= auc_threshold:
-                    auc_stopped = True
-                    break
-
-            # Only use old stopping condition if not using AUC stopping
-            if auc_stopping:
-                continue  # Keep running until AUC threshold or max steps
+            # Stopping Conditions
+            if self.tolerance_stopping:
+                if stop_condition(credences_prior):
+                    break  # Old convergence-based stopping
             elif self.tstep_stopping:
                 continue  # tstep mode: run for fixed number of steps
-            elif stop_condition(credences_prior):
-                break  # Old convergence-based stopping
+            elif auc_stopping:
+                # AUC-based stopping (check every auc_check_interval steps)
+                if (step_num + 1) % auc_check_interval == 0:
+                    result = compute_current_auc()
+                    if result[0] is not None and result[0] >= auc_threshold:
+                        auc_stopped = True
+                        break
 
         # Store final prior for convergence analysis
         if self.compute_convergence:
