@@ -62,6 +62,13 @@ When submitting changes, please use the following structure:
 ## Intervention History
 - status: active
 
+*   **Date:** 2026-03-04
+*   **Agent:** Jules (AI Assistant)
+*   **Task:** Generate and save a repository map (`AI_AGENTS/REPOSITORY_MAP.md`).
+*   **Actions:**
+    *   Scanned `src` directory to map out structure and determine internal/external python imports.
+    *   Created `AI_AGENTS/REPOSITORY_MAP.md` formatted to Markdown-JSON hybrid schema.
+
 ### [DATE] - Initial Setup & Test Fixes (Jules)
 - status: active
 
