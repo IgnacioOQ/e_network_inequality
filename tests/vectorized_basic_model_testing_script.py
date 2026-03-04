@@ -31,7 +31,7 @@ my_network = nx.gnp_random_graph(n_agents, p=0.2, directed=True)
 
 seed=420
 my_model = VectorizedModel(my_network, n_experiments=10, uncertainty=0.001,
-                 histories=True,sampling_update=True,variance_stopping = False,directed_network = True,
+                 histories=True,sampling_update=True,
                  seed=seed,seeded=False, agent_type='bayes')
 my_model.run_simulation(number_of_steps=10000,show_bar=True)
 print('steps: ',my_model.n_steps)
@@ -71,7 +71,7 @@ my_network = nx.gnp_random_graph(n_agents, p=0.2, directed=True)
 
 seed=420
 my_model = VectorizedModel(my_network, n_experiments=10, uncertainty=0.001,
-                 histories=True,sampling_update=True,variance_stopping = False,directed_network = True,
+                 histories=True,sampling_update=True,
                  seed=seed,seeded=False, agent_type='beta')
 
 my_model.run_simulation(number_of_steps=10000,show_bar=True)

@@ -90,7 +90,7 @@ When submitting changes, please use the following structure:
 *   **Task:** Create vectorized implementation of the simulation to improve performance.
 *   **Actions:**
     *   Created `vectorized_model.py`: Implements `VectorizedModel` which replaces object-oriented agent state with NumPy matrices `(N_agents, 2, 2)`. Replaces loop-based updates with matrix multiplication (`Adjacency.T @ Outcomes`).
-    *   Created `vectorized_agents.py`: Implements `VectorizedBandit` for batch experiment generation.
+    *   Created `bandit.py`: Implements `VectorizedBandit` for batch experiment generation.
     *   Created `vectorized_simulation_functions.py`: Wrapper for running vectorized simulations.
     *   Created `test_vectorization.py`: Verified initialization match and update logic equivalence between `Model` and `VectorizedModel`.
     *   **Results:** Benchmarking showed a **~125x speedup** (from 14.5s to 0.11s for 100 agents / 500 steps).

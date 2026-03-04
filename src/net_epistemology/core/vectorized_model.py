@@ -1,5 +1,5 @@
 from ..utils.imports import beta, np, nx, rd, tqdm
-from .vectorized_agents import VectorizedBandit
+from .bandit import VectorizedBandit
 
 
 class VectorizedModel:

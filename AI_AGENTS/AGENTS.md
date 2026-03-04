@@ -144,7 +144,7 @@ e_network_inequality/
 │   ├── core/                    # Core simulation classes
 │   │   ├── agents.py            # Legacy agent classes (immutable)
 │   │   ├── model.py             # Legacy Model class (immutable)
-│   │   ├── vectorized_agents.py # Vectorized bandit
+│   │   ├── bandit.py            # Vectorized bandit
 │   │   └── vectorized_model.py  # Fast vectorized simulation
 │   ├── simulation/              # Simulation runners
 │   │   ├── simulation_functions.py
@@ -192,7 +192,7 @@ The project relies on a central imports file to manage dependencies across modul
 
 **Vectorized Implementation (Fast):**
 *   **`vectorized_model.py`**: The high-performance, matrix-based replacement for `Model`. It stores agent states in NumPy arrays `(N, 2, 2)` instead of objects. Includes convergence tracking and root analysis.
-*   **`vectorized_agents.py`**: Contains `VectorizedBandit` for batch processing of experiments.
+*   **`bandit.py`**: Contains `VectorizedBandit` for batch processing of experiments.
 *   **`vectorized_simulation_functions.py`**: Wrappers for running `VectorizedModel`.
 
 **Analysis Tools:**
