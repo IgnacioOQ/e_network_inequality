@@ -10,9 +10,9 @@
 # In[1]:
 
 
-from net_epistemology.utils.imports import *
-from net_epistemology.core.agents import BetaAgent, BayesAgent
-from net_epistemology.core.model import Model
+from.utils.imports import *
+from.core.agents import BetaAgent, BayesAgent
+from.core.model import Model
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

@@ -1,10 +1,10 @@
-from ..core.agents import BayesAgent, BetaAgent
-from ..core.model import Model
-from ..utils.imports import *
+from models.agents import BayesAgent, BetaAgent
+from models.model import Model
+from utils.imports import *
 
 # from network_randomization import *
-from ..utils.network_generation import *
-from ..utils.network_utils import *
+from networks.network_generation import *
+from networks.network_utils import *
 
 G_default = barabasi_albert_directed(100, 5)
 

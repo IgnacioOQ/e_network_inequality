@@ -11,7 +11,7 @@ import os
 import json
 
 # Add src to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import numpy as np
 import matplotlib
@@ -19,7 +19,7 @@ matplotlib.use('Agg')  # Non-interactive backend for script execution
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from net_epistemology.core.vectorized_model import VectorizedModel
+from models.vectorized_model import VectorizedModel
 
 # Set plotting style
 plt.style.use('seaborn-v0_8-whitegrid')
@@ -27,7 +27,7 @@ plt.style.use('seaborn-v0_8-whitegrid')
 # ## Load Empirical Network
 
 print("Loading pud_final.json network...")
-network_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'empirical_networks', 'pud_final.json')
+network_path = os.path.join(os.path.dirname(__file__), '..', '..', 'networks', 'citation_data', 'pud_final.json')
 
 with open(network_path, 'r') as f:
     network_data = json.load(f)

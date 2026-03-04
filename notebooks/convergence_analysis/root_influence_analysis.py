@@ -11,7 +11,7 @@ import sys
 import os
 import json
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import numpy as np
 import matplotlib
@@ -21,14 +21,14 @@ import networkx as nx
 from tqdm import tqdm
 from scipy import stats
 
-from net_epistemology.core.vectorized_model import VectorizedModel
+from models.vectorized_model import VectorizedModel
 
 plt.style.use('seaborn-v0_8-whitegrid')
 
 # ## Load Network
 
 print("Loading pud_final.json network...")
-network_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'empirical_networks', 'pud_final.json')
+network_path = os.path.join(os.path.dirname(__file__), '..', '..', 'networks', 'citation_data', 'pud_final.json')
 
 with open(network_path, 'r') as f:
     network_data = json.load(f)
