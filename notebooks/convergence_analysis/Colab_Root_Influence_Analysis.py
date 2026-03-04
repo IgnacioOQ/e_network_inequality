@@ -72,7 +72,7 @@ get_ipython().system('pip install -e .')
 # Add src to path and import modules
 import sys
 import os
-sys.path.insert(0, os.path.abspath('src'))
+sys.path.insert(0, os.path.abspath('.'))
 
 # Core imports
 import numpy as np
@@ -85,16 +85,16 @@ from multiprocessing import Pool, cpu_count
 from functools import partial
 from scipy import stats
 
-# Import from net_epistemology package
-from net_epistemology.utils.imports import *
-from net_epistemology.core.agents import BetaAgent, BayesAgent
-from net_epistemology.core.model import Model
-from net_epistemology.utils.network_utils import *
-from net_epistemology.utils.network_generation import *
+# Import from package
+from utils.imports import *
+from models.agents import BetaAgent, BayesAgent
+from models.model import Model
+from utils.network_utils import *
+from utils.network_generation import *
 # Import only what we need from non-vectorized (for parameter generation)
-from net_epistemology.simulation.simulation_functions import generate_parameters_aggregate
+from simulations.simulation_functions import generate_parameters_aggregate
 # Vectorized simulations for performance
-from net_epistemology.simulation.vectorized_simulation_functions import *
+from simulations.vectorized_simulation_functions import *
 
 print("✅ All imports successful!")
 
@@ -226,7 +226,7 @@ def load_empirical_network():
     """Load the pud_final.json empirical network."""
     import json
     
-    network_path = 'data/empirical_networks/pud_final.json'
+    network_path = 'networks/citation_data/pud_final.json'
     print(f"Loading empirical network from: {network_path}")
     
     with open(network_path, 'r') as f:

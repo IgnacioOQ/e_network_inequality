@@ -1,4 +1,4 @@
-from ..utils.imports import beta, np, nx, rd, tqdm
+from utils.imports import beta, np, nx, rd, tqdm
 from .bandit import VectorizedBandit
 
 

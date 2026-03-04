@@ -1,4 +1,4 @@
-from ..utils.imports import beta, np, rd
+from utils.imports import beta, np, rd
 
 bad_theory_id: int = 0
 good_theory_id: int = 1

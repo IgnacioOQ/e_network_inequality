@@ -10,8 +10,8 @@
 # In[1]:
 
 
-from net_epistemology.utils.imports import *
-from net_epistemology.core.vectorized_model import VectorizedModel
+from.utils.imports import *
+from.core.vectorized_model import VectorizedModel
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

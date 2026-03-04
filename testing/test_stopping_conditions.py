@@ -5,9 +5,9 @@ import numpy as np
 # Adjust imports to find the source code from tests/
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from net_epistemology.core.vectorized_model import VectorizedModel
+from models.vectorized_model import VectorizedModel
 
 class TestVectorizedModelStopping(unittest.TestCase):
     def setUp(self):

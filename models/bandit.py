@@ -2,7 +2,7 @@ from typing import Tuple
 
 from numpy.typing import ArrayLike, NDArray
 
-from ..utils.imports import np, rd
+from utils.imports import np, rd
 
 
 class VectorizedBandit:

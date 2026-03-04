@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 import numpy.random as rd
 import networkx as nx
-from net_epistemology.core.model import Model
-from net_epistemology.core.vectorized_model import VectorizedModel
+from models.model import Model
+from models.vectorized_model import VectorizedModel
 from scipy.stats import beta
 
 

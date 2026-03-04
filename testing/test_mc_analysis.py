@@ -12,8 +12,8 @@ import unittest
 import numpy as np
 import networkx as nx
 
-from net_epistemology.core.vectorized_model import VectorizedModel
-from net_epistemology.analysis.mc_analysis import (
+from models.vectorized_model import VectorizedModel
+from utils.mc_analysis import (
     MarkovChainAnalyzer,
     StateSnapshot,
     ConvergenceDiagnostics,

@@ -1,5 +1,5 @@
-from net_epistemology.utils.imports import *
-from net_epistemology.core.agents import Bandit, BetaAgent
+from.utils.imports import *
+from.core.agents import Bandit, BetaAgent
 
 
 class TestBandit(unittest.TestCase):
