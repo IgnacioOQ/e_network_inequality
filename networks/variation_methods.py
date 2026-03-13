@@ -1,6 +1,6 @@
 from functools import partial
 
-from imports import *
+from utils.imports import copy, np, nx, random
 
 # Helper functions for variation methods
 
@@ -10,7 +10,7 @@ def _sample_edge_from_degree_dist(
     nodes: list,
     indegrees: dict,
     outdegrees: dict,
-    attempts: int = 10,
+    attempts: int = 100,
 ) -> tuple | None:
     """Sample a new edge based on degree distribution weights. Note: may return None."""
     out_weights = [outdegrees[node] for node in nodes]
@@ -22,19 +22,18 @@ def _sample_edge_from_degree_dist(
 
     sources = random.choices(
         nodes,
-        weights=out_weights,
+        weights=out_weights,  # type: ignore
         k=attempts,
     )
     targets = random.choices(
         nodes,
-        weights=in_weights,
+        weights=in_weights,  # type: ignore
         k=attempts,
     )
     sample_edges = [
-        (source, target)
-        for source in sources
-        for target in targets
-        if source != target and not net.has_edge(source, target)
+        edge
+        for edge in zip(sources, targets)
+        if edge[0] != edge[1] and not net.has_edge(*edge)
     ]
     if sample_edges == []:
         return None
@@ -121,16 +120,20 @@ def generate_network_variant(
         "original" preserves the original degree distribution,
         "uniform" assigns equal probability to all nodes. Default is "original".
     target_average_clustering : float, optional
-        The desired average clustering coefficient. If None, uses the original network's clustering.
+        The desired average clustering coefficient. If None, uses the original
+        network's clustering.
 
     Returns
     -------
     nx.DiGraph
-        A new directed network with increased density and optionally modified clustering/degree distribution.
+        A new directed network with increased density and optionally modified
+        clustering/degree distribution.
     """
     # Set target average clustering if input is None
     if target_average_clustering is None:
-        target_average_clustering = np.average(list(nx.clustering(net).values()))
+        target_average_clustering = np.average(
+            list(nx.clustering(net).values())  # type: ignore
+        )
 
     # Set target degree distribution
     if target_degree_dist == "original":
@@ -144,10 +147,10 @@ def generate_network_variant(
 
     # Create a copy of the original network
     variant = copy.deepcopy(net)
-    uniform_degrees = {n: 1 for n in variant.nodes()}
+    # uniform_degrees = {n: 1 for n in variant.nodes()}
 
     # Create clustering dictionary and compute initial sum for incremental updates
-    clustering_dict: dict = nx.clustering(variant)
+    clustering_dict: dict = nx.clustering(variant)  # type: ignore
     clustering_sum = sum(clustering_dict.values())
     n_nodes = variant.number_of_nodes()
 
@@ -157,7 +160,7 @@ def generate_network_variant(
         for _ in range(num_edges_to_remove):
             variant = _remove_edge_avoiding_isolates(variant)
         # Recompute clustering after edge removal
-        clustering_dict = nx.clustering(variant)
+        clustering_dict = nx.clustering(variant)  # type: ignore
         clustering_sum = sum(clustering_dict.values())
 
     # Main loop for adding edges
@@ -165,7 +168,7 @@ def generate_network_variant(
     new_average_clustering = clustering_sum / n_nodes
     while n_edges_added < n_edges:
         # Choose sampling strategy based on clustering target
-        if new_average_clustering < target_average_clustering:
+        if new_average_clustering < target_average_clustering:  # type: ignore
             node = random.choice(list(variant.nodes()))
             neighbors = list(variant.predecessors(node)) + list(
                 variant.successors(node)
@@ -173,8 +176,8 @@ def generate_network_variant(
             new_edge = _sample_edge_from_degree_dist(
                 variant,
                 neighbors,
-                uniform_degrees,
-                uniform_degrees,
+                target_in_degrees,
+                target_out_degrees,
             )
         else:
             new_edge = _sample_edge_from_degree_dist(
