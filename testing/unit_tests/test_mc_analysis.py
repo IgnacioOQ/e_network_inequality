@@ -12,7 +12,7 @@ import unittest
 import numpy as np
 import networkx as nx
 
-from models.vectorized_model import VectorizedModel
+from model.vectorized_model import VectorizedModel
 from utils.mc_analysis import (
     MarkovChainAnalyzer,
     StateSnapshot,

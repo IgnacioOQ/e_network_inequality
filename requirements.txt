@@ -7,3 +7,4 @@ matplotlib
 seaborn
 dill
 statsmodels
+joblib
