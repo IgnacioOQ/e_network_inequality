@@ -70,12 +70,16 @@ To verify the installation and core logic (run from project root):
 ### Running Simulations
 - status: active
 
-The main entry-point notebooks are at the **project root**, numbered in order:
+The main entry-point notebooks are at the **project root**, following this workflow:
 
-1. `1. Citation Data and Networks Generation.ipynb` — Build empirical networks from OpenAlex data.
-2. `2. Colab Simulations.ipynb` — Run large-scale simulations.
-3. `3. Simulations Data Analysis.ipynb` — Analyse and plot simulation results.
-4. `A. Visualizations.ipynb` — Network and result visualisations.
+1. `1. Citation Data and Networks Generation.ipynb` — Fetch data from OpenAlex and build empirical citation networks.
+2. `2. GColab Simulations.ipynb` — Run large-scale simulations on Google Colab (primary simulation entry point).
+3. `3. Results Data Analysis.ipynb` — Load simulation outputs, analyse and plot results.
+
+Appendices (standalone, may be incomplete):
+
+- `A. Visualizations.ipynb` — Network and result visualisations.
+- `A. GColab Simulations Playground.ipynb` — Experimental simulation runs and sandbox work on Colab.
 
 For testing and debugging refer to `testing/notebooks/`.
 
@@ -85,10 +89,11 @@ For testing and debugging refer to `testing/notebooks/`.
 ```
 e_network_inequality/
 │
-├── 1. Citation Data and Networks Generation.ipynb   # Entry point 1: build networks
-├── 2. Colab Simulations.ipynb                       # Entry point 2: run simulations
-├── 3. Simulations Data Analysis.ipynb               # Entry point 3: analyse results
-├── A. Visualizations.ipynb                          # Entry point 4: visualisations
+├── 1. Citation Data and Networks Generation.ipynb   # Step 1: fetch data and build networks
+├── 2. GColab Simulations.ipynb                      # Step 2: run simulations on Colab
+├── 3. Results Data Analysis.ipynb                   # Step 3: analyse and plot results
+├── A. Visualizations.ipynb                          # Appendix: network and result visualisations
+├── A. GColab Simulations Playground.ipynb           # Appendix: experimental Colab sandbox
 │
 ├── model/                          # All model and simulation code
 │   ├── agents.py                   # Legacy OO agent classes (immutable)
