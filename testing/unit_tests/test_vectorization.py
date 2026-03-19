@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 import numpy.random as rd
 import networkx as nx
-from models.model import Model
-from models.vectorized_model import VectorizedModel
+from model.model import Model
+from model.vectorized_model import VectorizedModel
 from scipy.stats import beta
 
 

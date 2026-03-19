@@ -7,9 +7,6 @@ This project is a simulation framework for agent-based models on various network
 ## Project Overview
 - status: active
 
-## Project Overview
-- status: active
-
 ### Simulation Core
 - status: active
 
@@ -23,8 +20,8 @@ The core of this project is a flexible agent-based modeling framework designed t
     3.  **Update**: Agents update their belief parameters (α/β) using Bayesian inference based on their own results and the observed evidence.
 
 Two parallel implementations exist to balance flexibility and performance:
-- **Object-Oriented**: Logical, easy to extend (`src/net_epistemology/core/agents.py`).
-- **Vectorized**: High-performance, matrix-based implementation using NumPy for large-scale simulations (`src/net_epistemology/core/vectorized_model.py`).
+- **Object-Oriented**: Logical, easy to extend (`model/model.py`).
+- **Vectorized**: High-performance, matrix-based implementation using NumPy for large-scale simulations (`model/vectorized_model.py`).
 
 ### Empirical Networks
 - status: active
@@ -57,7 +54,7 @@ Ensure you have Python 3.8+ installed.
     ```bash
     pip install -r requirements.txt
     ```
-    *Manual install*: `numpy`, `scipy`, `pandas`, `networkx`, `tqdm`, `matplotlib`, `seaborn`, `dill`.
+    *Manual install*: `numpy`, `scipy`, `pandas`, `networkx`, `tqdm`, `matplotlib`, `seaborn`, `dill`, `statsmodels`, `joblib`.
 
 ## Usage
 - status: active
@@ -65,40 +62,90 @@ Ensure you have Python 3.8+ installed.
 ### Running Tests
 - status: active
 
-To verify the installation and core logic:
+To verify the installation and core logic (run from project root):
 ```bash
-python -m unittest unit_tests.py
+.venv/bin/python -m unittest discover -s testing/unit_tests -v
 ```
 
 ### Running Simulations
 - status: active
 
-Refer to the `notebooks/` directory for examples of how to set up and run simulations.
-- `notebooks/basic_testing/basic_model_testing.ipynb`: Good starting point for understanding the object-oriented model.
-- `notebooks/basic_testing/vectorized_basic_model_testing.ipynb`: Guide for the vectorized model.
+The main entry-point notebooks are at the **project root**, following this workflow:
+
+1. `1. Citation Data and Networks Generation.ipynb` — Fetch data from OpenAlex and build empirical citation networks.
+2. `2. GColab Simulations.ipynb` — Run large-scale simulations on Google Colab (primary simulation entry point).
+3. `3. Results Data Analysis.ipynb` — Load simulation outputs, analyse and plot results.
+
+Appendices (standalone, may be incomplete):
+
+- `A. Visualizations.ipynb` — Network and result visualisations.
+- `A. GColab Simulations Playground.ipynb` — Experimental simulation runs and sandbox work on Colab.
+
+For testing and debugging refer to `testing/notebooks/`.
 
 ## Directory Structure
 - status: active
 
-- **`src/net_epistemology/`**: The core package containing the simulation logic.
-    - `core/`: Contains the primary classes for the model (`Model`, `VectorizedModel`) and agents (`BetaAgent`, `BayesAgent`). This is where the Bayesian update logic and network interactions are defined.
-    - `simulation/`: Helper functions and wrappers to run large-scale simulations, including parallel execution tools.
-    - `data/`: Modules for handling data loading and processing.
-    - `utils/`: Utilities for network generation (e.g., scale-free, small-world graphs) and dependency management.
-    - `analysis/`: Tools for analyzing simulation results, including Markov Chain analysis and convergence diagnostics.
-- **`data/`**: Storage for input and output data.
-    - `empirical_networks/`: JSON files representing real-world networks used for empirical validation of the models.
-    - `results_data_sets/`: Generated datasets from simulations, often used for plotting and analysis in notebooks.
-- **`notebooks/`**: Jupyter notebooks for interactive testing, visualization, and deep-dive analysis (e.g., convergence studies, root influence).
-- **`tests/`**: Unit tests ensuring the stability and correctness of the core logic, vectorization, and analysis tools.
-- **`AI_AGENTS/`**: Documentation and context files specifically designed for AI assistants (like this one) to understand the project architecture, rules, and specialized tasks.
-    - `AGENTS.md`, `MD_CONVENTIONS.md`, etc.
+```
+e_network_inequality/
+│
+├── 1. Citation Data and Networks Generation.ipynb   # Step 1: fetch data and build networks
+├── 2. GColab Simulations.ipynb                      # Step 2: run simulations on Colab
+├── 3. Results Data Analysis.ipynb                   # Step 3: analyse and plot results
+├── A. Visualizations.ipynb                          # Appendix: network and result visualisations
+├── A. GColab Simulations Playground.ipynb           # Appendix: experimental Colab sandbox
+│
+├── model/                          # All model and simulation code
+│   ├── agents.py                   # Legacy OO agent classes (immutable)
+│   ├── bandit.py                   # Vectorized multi-armed bandit
+│   ├── model.py                    # Legacy OO Model class (immutable)
+│   ├── vectorized_model.py         # Fast vectorized simulation (primary)
+│   ├── simulation_functions.py     # Wrappers for running Model in parallel
+│   ├── vectorized_simulation_functions.py  # Wrappers for VectorizedModel
+│   └── convergence_analysis/       # Colab notebooks for convergence studies
+│
+├── networks/                       # Network generation and manipulation
+│   ├── network_generation.py       # Synthetic graph generators (BA, WS, etc.)
+│   ├── variation_methods.py        # Network variation utilities (densify, equalize)
+│   └── citation_data/              # Pickled empirical network files (.pkl, .json)
+│
+├── utils/                          # Shared utilities
+│   ├── imports.py                  # Central external library imports
+│   ├── network_utils.py            # Network statistics and helper functions
+│   └── mc_analysis.py              # Markov Chain analysis utilities
+│
+├── testing/                        # All tests
+│   ├── unit_tests/                 # Automated test suite (run with unittest discover)
+│   │   ├── test_agents.py          # Tests for Bandit and BetaAgent
+│   │   ├── test_vectorization.py   # Equivalence tests: Model vs VectorizedModel
+│   │   ├── test_mc_analysis.py     # Tests for Markov Chain analysis utilities
+│   │   └── test_stopping_conditions.py
+│   └── notebooks/                  # Interactive testing notebooks
+│       ├── basic_model_testing.ipynb
+│       ├── vectorized_basic_model_testing.ipynb
+│       ├── reproducing_zollman.ipynb
+│       └── variation_methods_test.ipynb
+│
+├── results/                        # Output datasets and analysis notebooks
+├── figures/                        # Visualisation notebooks
+│
+├── AI_AGENTS/                      # Documentation for AI assistants
+│   ├── AGENTS.md                   # AI agent instructions and conventions
+│   ├── AGENTS_LOG.md               # Log of AI interventions
+│   ├── REPOSITORY_MAP.md           # Detailed module dependency map
+│   ├── HOUSEKEEPING.md             # Housekeeping protocol
+│   ├── MD_CONVENTIONS.md           # Markdown-JSON schema conventions
+│   └── ...
+│
+├── README.md
+├── requirements.txt
+└── setup.py
+```
 
 ## Development & Conventions
 - status: active
 
+- **Immutable Core Files**: Do not modify `model/agents.py`, `model/model.py`, or `model/simulation_functions.py`. Create new versions (subclasses or new files) instead.
 - **Markdown Conventions**: All `.md` files must follow the [Markdown-JSON Hybrid Schema](AI_AGENTS/MD_CONVENTIONS.md).
-    - Headers must be immediately followed by a metadata block (bulleted list).
-    - Metadata blocks must be separated from content by a `<!-- content -->` line.
-    - This schema allows for bidirectional conversion between Markdown and JSON for programmatic task management.
 - **AI Agents**: If you are an AI assistant, primarily rely on `AI_AGENTS/AGENTS.md` and the `AI_AGENTS/` folder for context.
+- **Import Convention**: All files use absolute imports from the project root (e.g., `from model.vectorized_model import VectorizedModel`, `from utils.imports import *`). Notebooks add the project root to `sys.path` at startup.

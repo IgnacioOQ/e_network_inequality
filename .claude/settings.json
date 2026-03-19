@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -m unittest discover -s testing/unit_tests -v)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(done)",
+      "Bash(.venv/bin/pip install:*)"
+    ]
+  }
+}

@@ -2,6 +2,7 @@
 - status: active
 - type: context
 - owner: AI
+- last_checked: 2026-03-15
 <!-- content -->
 
 This document details the complete structure of the repository, highlighting explicit module boundaries and import dependencies between internal files and external libraries.
@@ -12,125 +13,112 @@ This document details the complete structure of the repository, highlighting exp
 
 ```text
 e_network_inequality/
-├── AI_AGENTS/                   # Context and convention files for AI agents
-│   ├── AGENTS.md                
-│   ├── AGENTS_LOG.md            
-│   ├── HOUSEKEEPING.md          
-│   ├── LINEARIZE_AGENT.md       
-│   ├── MC_AGENT.md              
-│   ├── MD_CONVENTIONS.md
-│   └── REPOSITORY_MAP.md        # This file
 │
-├── data/                        # Contains simulation output data and empirical network JSONs
-│   ├── empirical_networks/
-│   └── results_data_sets/
+├── 1. Citation Data and Networks Generation.ipynb   # Entry point 1: build networks
+├── 2. Colab Simulations.ipynb                       # Entry point 2: run simulations
+├── 3. Simulations Data Analysis.ipynb               # Entry point 3: analyse results
+├── A. Visualizations.ipynb                          # Entry point 4: visualisations
 │
-├── notebooks/                   # Jupyter notebooks for interactive analysis
-│   ├── basic_testing/           # e.g., basic_model_testing.ipynb
-│   ├── convergence_analysis/    # e.g., convergence_studies.py
-│   └── simulation_variations/   
-│
-├── src/net_epistemology/        # Main source package
+├── model/                          # All model and simulation code
 │   ├── __init__.py
-│   ├── analysis/                # Markov chain and convergence analysis
-│   │   ├── __init__.py
-│   │   └── mc_analysis.py       
-│   ├── core/                    # Core simulation instances and agents
-│   │   ├── __init__.py
-│   │   ├── agents.py            # Legacy object-oriented agents
-│   │   ├── bandit.py            # Vectorized multi-armed bandit (numpy arrays)
-│   │   ├── model.py             # Legacy sequential model definitions
-│   │   └── vectorized_model.py  # Fast vectorized model simulation
-│   ├── simulation/              # Runners and wrappers
-│   │   ├── __init__.py
-│   │   ├── simulation_functions.py
-│   │   └── vectorized_simulation_functions.py
-│   └── utils/                   # Helpers, graph algorithms, and global imports
-│       ├── __init__.py
-│       ├── imports.py           # Global entry point for external libraries
-│       ├── network_generation.py
-│       ├── network_utils.py
-│       └── variation_methods.py
+│   ├── agents.py                   # Legacy OO agent classes (IMMUTABLE)
+│   ├── bandit.py                   # Vectorized multi-armed bandit
+│   ├── model.py                    # Legacy OO Model class (IMMUTABLE)
+│   ├── vectorized_model.py         # Fast vectorized simulation (primary)
+│   ├── simulation_functions.py     # Wrappers for running Model in parallel (IMMUTABLE)
+│   ├── vectorized_simulation_functions.py  # Wrappers for VectorizedModel
+│   └── convergence_analysis/       # Colab notebooks for convergence studies
 │
-├── tests/                       # Unit tests and regression checks
-│   ├── test_mc_analysis.py
-│   ├── test_stopping_conditions.py
-│   ├── test_vectorization.py
-│   └── unit_tests.py
+├── networks/                       # Network generation and manipulation
+│   ├── __init__.py
+│   ├── network_generation.py       # Synthetic graph generators (BA, WS, etc.)
+│   ├── variation_methods.py        # Network variation utilities (densify, equalize)
+│   └── citation_data/              # Pickled empirical network files (.pkl, .json)
+│
+├── utils/                          # Shared utilities
+│   ├── __init__.py
+│   ├── imports.py                  # Central external library imports (used by all modules)
+│   ├── network_utils.py            # Network statistics and helper functions
+│   └── mc_analysis.py              # Markov Chain analysis utilities
+│
+├── testing/                        # All tests
+│   ├── unit_tests/                 # Automated test suite
+│   │   ├── test_agents.py          # Tests for Bandit and BetaAgent
+│   │   ├── test_vectorization.py   # Equivalence: Model vs VectorizedModel
+│   │   ├── test_mc_analysis.py     # Tests for Markov Chain analysis
+│   │   └── test_stopping_conditions.py
+│   └── notebooks/                  # Interactive testing notebooks
+│       ├── basic_model_testing.ipynb
+│       ├── vectorized_basic_model_testing.ipynb
+│       ├── reproducing_zollman.ipynb
+│       └── variation_methods_test.ipynb
+│
+├── results/                        # Output datasets and analysis notebooks
+├── figures/                        # Visualisation notebooks
+│
+├── AI_AGENTS/                      # Documentation for AI assistants
+│   ├── AGENTS.md
+│   ├── AGENTS_LOG.md
+│   ├── HOUSEKEEPING.md
+│   ├── LINEARIZE_AGENT.md
+│   ├── MC_AGENT.md
+│   ├── MD_CONVENTIONS.md
+│   └── REPOSITORY_MAP.md           # This file
 │
 ├── README.md
 ├── requirements.txt
 └── setup.py
 ```
 
-## 2. File Imports and Dependencies
+## 2. Import Convention
 - status: active
 <!-- content -->
 
-### Core Package Modules (`src/net_epistemology/core/`)
+All modules use **absolute imports from the project root**. Notebooks add the project root to `sys.path` at startup via:
+
+```python
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '../..')))  # from testing/notebooks/
+```
+
+**Key rules:**
+- `from utils.imports import *` — pulls all shared external libraries
+- `from model.X import Y` — imports from model package
+- `from networks.X import Y` — imports from networks package
+- `from utils.network_utils import ...` — note: `network_utils` is in `utils/`, NOT `networks/`
+- `from networks.variation_methods import ...` — `variation_methods` is in `networks/`
+
+## 3. File Imports and Dependencies
 - status: active
 <!-- content -->
 
-*   **`__init__.py`**
-    *   *Internal Exports*: `Model`, `Bandit`, `BetaAgent`, `BayesAgent`, `VectorizedModel`, `VectorizedBandit`
-*   **`model.py`**
-    *   *Internal Imports*: `from .agents import Bandit, BayesAgent, BetaAgent`
-    *   *External via utils*: `from ..utils.imports import np, nx, rd, tqdm`
-*   **`vectorized_model.py`**
-    *   *Internal Imports*: `from .bandit import VectorizedBandit`
-    *   *External via utils*: `from ..utils.imports import beta, np, nx, rd, tqdm`
-*   **`agents.py`**
-    *   *External via utils*: `from ..utils.imports import beta, np, rd`
-*   **`bandit.py`** *(formerly `vectorized_agents.py`)*
-    *   *External via utils*: `from ..utils.imports import np, rd`
-    *   *Standard Lib*: `from typing import Tuple`, `from numpy.typing import ArrayLike, NDArray`
-
-### Simulation Package Modules (`src/net_epistemology/simulation/`)
+### `model/`
 - status: active
 <!-- content -->
 
-*   **`simulation_functions.py`**
-    *   *Internal Imports*: 
-        *   `from ..core.agents import BayesAgent, BetaAgent`
-        *   `from ..core.model import Model`
-        *   `from ..utils.network_generation import *`
-        *   `from ..utils.network_utils import *`
-    *   *External via utils*: `from ..utils.imports import *`
-*   **`vectorized_simulation_functions.py`**
-    *   *Internal Imports*:
-        *   `from ..core.vectorized_model import VectorizedModel`
-        *   `from ..utils.network_generation import *`
-        *   `from ..utils.network_utils import *`
-    *   *External via utils*: `from ..utils.imports import *`
+| File | Imports |
+| :--- | :--- |
+| `agents.py` | `from utils.imports import beta, np, rd` |
+| `bandit.py` | `from utils.imports import beta, np, nx, rd, tqdm` |
+| `model.py` | `from utils.imports import np, nx, rd, tqdm` · `from .agents import Bandit, BayesAgent, BetaAgent` |
+| `vectorized_model.py` | `from utils.imports import beta, np, nx, rd, tqdm` · `from .bandit import VectorizedBandit` |
+| `simulation_functions.py` | `from utils.imports import *` · `from model.agents import ...` · `from model.model import Model` · `from networks.network_generation import *` · `from utils.network_utils import *` |
+| `vectorized_simulation_functions.py` | `from utils.imports import *` · `from model.vectorized_model import VectorizedModel` · `from networks.network_generation import *` · `from utils.network_utils import *` |
 
-### Analysis Modules (`src/net_epistemology/analysis/`)
+### `networks/`
 - status: active
 <!-- content -->
 
-*   **`__init__.py`**
-    *   *Internal Exports*: `MarkovChainAnalyzer`
-*   **`mc_analysis.py`**
-    *   *External Libraries*: `import numpy as np`, `import numpy.random as rd`, `import networkx as nx`, `from scipy import stats`
-    *   *Standard Lib*: `import hashlib`, `from typing import Optional, List, Tuple, ...`, `from dataclasses import dataclass, field`
+| File | Imports |
+| :--- | :--- |
+| `network_generation.py` | `from utils.imports import *` |
+| `variation_methods.py` | `from utils.imports import *` · `from functools import partial` |
 
-### Utils Modules (`src/net_epistemology/utils/`)
+### `utils/`
 - status: active
 <!-- content -->
 
-*   **`imports.py`** *(Central dependency file to prevent cyclic imports and ensure library consistency)*
-    *   *Standard Lib*: `copy`, `hashlib`, `os`, `pickle`, `random`, `unittest`, `uuid`, `multiprocessing`
-    *   *External Libraries*: `dill`, `matplotlib.pyplot as plt`, `networkx as nx`, `numpy as np`, `numpy.random as rd`, `pandas as pd`, `scipy.stats` (specifically `beta`), `seaborn as sns`, `tqdm`
-*   **`network_generation.py`**
-    *   *Internal Imports*: `from .imports import *`
-*   **`network_utils.py`**
-    *   *Internal Imports*: `from .imports import *` (though it uses `from imports import *` locally inside the folder as denoted by the search tool, possibly needing an update)
-*   **`variation_methods.py`**
-    *   *Internal Imports*: `from .imports import *`
-    *   *Standard Lib*: `from functools import partial`
-
-### Main Package Root (`src/net_epistemology/`)
-- status: active
-<!-- content -->
-
-*   **`__init__.py`**
-    *   *Internal Imports*: Collects and exposes the core classes (`Model`, `BetaAgent`, `VectorizedModel`, `VectorizedBandit`, etc.) from the `core/` submodule.
+| File | Imports |
+| :--- | :--- |
+| `imports.py` | External libraries only (`numpy`, `scipy`, `networkx`, `pandas`, `tqdm`, `dill`, `matplotlib`, `seaborn`, `statsmodels`, `joblib`, std lib) |
+| `network_utils.py` | `from utils.imports import *` |
+| `mc_analysis.py` | `from model.vectorized_model import VectorizedModel` · external libraries directly |

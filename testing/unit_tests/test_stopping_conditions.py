@@ -5,9 +5,9 @@ import numpy as np
 # Adjust imports to find the source code from tests/
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from models.vectorized_model import VectorizedModel
+from model.vectorized_model import VectorizedModel
 
 class TestVectorizedModelStopping(unittest.TestCase):
     def setUp(self):
