@@ -1,4 +1,4 @@
-from .imports import *
+from utils.imports import *
 
 
 def barabasi_albert_directed(n, m):

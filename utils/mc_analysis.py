@@ -225,7 +225,7 @@ class MarkovChainAnalyzer:
         # We need to save and restore state, which requires a fresh model
         # This is a simplified test that checks reproducibility with same seed
         
-        from net_epistemology.core.vectorized_model import VectorizedModel
+        from model.vectorized_model import VectorizedModel
         
         divergences = []
         
@@ -342,7 +342,7 @@ class MarkovChainAnalyzer:
         Returns:
             Tuple of (estimated_mixing_time, distance_histories)
         """
-        from net_epistemology.core.vectorized_model import VectorizedModel
+        from model.vectorized_model import VectorizedModel
         
         # Initialize chains with different random states
         chains = []
@@ -401,7 +401,7 @@ class MarkovChainAnalyzer:
         Returns:
             AbsorptionAnalysis with probability estimates and hitting times
         """
-        from net_epistemology.core.vectorized_model import VectorizedModel
+        from model.vectorized_model import VectorizedModel
         
         analysis = AbsorptionAnalysis(n_simulations=n_simulations)
         
