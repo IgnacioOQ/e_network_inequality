@@ -15,7 +15,7 @@ def run_vectorized_simulation_with_params(
     seeded=False,
     number_of_steps=10000,
     show_bar=False,
-    agent_type="bayes",
+    agent_type="beta",
     compute_convergence=False,
     compute_root_analysis=False,
     auc_stopping=False,
