@@ -45,7 +45,7 @@ model = VectorizedModel(
     uncertainty=0.1,
     agent_type="beta",
     tolerance_stopping=True,
-    tolerance=1e-10,
+    tolerance=1e-6,
     compute_convergence=True,
 )
 
