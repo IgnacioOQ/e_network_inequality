@@ -4,11 +4,19 @@
 .LSOverride
 ._*
 
+# Python
 __pycache__/
-.vscode/
 *.pyc
-*.ipynb_checkpoints/
 *.egg-info/
+.venv/
+
+# IDEs
+.vscode/
+
+# Generated outputs
+convergence_plot*.png
+root_influence_analysis*.png
+
 # API keys and secrets
 .env
 *.key

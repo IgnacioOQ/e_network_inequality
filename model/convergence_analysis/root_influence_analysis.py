@@ -21,7 +21,7 @@ import networkx as nx
 from tqdm import tqdm
 from scipy import stats
 
-from models.vectorized_model import VectorizedModel
+from model.vectorized_model import VectorizedModel
 
 plt.style.use('seaborn-v0_8-whitegrid')
 
