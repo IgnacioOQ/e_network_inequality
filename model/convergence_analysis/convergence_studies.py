@@ -44,12 +44,12 @@ model = VectorizedModel(
     n_experiments=10,
     uncertainty=0.1,
     agent_type="beta",
-    tolerance_stopping=False,  # Disable early stopping so we run all steps
-    tstep_stopping=True,
+    tolerance_stopping=True,
+    tolerance=1e-10,
     compute_convergence=True,
 )
 
-model.run_simulation(number_of_steps=10000, show_bar=True)
+model.run_simulation(number_of_steps=10**6, show_bar=True)
 
 print(f"\nSimulation completed: {model.n_steps} steps")
 print(f"Conclusion (share believing truth): {model.conclusion:.4f}")
