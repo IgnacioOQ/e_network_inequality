@@ -404,3 +404,104 @@ Repeat Steps 3–4 on synthetic networks (Erdős-Rényi, Barabási-Albert, Watts
 4. **What is the distribution of truth share across runs?** The mean $\mu$ and variance $\text{Var}(X)$ are the first two moments. Is $X$ approximately normal for large $N$? If so, a Central Limit Theorem with the network correlation structure would give a complete distributional prediction.
 
 5. **Cycles.** For graphs with cycles, root nodes are not well-defined and the recursion does not apply. What replaces the topological recursion? A fixed-point equation: $P_i = 1 - (1-p^r)\prod_{j \in \text{Pa}(i)}(1-P_j)$, now solved simultaneously rather than iteratively. Does a unique fixed point always exist? Under what conditions?
+
+---
+
+## 10. Simulation Implementation Plan
+
+The goal is to test three nested versions of the hypothesis by comparing their predictions to empirical per-node convergence frequencies across many simulation runs.
+
+| Version | Description | Free parameters |
+|---------|-------------|----------------|
+| **V0** — Root Node Hypothesis | $P_i \in \{0,1\}$, determined purely by reachability from truthful roots | none |
+| **V1** — Static stochastic | Topological recursion with constant $p^r$ | $p^*, p^r$ |
+| **V2** — Dampening-aware | Recursion with $p^r = p^r(k)$ depending on number of false parents | $p^*, p^r(1), p^r(2), \ldots$ |
+
+Each experiment below is a self-contained script in `model/convergence_analysis/`. All outputs (plots, `.npy` files) stay in this folder.
+
+---
+
+### Experiment 1 — Estimate $p^*$ (`estimate_pstar.py`)
+
+**What it tests:** The foundational parameter. Without $\hat{p}^*$, V1 and V2 cannot make predictions.
+
+**Design:** Create a single-node network (no edges). Run $R = 1000$ isolated-agent simulations with different random seeds. Record whether each ends with $c^{(1)} > c^{(0)}$. Compute $\hat{p}^* = R^{-1}\sum_r \mathbf{1}[\text{truth}]$.
+
+**Parameter sweep:** Vary $\Delta \in \{0.05, 0.1, 0.2\}$ and $\varepsilon \in \{0.05, 0.1, 0.2\}$ to produce a $\hat{p}^*(\Delta, \varepsilon)$ surface. This is cheap (single-node simulations are fast) and reveals how sensitive the hypothesis is to the bandit parameters.
+
+**Output:** Table of $\hat{p}^*$ values; heatmap plot.
+
+---
+
+### Experiment 2 — Multi-replica validation (`multi_replica.py`)
+
+**What it tests:** The core prediction — does the recursion's per-node $\hat{P}_i$ match empirical convergence frequencies?
+
+**Design:**
+1. Run $R = 200$ full-network simulations on the PUD network with different seeds.
+2. For each run $r$ and node $i$, record $x_{ir} = \mathbf{1}[c_i^{(1)} > c_i^{(0)}]$ at convergence.
+3. Compute empirical truth probability: $\hat{P}_i^{\text{emp}} = R^{-1}\sum_r x_{ir}$.
+4. Also record, for each node, whether all its parents converged to falsehood (used for Experiment 3).
+
+**Output:** Matrix $X \in \{0,1\}^{N \times R}$, saved as `.npy`. Empirical $\hat{P}_i^{\text{emp}}$ vector. Empirical mean $\bar{X}$ and variance $\widehat{\text{Var}}(X)$.
+
+---
+
+### Experiment 3 — Compute predictions and compare (`predict_and_validate.py`)
+
+**What it tests:** V0 vs. V1 vs. V2 at the node level and network level.
+
+**Design (uses output from Experiments 1–2):**
+
+1. **V0 predictions:** For each node $i$, $\hat{P}_i^{V0} = 1$ if reachable from a truthful root, else 0. "Truthful root" = root that converged to truth in $>50\%$ of Experiment 2 runs.
+2. **V1 predictions:** Run the condensation-DAG recursion (Section 4) with $\hat{p}^*$ from Experiment 1 and $\hat{p}^r$ from Experiment 3 step below. Produces $\hat{P}_i^{V1}$ for all nodes.
+3. **$\hat{p}^r$ estimate:** From Experiment 2 data, isolate nodes whose parents all converged to falsehood in a given run. The fraction of such nodes that themselves converged to truth is $\hat{p}^r$.
+4. **V2 predictions:** Repeat V1 recursion but use $\hat{p}^r(k)$ — a different resistance probability for each number of false parents $k$. Requires grouping nodes by $|\text{Pa}(i)|$ in the resistance regime.
+
+**Comparisons:**
+- Scatter plot $\hat{P}_i^{V0}, \hat{P}_i^{V1}, \hat{P}_i^{V2}$ vs. $\hat{P}_i^{\text{emp}}$ (calibration, one point per node).
+- Predicted vs. empirical network mean truth share.
+- Predicted vs. empirical variance across runs.
+
+**Output:** Calibration plots (one per version), summary table of mean/variance errors.
+
+---
+
+### Experiment 4 — SCC collective-unit check (`scc_analysis.py`)
+
+**What it tests:** Whether truth is indeed all-or-nothing within non-trivial SCCs (the collective-unit assumption in Section 4).
+
+**Design (uses Experiment 2 data):**
+1. Identify all non-trivial SCCs using `networkx.strongly_connected_components`.
+2. For each non-trivial SCC $S$ and each run $r$, check whether the SCC shows a mixed outcome ($\exists i \in S, j \in S: x_{ir} \neq x_{jr}$).
+3. Compute the fraction of runs with mixed outcomes per SCC.
+
+**Expected result:** If the collective-unit assumption holds, mixed-outcome runs should be rare (close to 0). If they are common, the SCC must be treated as having internal heterogeneity rather than a single $P_S$.
+
+**Output:** Per-SCC table of mixed-outcome rates; flag any SCC where the assumption fails.
+
+---
+
+### Experiment 5 — Dampening study (`dampening_study.py`)
+
+**What it tests:** How $p^r$ depends on the number of false parents $k$ and simulation length $t$ — the key open question from Section 9.1.
+
+**Design:** Construct synthetic two-layer networks: $k$ source nodes (strongly initialized toward T0 via high $\alpha^{(0)}$ priors) feeding one focal node. Run $R = 500$ simulations for each $k \in \{1, 2, 3, 5\}$. Measure $\hat{p}^r(k)$.
+
+*Note:* Strong initialization of source nodes is not directly supported by the current `VectorizedModel` API (which starts all agents at uniform priors). This experiment may require a lightweight wrapper that overwrites `alphas_betas` immediately after initialization. Do not modify `vectorized_model.py`; instead, set `model.alphas_betas` directly after construction (the attribute is public).
+
+**Output:** $\hat{p}^r(k)$ curve; check whether it follows $O(1/k)$ or exponential decay.
+
+---
+
+### Recommended execution order
+
+```
+Experiment 1   →  estimate_pstar.py          (fast; ~minutes)
+Experiment 2   →  multi_replica.py           (slow; ~hours on PUD network)
+Experiment 3   →  predict_and_validate.py    (fast; postprocessing only)
+Experiment 4   →  scc_analysis.py            (fast; postprocessing only)
+Experiment 5   →  dampening_study.py         (medium; synthetic networks are small)
+```
+
+Experiments 3 and 4 are pure postprocessing and can run in seconds once Experiment 2's output is saved. Experiment 2 is the computational bottleneck and is a natural candidate for Colab.
