@@ -16,6 +16,7 @@ __pycache__/
 # Generated outputs
 convergence_plot*.png
 root_influence_analysis*.png
+two_phase_dynamics*.png
 
 # API keys and secrets
 .env

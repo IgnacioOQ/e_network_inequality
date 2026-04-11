@@ -5,6 +5,8 @@
 - last_checked: 2026-04-11
 <!-- content -->
 
+> **Scope reminder:** work investigating these questions must not modify any file outside `model/convergence_analysis/`. Scripts and outputs (plots, datasets) belong in this folder. See `MC_AGENT.md` for the full constraints.
+
 This document records open conceptual tensions and future research directions arising from the network epistemology simulation and its Markov Chain analysis. It is a living document — add new entries as questions emerge.
 
 ## 1. The Lower-Bound Anomaly
