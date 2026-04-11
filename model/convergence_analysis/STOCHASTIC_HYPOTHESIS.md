@@ -10,6 +10,111 @@
 
 ---
 
+## 0. Simulation Model
+
+This section is a self-contained description of the simulation so that the hypothesis can be studied independently of the codebase.
+
+### 0.1 Setting
+
+$N$ agents are arranged on a **directed graph** $G = (V, E)$. An edge $(u, v) \in E$ means agent $v$ **observes** (listens to) agent $u$: at each step, $v$ receives the experimental outcomes produced by $u$. Edges encode information flow, not physical connection.
+
+There are two competing theories:
+
+| Theory | Success probability |
+|--------|-------------------|
+| Theory 0 (bad / false) | $p_0 = 0.5$ |
+| Theory 1 (good / true) | $p_1 = 0.5 + \Delta$ |
+
+where $\Delta > 0$ is the **bandit gap** (called `uncertainty` in the code). The ground truth is that Theory 1 is better, but agents do not know this — they must learn it through experimentation.
+
+### 0.2 Agent State
+
+Each agent $i$ maintains a **Beta distribution** over each theory's success probability. The state is four numbers:
+
+$$(\alpha_i^{(0)},\ \beta_i^{(0)},\ \alpha_i^{(1)},\ \beta_i^{(1)})$$
+
+where $\alpha_i^{(k)}$ counts accumulated successes and $\beta_i^{(k)}$ counts accumulated failures for theory $k$. The **credence** (mean belief) for theory $k$ is:
+
+$$c_i^{(k)} = \frac{\alpha_i^{(k)}}{\alpha_i^{(k)} + \beta_i^{(k)}}$$
+
+**Initialization:** all agents start with uniform priors:
+
+$$\alpha_i^{(0)} = \beta_i^{(0)} = \alpha_i^{(1)} = \beta_i^{(1)} = 1 \implies c_i^{(0)} = c_i^{(1)} = 0.5 \quad \forall i$$
+
+### 0.3 Per-Step Dynamics
+
+At each discrete time step $t$, every agent executes three phases simultaneously:
+
+**Phase 1 — Choice (epsilon-greedy):**
+
+$$k_i(t) = \begin{cases} \text{Uniform}\{0, 1\} & \text{with probability } \varepsilon \quad \text{(explore)} \\ \operatorname{argmax}_k\, c_i^{(k)}(t) & \text{with probability } 1 - \varepsilon \quad \text{(exploit)} \end{cases}$$
+
+Ties in argmax are broken randomly. $\varepsilon \in (0, 1)$ is the **exploration rate** (fixed throughout the simulation).
+
+**Phase 2 — Experiment:**
+
+Agent $i$ runs $n$ independent Bernoulli trials on its chosen theory $k_i(t)$:
+
+$$S_i(t) \sim \operatorname{Binomial}(n,\ p_{k_i(t)}), \qquad F_i(t) = n - S_i(t)$$
+
+The individual results matrix is:
+$$s_i^{(k)}(t) = S_i(t) \cdot \mathbf{1}[k = k_i(t)], \qquad f_i^{(k)}(t) = F_i(t) \cdot \mathbf{1}[k = k_i(t)]$$
+
+(Agent $i$ produces evidence only for the theory it tested; the other theory's entry is zero.)
+
+**Phase 3 — Observation and Bayesian Update:**
+
+Agent $i$ observes its own results and those of every agent it listens to ($j \in \text{Pa}(i)$). Total evidence received for theory $k$:
+
+$$\hat{S}_i^{(k)}(t) = s_i^{(k)}(t) + \sum_{j \in \text{Pa}(i)} s_j^{(k)}(t)$$
+$$\hat{F}_i^{(k)}(t) = f_i^{(k)}(t) + \sum_{j \in \text{Pa}(i)} f_j^{(k)}(t)$$
+
+Bayesian update (conjugate Beta–Binomial):
+
+$$\alpha_i^{(k)}(t+1) = \alpha_i^{(k)}(t) + \hat{S}_i^{(k)}(t)$$
+$$\beta_i^{(k)}(t+1) = \beta_i^{(k)}(t) + \hat{F}_i^{(k)}(t)$$
+
+Credences are updated as means: $c_i^{(k)}(t+1) = \alpha_i^{(k)}(t+1)\,/\,(\alpha_i^{(k)}(t+1) + \beta_i^{(k)}(t+1))$.
+
+Note: $\alpha$ and $\beta$ are **monotonically non-decreasing** — evidence is never forgotten. This guarantees that the chain is absorbing: once an agent's credences have strongly concentrated on one theory, the other theory requires an ever-larger evidence shock to dislodge.
+
+### 0.4 Convergence Criterion
+
+Agent $i$ is said to have **converged to truth** if $c_i^{(1)} > c_i^{(0)}$ at the end of the simulation (credence for Theory 1 exceeds credence for Theory 0).
+
+The **simulation stops** when the maximum per-agent credence change in a step falls below a tolerance:
+
+$$\max_{i,k}\left|c_i^{(k)}(t) - c_i^{(k)}(t-1)\right| < \tau$$
+
+Default: $\tau = 10^{-6}$, max steps $= 10^6$.
+
+### 0.5 Reference Parameters
+
+The values used in the empirical verification runs on the PUD citation network:
+
+| Parameter | Symbol | Value |
+|-----------|--------|-------|
+| Theory 0 success probability | $p_0$ | $0.5$ |
+| Theory 1 success probability | $p_1$ | $0.5 + \Delta$ |
+| Bandit gap (uncertainty) | $\Delta$ | $0.1$ $\Rightarrow$ $p_1 = 0.6$ |
+| Experiments per step | $n$ | $10$ |
+| Exploration rate | $\varepsilon$ | $0.1$ |
+| Prior | $\alpha^{(k)}_0 = \beta^{(k)}_0$ | $1$ (uniform Beta) |
+| Convergence tolerance | $\tau$ | $10^{-6}$ |
+| Network | PUD citation network | $N = 87$ nodes, 160 edges, 16 root nodes, 25 simple cycles (lengths 2–6) |
+
+### 0.6 Root Node Dynamics (Relevant to $p^*$)
+
+A **root node** ($\text{Pa}(i) = \emptyset$) observes no neighbors. Its dynamics reduce to a pure two-armed bandit with Beta-updating and epsilon-greedy exploration. At each step it:
+
+1. Exploits $\operatorname{argmax}(c^{(0)}, c^{(1)})$ with probability $1 - \varepsilon$, or explores uniformly with probability $\varepsilon$.
+2. Runs $n$ Bernoulli trials on the chosen arm.
+3. Updates its own $\alpha^{(k)}, \beta^{(k)}$ directly (no neighbor evidence).
+
+Since $p_1 > p_0$, a root that tests Theory 1 gets systematically more successes per trial. But in early steps, if random outcomes favour Theory 0, the agent may lock into exploitation of Theory 0. The probability $p^*$ that a root agent eventually converges to Theory 1 (before simulation stops) depends on $\Delta$, $\varepsilon$, $n$, and $\tau$. It is **not analytically tractable** in closed form for Beta-updating epsilon-greedy but is straightforwardly estimated by Monte Carlo: run many isolated-agent simulations and record the fraction that end with $c^{(1)} > c^{(0)}$.
+
+---
+
 ## 1. The Idea in Natural Language
 
 Before any simulation runs, we know two things about the network: its topology (who listens to whom) and the bandit parameters (how much better Theory 1 is, how many experiments each agent runs, how often they explore). The question is: can we write down, for every node in the network, a probability that it will ultimately converge to the truth?
