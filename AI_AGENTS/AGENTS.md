@@ -141,7 +141,7 @@ e_network_inequality/
 │   ├── vectorized_model.py         # Fast vectorized simulation (primary)
 │   ├── simulation_functions.py     # Wrappers for Model (IMMUTABLE)
 │   ├── vectorized_simulation_functions.py
-│   └── convergence_analysis/       # Colab convergence study notebooks
+│   └── convergence_analysis/       # Convergence & MC analysis (scripts, notebooks, docs)
 │
 ├── networks/                       # Network generation and manipulation
 │   ├── network_generation.py       # Synthetic graph generators
@@ -201,7 +201,7 @@ The project relies on a central imports file to manage dependencies across modul
 *   **`vectorized_simulation_functions.py`**: Wrappers for running `VectorizedModel`.
 
 **Analysis Tools:**
-*   **`analysis/mc_analysis.py`**: Markov Chain analysis utilities including:
+*   **`utils/mc_analysis.py`**: Markov Chain analysis utilities including:
     *   `MarkovChainAnalyzer`: Main class for trajectory analysis
     *   `StateSnapshot`: Immutable state records with fingerprinting
     *   Convergence diagnostics, mixing time estimation, absorption analysis
@@ -215,5 +215,5 @@ The project relies on a central imports file to manage dependencies across modul
 *   **`tests/test_vectorization.py`**: Regression tests ensuring `VectorizedModel` matches `Model`.
 *   **`tests/test_mc_analysis.py`**: Unit tests for Markov Chain analysis utilities.
 *   **`notebooks/basic_testing/`**: Visual verification notebooks for both model implementations.
-*   **`notebooks/convergence_analysis/`**: Convergence studies and root influence analysis scripts.
+*   **`model/convergence_analysis/`**: Convergence studies, root influence analysis scripts, and Markov Chain documentation (`MC_AGENT.md`, `ROOTNODE_HYPOTHESIS.md`, `OPEN_QUESTIONS.md`).
 

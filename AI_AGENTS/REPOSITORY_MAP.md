@@ -27,7 +27,15 @@ e_network_inequality/
 │   ├── vectorized_model.py         # Fast vectorized simulation (primary)
 │   ├── simulation_functions.py     # Wrappers for running Model in parallel (IMMUTABLE)
 │   ├── vectorized_simulation_functions.py  # Wrappers for VectorizedModel
-│   └── convergence_analysis/       # Colab notebooks for convergence studies
+│   └── convergence_analysis/       # Convergence & MC analysis (scripts, notebooks, docs)
+│       ├── MC_AGENT.md             # Markov Chain agent instructions
+│       ├── ROOTNODE_HYPOTHESIS.md  # Root node influence hypothesis & results
+│       ├── OPEN_QUESTIONS.md       # Open conceptual tensions and future directions
+│       ├── convergence_studies.py  # Local script: belief-change convergence plot
+│       ├── root_influence_analysis.py  # Local script: root hypothesis verification
+│       ├── Colab_Formal_Analysis.ipynb         # Spectral & stochastic process analysis
+│       ├── Colab_Ignacio_Convergence_Study.ipynb   # OO vs vectorized convergence study
+│       └── Colab_Root_Influence_Analysis.ipynb # Multi-network root influence (Colab)
 │
 ├── networks/                       # Network generation and manipulation
 │   ├── __init__.py
@@ -61,7 +69,6 @@ e_network_inequality/
 │   ├── AGENTS_LOG.md
 │   ├── HOUSEKEEPING.md
 │   ├── LINEARIZE_AGENT.md
-│   ├── MC_AGENT.md
 │   ├── MD_CONVENTIONS.md
 │   └── REPOSITORY_MAP.md           # This file
 │
