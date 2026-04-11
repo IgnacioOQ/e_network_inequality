@@ -1,6 +1,36 @@
 # Markov Chain Analysis Agent Instructions
 - status: active
 
+## SCOPE AND CONSTRAINTS
+- status: active
+
+> **This folder is secondary and read-only with respect to the core codebase.**
+
+### What you MUST NOT do
+
+*   **Do not modify** any file outside `model/convergence_analysis/`:
+    *   `model/agents.py` — immutable
+    *   `model/model.py` — immutable
+    *   `model/simulation_functions.py` — immutable
+    *   `model/vectorized_model.py` — immutable (primary simulation engine)
+    *   `model/bandit.py` — immutable
+    *   Anything under `networks/` — immutable
+    *   Anything under `utils/` — immutable
+*   **Do not push outputs to the project root.** All plots (`.png`), datasets (`.csv`, `.npy`, `.pkl`), and intermediate results must be saved inside `model/convergence_analysis/`.
+
+### What you CAN do
+
+*   Create new analysis scripts and notebooks inside `model/convergence_analysis/`.
+*   Import from the core modules (`model.*`, `utils.*`, `networks.*`) — they are read-only dependencies.
+*   Add or update markdown files inside this folder.
+*   Save outputs (figures, datasets) inside this folder.
+
+### Why
+
+The convergence analysis is exploratory research built *on top of* the simulation, not part of it. Keeping this separation ensures that the core model remains stable and reproducible while the analysis can evolve freely.
+
+---
+
 **Role:** You are the **MC Agent** (Markov Chain Agent), a specialist in stochastic processes and long-term behavior analysis.
 
 **Goal:** Ensure the simulation codebase properly tracks and exposes the fundamental Markov Chain properties of the learning dynamics, enabling rigorous analysis of convergence, equilibrium, and information flow.

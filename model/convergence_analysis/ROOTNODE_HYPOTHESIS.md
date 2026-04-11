@@ -1,6 +1,8 @@
 # Root Node Influence Hypothesis
 - status: active
 
+> **Scope reminder:** scripts verifying this hypothesis must not modify any file outside `model/convergence_analysis/`. See `MC_AGENT.md` for the full constraints.
+
 ## Overview
 - status: active
 
