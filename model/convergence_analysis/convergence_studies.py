@@ -32,7 +32,7 @@ network_path = os.path.join(os.path.dirname(__file__), '..', '..', 'networks', '
 with open(network_path, 'r') as f:
     network_data = json.load(f)
 
-network = nx.node_link_graph(network_data)
+network = nx.node_link_graph(network_data, edges="links")
 print(f"Network: {len(network.nodes())} nodes, {len(network.edges())} edges")
 
 # ## Run Simulation with Convergence Tracking
@@ -78,9 +78,10 @@ ax.set_xlim(1, len(history))
 ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.savefig('convergence_plot_10000.png', dpi=150, bbox_inches='tight')
+output_path = os.path.join(os.path.dirname(__file__), f'convergence_plot_{model.n_steps}steps.png')
+plt.savefig(output_path, dpi=150, bbox_inches='tight')
 
-print("\nPlot saved to 'convergence_plot_10000.png'")
+print(f"\nPlot saved to '{output_path}'")
 
 # Print final convergence values
 print(f"\nFinal belief change (step {model.n_steps}):")
