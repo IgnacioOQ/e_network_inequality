@@ -55,15 +55,27 @@ $p^*$ is not 1. With epsilon-greedy exploration and a finite number of experimen
 
 $p^*$ is not analytically tractable in closed form for Beta-updating epsilon-greedy, but it is empirically estimable: run many isolated-agent simulations and measure the fraction that converge to Theory 1.
 
-### 2.3 The Resistance Probability $p^r$
+### 2.3 The Dampening Effect of False Parents
 
-Suppose all parents of node $i$ have converged to falsehood. They accumulate large alpha values for Theory 0 and large beta values for Theory 1, producing overwhelming evidence *against* the good theory. Node $i$ observes this misleading evidence alongside its own experiments.
+Suppose some parents of node $i$ have converged to falsehood. They are running experiments on Theory 0, accumulating successes at rate $0.5$ per experiment. Node $i$ observes these results and its Bayesian parameters update as:
 
-In this regime, node $i$ can still reach truth, but only through its own $\varepsilon$-fraction exploratory trials on Theory 1. The probability is:
+$$\alpha_i^{(0)} \mathrel{+}= \text{(neighbour successes for T0)}, \quad \beta_i^{(0)} \mathrel{+}= \text{(neighbour failures for T0)}$$
 
-$$p^r = P(\text{node } i \text{ converges to truth} \mid \text{all parents converge to falsehood})$$
+This raises $i$'s credence for Theory 0: $c_i^{(0)} = \alpha_i^{(0)} / (\alpha_i^{(0)} + \beta_i^{(0)})$. A higher $c_i^{(0)}$ means node $i$ exploits Theory 0 more often (epsilon-greedy), which in turn generates *its own* evidence for Theory 0, further entrenching the false belief.
 
-By symmetry of the Beta-updating rule and the bandit structure, $p^r$ does not depend on $i$ (only on $\varepsilon$, $\Delta$, $n$, and the prior). We expect $p^r \ll p^*$: false parents actively suppress the good signal. As the number of parents grows, $p^r \to 0$ (the misleading evidence scales with the number of false parents).
+**However, dampening is about timing, not the final state.** Theory 1 has a strictly higher success rate ($0.5 + \Delta > 0.5$). Even when node $i$ is mostly exploiting Theory 0, its occasional $\varepsilon$-fraction explorations of Theory 1 accumulate evidence for T1 at rate $(0.5 + \Delta)$ per exploration. Simultaneously, $c_i^{(0)}$ converges to $0.5$ (the true success rate of T0) as evidence accumulates. In the infinite-time limit:
+
+$$c_i^{(1)} \to 0.5 + \Delta, \qquad c_i^{(0)} \to 0.5$$
+
+So eventually $c_i^{(1)} > c_i^{(0)}$, node $i$ switches to exploiting T1, and truth convergence follows. **False parents cannot permanently prevent truth convergence — they only delay it.**
+
+The delay can be very long. With $k$ false parents each running $n$ experiments per step, the rate of false T0 evidence arriving at node $i$ is proportional to $k \cdot n$, while the rate of T1 evidence from $i$'s own exploration is only $\varepsilon \cdot n$. The ratio is $k / \varepsilon$ — for $k = 1$ false parent and $\varepsilon = 0.1$, false evidence arrives 10 times faster than true evidence. The crossover time at which $c_i^{(1)} > c_i^{(0)}$ scales roughly as $O(k / (\varepsilon \Delta^2))$, growing with the number of false parents and shrinking with the bandit gap.
+
+**The resistance probability $p^r(t)$** is therefore not a static constant but a function of time:
+
+$$p^r(t) = P(\text{node } i \text{ has converged to truth by step } t \mid \text{all parents converge to falsehood})$$
+
+$p^r(t)$ starts near $p^*$ (no accumulated false evidence at $t = 0$), decreases as false-parent evidence builds up, and then recovers slowly as T1 evidence eventually overcomes T0 evidence. For practical simulation horizons (e.g., $10^6$ steps), $p^r \approx 0$ for nodes with one or more active false parents. The $\approx 1\%$ lower-bound anomaly in the Root Node Hypothesis data represents the small but non-zero residual $p^r$ at $10^6$ steps.
 
 ---
 
@@ -126,9 +138,61 @@ where $|\mathcal{R}_i|$ is the number of distinct root ancestors of $i$ and $\te
 
 ---
 
-## 4. Network-Level Predictions
+## 4. Cycles and the Condensation Generalization
 
-### 4.1 Mean Truth Share
+### 4.1 The PUD Network Is Not a DAG
+
+The empirical PUD network ($N = 87$, 160 edges) contains **25 simple cycles** with lengths 2–6, alongside 16 root nodes (in-degree 0). The topological recursion of Section 3 does not apply directly: there is no topological ordering when cycles exist, and the formula $P_i = f(\{P_j\}_{j \in \text{Pa}(i)})$ for a node inside a cycle references its own probability through the cycle.
+
+### 4.2 The Condensation Graph
+
+The standard remedy is to replace the original graph $G$ with its **condensation** $\tilde{G}$:
+
+1. **Find all Strongly Connected Components (SCCs).** An SCC is a maximal set of nodes that can all reach each other. In a DAG every node is its own SCC. In a cyclic graph, each cycle forms (part of) a non-trivial SCC.
+2. **Collapse each SCC into a single super-node.** The condensation $\tilde{G}$ has one node per SCC and an edge $S_a \to S_b$ if any node in $S_a$ has an edge to any node in $S_b$. The condensation of any directed graph is always a DAG — this is a theorem.
+3. **Apply the topological recursion on $\tilde{G}$.** Each super-node has a single truth probability $P_{S}$, computed from its parents in $\tilde{G}$.
+
+### 4.3 Truth Probability of an SCC
+
+For a trivial SCC (single node, no cycle), $P_S = P_i$ as before.
+
+For a non-trivial SCC (two or more mutually reachable nodes), the internal dynamics must be solved separately. Define $P_S$ as the probability that the SCC as a whole converges to truth — meaning all (or most) nodes inside reach the good theory.
+
+The internal dynamics of an SCC are governed by a fixed-point equation. For each node $i$ inside SCC $S$, define $P_i^S$ as its individual truth probability *given* the truth probabilities of $S$'s parent SCCs. Within the SCC, nodes mutually observe each other, so:
+
+$$P_i^S = 1 - (1 - p^r(t)) \prod_{j \in \text{Pa}(i),\, j \in S} (1 - P_j^S) \cdot \prod_{j \in \text{Pa}(i),\, j \notin S} (1 - P_j)$$
+
+The second product (over parents outside $S$) is known from the condensation recursion; the first product (over parents inside $S$) creates the circular dependency. The solution is the fixed point of this system.
+
+**The symmetric case (all SCC nodes equivalent):** For a uniform cycle of $k$ nodes where each has the same parent structure and same $p^r$, by symmetry $P_i^S = P^S$ for all $i \in S$, and:
+
+$$P^S = 1 - (1 - p^r)(1 - P^S)^{k-1}$$
+
+This is a polynomial fixed-point equation in $P^S$. For $p^r = 0$: $P^S = 0$ or $P^S = 1$ are both solutions; the realized outcome depends on which basin of attraction the system enters. For $p^r > 0$: the only stable fixed point is $P^S = 1$ in infinite time, consistent with the dampening analysis — but the transient time grows with the cycle size.
+
+### 4.4 Mutual Reinforcement in Cycles
+
+A cycle introduces **mutual reinforcement** of whatever belief the cycle converges to. If a length-2 cycle (nodes $A$ and $B$ observe each other) both converge to falsehood, each step:
+- $A$'s false T0 experiments reinforce $B$'s false belief
+- $B$'s false T0 experiments reinforce $A$'s false belief
+
+The effective false-evidence rate arriving at $A$ is doubled compared to a node with one unidirectional false parent. The crossover time at which T1 evidence overtakes T0 evidence is correspondingly longer. For a length-$k$ cycle of false believers, the crossover time grows approximately as $O(k^2 / (\varepsilon \Delta^2))$ — quadratically in cycle size, because each node is both a source and consumer of false evidence.
+
+This means that empirically, nodes inside cycles are **more likely to be stuck** at finite simulation time than isolated false-parent situations, even though the theoretical infinite-time outcome is the same.
+
+### 4.5 Practical Implication
+
+For the PUD network with 25 short cycles (lengths 2–6):
+- Compute SCCs (most will be trivial; a few will be 2–6 node cycles).
+- For non-trivial SCCs, solve the internal fixed-point equation numerically.
+- Apply the condensation DAG recursion on the resulting super-node probabilities.
+- Compare predicted $P_i$ values to empirical convergence frequencies across simulation runs.
+
+---
+
+## 5. Network-Level Predictions
+
+### 5.1 Mean Truth Share
 
 The expected fraction of agents believing truth at convergence:
 
@@ -136,7 +200,7 @@ $$\mu = \mathbb{E}\left[\frac{1}{N}\sum_{i=1}^N \mathbf{1}[T_i]\right] = \frac{1
 
 This is exact regardless of correlations — the expectation is linear.
 
-### 4.2 Variance of Truth Share
+### 5.2 Variance of Truth Share
 
 Let $X = N^{-1}\sum_i \mathbf{1}[T_i]$ be the truth share in a single simulation run.
 
@@ -154,9 +218,9 @@ The **network correlation matrix** $C_{ij} = P(T_i \cap T_j)$ can be estimated v
 
 ---
 
-## 5. Connection to Existing Results
+## 6. Connection to Existing Results
 
-### 5.1 Root Node Hypothesis as a Special Case
+### 6.1 Root Node Hypothesis as a Special Case
 
 Set $p^r = 0$ (no resistance). Then $(1 - P_i) = \prod_{j \in \text{Pa}(i)} (1 - P_j)$.
 
@@ -166,7 +230,7 @@ For a node whose only ultimate ancestors are roots, this gives:
 
 This is exactly the Root Node Hypothesis: the truth share equals the fraction of the network reachable from truthful roots. **The Root Node Hypothesis is the $p^r \to 0$ limit of the Stochastic Hypothesis.**
 
-### 5.2 The Lower-Bound Anomaly (Q1)
+### 6.2 The Lower-Bound Anomaly (Q1)
 
 In the empirical data, at $10^6$ steps the actual truth share (0.7724) slightly *exceeds* the root-reachability prediction (0.7628). Under the Stochastic Hypothesis, this gap is:
 
@@ -174,7 +238,7 @@ $$\text{Gap} = \frac{1}{N}\sum_{i} p^r \cdot (1 - P(A_i))$$
 
 The sum runs only over nodes whose parent set $A_i^c$ occurs (all parents false). The gap is a direct measurement of $p^r$ weighted by the probability of the resistance regime. The approximately $+1\%$ gap thus gives a rough estimate of $p^r$ for the PUD network.
 
-### 5.3 Two-Phase Dynamics (Q3)
+### 6.3 Two-Phase Dynamics (Q3)
 
 The two-phase dynamics script (`two_phase_dynamics.py`) identified $t^* \approx 550$ as the half-life of active agents. In the Stochastic Hypothesis language:
 - **Exploration phase** ($t < t^*$): $p^*$ and $p^r$ are still being "revealed" — agents have not yet committed. The recursion does not yet apply.
@@ -184,23 +248,23 @@ $t^*$ thus marks the onset of the regime in which the Stochastic Hypothesis is p
 
 ---
 
-## 6. Spectral Connection (Tentative)
+## 7. Spectral Connection (Tentative)
 
-The log-space recursion $q_i = c + \sum_{j \in \text{Pa}(i)} q_j$ is equivalent to a matrix equation:
+For the condensation graph $\tilde{G}$ (a DAG by construction — see Section 4), the log-space recursion applied to super-nodes is equivalent to a matrix equation:
 
-$$\mathbf{q} = c^* \mathbf{e}_{\text{roots}} + \mathbf{L}^\top \mathbf{q} + c \, \mathbf{1}$$
+$$\mathbf{q} = c^* \mathbf{e}_{\text{root-SCCs}} + \tilde{\mathbf{L}}^\top \mathbf{q} + c \, \mathbf{1}$$
 
-where $\mathbf{L}$ is the adjacency matrix of the DAG. Since $G$ is a DAG, $\mathbf{L}$ is nilpotent (all eigenvalues zero). The formal solution is:
+where $\tilde{\mathbf{L}}$ is the adjacency matrix of the condensation DAG. Since $\tilde{G}$ is a DAG, $\tilde{\mathbf{L}}$ is nilpotent (all eigenvalues zero). The formal solution is:
 
-$$\mathbf{q} = (I - \mathbf{L}^\top)^{-1}(c^* \mathbf{e}_{\text{roots}} + c \, \mathbf{1})$$
+$$\mathbf{q} = (I - \tilde{\mathbf{L}}^\top)^{-1}(c^* \mathbf{e}_{\text{root-SCCs}} + c \, \mathbf{1})$$
 
-This is well-defined because $\mathbf{L}$ is nilpotent, so $(I - \mathbf{L}^\top)^{-1} = \sum_{k=0}^{d} (\mathbf{L}^\top)^k$ where $d$ is the depth of the DAG. The $k$-th power $(\mathbf{L}^\top)^k$ counts paths of length $k$ from parents to descendants.
+This is well-defined because $\tilde{\mathbf{L}}$ is nilpotent, so $(I - \tilde{\mathbf{L}}^\top)^{-1} = \sum_{k=0}^{d} (\tilde{\mathbf{L}}^\top)^k$ where $d$ is the depth of the condensation. The $k$-th power counts paths of length $k$ from parent SCCs to descendant SCCs.
 
 **Spectral gap and mixing time (Q7):** For networks with cycles, $\mathbf{L}$ is no longer nilpotent. The spectral gap $1 - |\lambda_2(\mathbf{L})|$ of the row-normalized version controls how fast information diffuses. A small spectral gap (close-to-1 second eigenvalue) means slow mixing — the truth signal from a root takes many steps to reach distant nodes. This connects Q7 (spectral gap) to Q2 (mixing time) via the Stochastic Hypothesis: the mixing time controls *when* the recursion's predictions become accurate, not the predictions themselves.
 
 ---
 
-## 7. Empirical Test Protocol
+## 8. Empirical Test Protocol
 
 To validate the Stochastic Hypothesis:
 
@@ -224,7 +288,7 @@ Repeat Steps 3–4 on synthetic networks (Erdős-Rényi, Barabási-Albert, Watts
 
 ---
 
-## 8. Open Questions
+## 9. Open Questions
 
 1. **Is $p^r$ topology-independent?** The resistance probability may depend on the number of false parents (more false parents → less resistance) and the strength of their accumulated evidence (more steps → stronger suppression). If so, $p^r$ is not a single scalar but a function $p^r(k, t)$ where $k$ is the number of false parents.
 
