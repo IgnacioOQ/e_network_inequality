@@ -1,79 +1,112 @@
-If I recall correctly, Max and I thought it would be best to use the following stopping condition:
-
-* Stop after a fixed number of steps. The literature tends to use 10,000 steps, but we might use a larger number of steps (for instance, 1,000,000) because we know that our simulations converge more slowly. In any case, as a minimal requirement, our stopping condition should be such that it successfully replicates Zollman's original work (I believe 2007 uses beta agents).
-
-  * We could, perhaps, think of a way to stop a run sooner if we have good evidence that it has already converged. One simple option is to run a minimum number of steps and, after that, check every 10k steps whether anything has changed. (This would be akin to our previous tolerance stopping, except that we would increase the number of steps between the prior and post credences.) I am a bit unsure if this would work. 
-
-* Note: We can use cloud services from Utrecht University for this. 
-
-
-# **Variation methods**
-
-The revised variation method has the following structure:
-
-The method builds a variant of the input network by adding/rewiring `n_edges` edges while trying to preserve two properties of the original: the **degree distribution** and the **clustering coefficient**.
-
-It proceeds in three phases:
-
-1. **Setup**: Optionally removes the same number of edges as will be added (keeping density fixed). Sets the target degree distribution, original distribution for densify or uniform distribution for equalization.  
-2. **Main loop**: Adds edges one at a time. Each iteration takes one of two paths: if clustering has fallen below target, it adds an edge to push clustering back up (the interim clustering branch, more info below); otherwise it samples an edge to push the degree distribution to the target (the degree branch, more info below).  
-3. **Post clustering**: After all edges are added, performs degree-preserving edge swaps to correct any remaining gap between the achieved and target clustering (post clustering loop, more info below).
-
-Both the interim clustering branch and the post clustering loop are optional.
-
-## **Status**
-
-* ✅ PUD: interim and post clustering both work  
-* ✅ Tobacco: both interim and post clustering work for densify, but post clustering works best for equalize  
-  * Equalize  
-    * Interim clustering ⇒ correlation 0.21 (weak) \[Gini 0.62 —0.76\]  
-    * Post clustering ⇒ correlation \-0.025 (insignificant) \[Gini: 0.55—0.76\]  
-* ⏯️ Ego depletion: only post clustering works for densify, still working on equalize...
-
-## **Degree branch**
-
-### **Two approaches: independent and conditional approach**
-
-* **Independent approach:** Draw `attempts` sources independently (weighted by out-degree), draw `attempts` targets independently (weighted by in-degree), pair them up, then throw out any pairs that are self-loops or already-existing edges. Pick one surviving pair at random.  
-* **Conditional approach:** Draw one source (weighted by out-degree). Look at that specific source's already-existing connections and exclude them. Draw a target from what remains, still weighted by in-degree. Return immediately on the first success.
-
-The structural difference is: independent approach draws source and target *independently* and filters afterwards; conditional approach draws the target *given* the source.
-
-### **Hyperparameter `p_conditional`**
-
-Probability in \[0, 1\] of using the conditional (sequential) sampling approach in the degree branch. With probability `1 - p_conditional` the independent approach is used instead.
+# OBSERVATIONS.md
+- status: active
+- last_checked: 2026-04-15
+<!-- content -->
+Technical findings, design decisions, and open concerns organized by topic.
+See [WORKPLAN.md](WORKPLAN.md) for the task list.
 
 ---
 
-### **Why the approaches produce opposite correlations**
+## Variation Methods
+- status: active
+<!-- content -->
+**File:** [`networks/variation_methods.py`](networks/variation_methods.py)
 
-* In short: independent approach's rejection filter introduces an *implicit equalizing pressure* that grows with n\_edges; conditional's per-source filtering avoids this and lets preferential attachment run cleanly, which concentrates degree.
+Builds a variant of an input network by adding/rewiring `n_edges` edges while preserving the
+**degree distribution** and **clustering coefficient**. Three phases:
+
+1. **Setup** — Optionally remove the same number of edges as will be added (fixed density). Set
+   target degree distribution: original for densify, uniform for equalization.
+2. **Main loop** — Add edges one at a time. Either (a) add a triangle-completing edge if
+   clustering fell below target (interim clustering branch), or (b) sample an edge toward the
+   target degree distribution (degree branch).
+3. **Post clustering** — Degree-preserving edge swaps to close any remaining clustering gap.
+
+Both the interim clustering branch and post clustering loop are optional.
+
+### Per-network Status
+
+| Network | Densify | Equalize | Notes |
+|:---|:---|:---|:---|
+| PUD | ✅ | ✅ | Both interim and post clustering work |
+| Tobacco | ✅ | ✅ | Densify: both; Equalize: post only (interim → corr. 0.21; post → −0.025) |
+| Ego depletion | ✅ | ⏯️ | Densify: post only; Equalize in progress |
+
+Tobacco equalize Gini ranges: interim \[0.62—0.76\], post \[0.55—0.76\].
+
+### Degree Branch: Independent vs Conditional
+
+Controlled by `p_conditional` ∈ [0, 1]:
+
+- **Independent** (`1 − p_conditional`): Draw sources and targets independently, filter
+  self-loops and duplicates, pick a surviving pair. Simple but builds up a rejection bias.
+- **Conditional** (`p_conditional`): Draw one source, exclude its existing connections, draw a
+  target from the remainder. First attempt almost always succeeds.
+
+They produce **opposite correlations with n_edges** (both use static original-degree weights):
+
+- Independent → *negative* correlation: as edges fill up, hub-to-hub proposals get rejected
+  more, surviving edges skew toward peripheral nodes, flattening the distribution (lower Gini).
+- Conditional → *positive* correlation: only the drawn source's slots are excluded, other hubs
+  remain available, preferential attachment runs unimpeded (higher Gini).
+
+### Clustering Loops
+
+**Interim branch:** When clustering dips below target, pick a random node and add an edge between
+two of its neighbours — guaranteed to complete a triangle. Skipped if no valid pair exists.
+
+**Post loop:** After all edges are added, do degree-preserving swaps accepted only if they move
+clustering toward the target. Biased toward triangle edges when clustering is too high, non-triangle
+edges when too low.
+
+**Concerns:**
+- Interim *de*clustering was tried and gave worse results; not worth revisiting.
+- Post loop may distort structure in subtle ways — worth monitoring.
+- There may be an intrinsic trade-off: past some point, lowering degree Gini necessarily lowers
+  clustering too.
 
 ---
 
-* Both approaches use the same original degree weights throughout — weights never update as edges are added. The divergence comes from how they handle the fact that high-degree nodes (hubs) tend to already be densely connected.  
-* **Why independent → negative correlation:**  
-  * When n\_edges is large, many hub-to-hub connections already exist by the time later edges are being placed. Because sources and targets are drawn independently, proposals for hub-to-hub edges keep getting generated — but then discarded as duplicates. The pairs that *survive* the filter are systematically biased toward connections involving less-connected nodes, because those slots aren't taken yet. So the more edges you add, the more the surviving edges are pushed toward peripheral nodes, flattening the degree distribution and lowering the Gini.  
-* **Why conditional → positive correlation:**  
-  * When a hub is drawn as source, the conditional approach excludes only *that hub's* existing connections from the target pool. The remaining available targets are still weighted by in-degree, so other high-degree nodes (those the hub hasn't connected to yet) are still preferentially selected. There is no global rejection pressure accumulating across attempts — the very first attempt almost always succeeds. So preferential attachment runs unimpeded throughout: more edges consistently go to high-degree nodes, concentrating degree further and raising the Gini with larger n\_edges.
+## Empirical Networks — Visual Inspection
+- status: todo
+<!-- content -->
+**Files:** [`networks/citation_data/`](networks/citation_data/)
 
-## **Clustering loop**
+Three citation networks used as simulation topologies (all processed: twins pruned, LCC extracted,
+self-loops removed):
 
-* **Interim clustering branch**: When clustering dips below target during edge-adding, instead of sampling from the full network, the algorithm picks a random node and samples a new edge between that node's existing neighbours (predecessors and successors). Since every candidate node in that pool already shares a common connection through the chosen node, any edge added between them completes a triangle, directly raising clustering. The source and target within the neighbourhood are still chosen weighted by degree, so higher-degree neighbours are more likely to be picked. If no valid edge exists within the neighbourhood (e.g. it is fully connected), the loop simply moves on to the next iteration.  
-* **Post clustering loop**: After all edges are added, the algorithm fine-tunes clustering without changing any node's degree by performing degree-preserving swaps: two edges are removed and their endpoints reconnected in the opposite pairing. Each swap is only accepted if it moves clustering closer to the target, and the process is guided by biased edge selection — preferring triangle-participating edges when clustering is too high, and non-triangle edges when too low.
+- **PUD** — Peptic Ulcer Disease (OpenAlex, 1900–1978)
+- **Tobacco** — Tobacco research
+- **Ego depletion** — Ego depletion research
+
+Visual inspection of all three is still pending to check for suspicious features before simulations.
 
 ---
 
-* Notes  
-  * I have tried and implemented an interim declustering loop. However, this appeared to be giving worse results. Also, it wouldn’t solve our current issues: the solution for the ego depletion network requires clustering, not declustering.  
-  * I am a bit worried about the post clustering loop: it feels like it may mess up the network structure in unexpected ways.  
-  * Given a specific network, there might be a limit to how far one can change the degree Gini without changing the clustering. That is, it might be that, beyond a certain point, lowering the degree Gini necessarily yields a lower clustering coefficient.
+## Simulation Stopping Conditions
+- status: active
+<!-- content -->
+**File:** [`model/vectorized_model.py`](model/vectorized_model.py)
 
-## **To do**
+Current plan (Max + Ignacio): **fixed-step stopping condition**.
 
-* Milder equalization  
-  * Currently, the equalization method targets the uniform degree distribution. One idea is to parametrize the equalization method so that the target distribution is a (linear?) combination of the uniform and the original degree distribution.  
-* Hyperparameter optimization  
-  * Create a variation method with several hyperparameters such as `p_conditional` , but perhaps also `p_max_edges`, and also `p_max_rewired`.  
-  * Then, use [hyperopt](https://hyperopt.github.io/hyperopt/) to do hyperparameter optimalization to find the best hyperparameters of the variation method where the objective is to have a low correlation between network statistics.
+- Literature standard: 10,000 steps. Ours converge more slowly; likely need up to 1,000,000.
+- Hard requirement: must replicate Zollman (2007) as a correctness check.
+- Optional: run a minimum, then check every 10k steps whether anything changed (uncertain feasibility).
 
+Utrecht University cloud services available for large runs.
+
+---
+
+## Paper / Research Framing
+- status: active
+<!-- content -->
+Three concerns raised by FEW reviewers:
+
+1. **Why do results differ from theoretical networks?** — What structural property (degree
+   heterogeneity, clustering, diameter, hubs) causes the Zollman effect and equality effect to
+   disappear on empirical networks?
+2. **What do we learn about dynamics of inquiry?** — The discussion should clearly state the
+   practical takeaway about how scientific inquiry proceeds.
+3. **"How actually" model** — Clarify what phenomenon the model explains and how empirical
+   network topologies advance the mechanistic explanation over theoretical ones.
