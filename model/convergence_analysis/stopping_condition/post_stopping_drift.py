@@ -10,15 +10,19 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
+import dill
 import numpy as np
 import pandas as pd
 
 from model.vectorized_model import VectorizedModel
-from networks.network_generation import barabasi_albert_directed
+
+# --- Load network ---
+network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_final.pkl')
+with open(network_path, 'rb') as f:
+    network = dill.load(f)
+print(f"Network loaded: {len(network.nodes())} nodes, {len(network.edges())} edges")
 
 # --- Configuration ---
-N_NODES = 30
-M_EDGES = 2
 N_EXPERIMENTS = 10
 UNCERTAINTY = 0.1
 N_RUNS = 200
@@ -56,8 +60,6 @@ def resume_from_state(network, alphas_betas_saved, credences_saved, extra_steps,
 rows = []
 
 for run_idx in range(N_RUNS):
-    network = barabasi_albert_directed(N_NODES, M_EDGES)
-
     # Phase 1: run until tolerance stopping fires
     model = VectorizedModel(
         network=network,

@@ -9,15 +9,19 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
+import dill
 import numpy as np
 import pandas as pd
 
 from model.vectorized_model import VectorizedModel
-from networks.network_generation import barabasi_albert_directed
+
+# --- Load network ---
+network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_final.pkl')
+with open(network_path, 'rb') as f:
+    network = dill.load(f)
+print(f"Network loaded: {len(network.nodes())} nodes, {len(network.edges())} edges")
 
 # --- Configuration ---
-N_NODES = 30
-M_EDGES = 2
 N_EXPERIMENTS = 10
 UNCERTAINTY = 0.1
 N_RUNS = 200
@@ -71,7 +75,6 @@ for tolerance, tstep in configs:
     print(f"Running tolerance={label} ({N_RUNS} runs)...")
     for run_idx in range(N_RUNS):
         seed = run_idx  # same seeds across all tolerances for comparability
-        network = barabasi_albert_directed(N_NODES, M_EDGES)
         row = run_single(network, tolerance if not tstep else 5e-3, tstep, seed)
         rows.append(row)
         done += 1
