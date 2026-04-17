@@ -29,9 +29,7 @@ MAX_STEPS = 10 ** 6
 
 TOLERANCES = [1e-1, 1e-2, 5e-3, 1e-3, 1e-4, 1e-5, 1e-6]
 
-results_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'results'))
-os.makedirs(results_dir, exist_ok=True)
-output_path = os.path.join(results_dir, 'tolerance_sensitivity.csv')
+output_path = os.path.join(os.path.dirname(__file__), 'tolerance_sensitivity.csv')
 
 
 def run_single(network, tolerance, tstep, seed):

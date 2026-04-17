@@ -126,7 +126,13 @@ If stopping times differ by an order of magnitude across the plausible tolerance
 
 ### 4.4 Measurement
 
-`stopping_tolerance_sensitivity.py` records `steps_taken` for each tolerance level across `N_RUNS` independent runs. The expected output is a distribution of stopping times per tolerance, from which mean and variance can be compared. A useful derived quantity is the **stopping-time ratio**: `mean_steps(tol) / mean_steps(default)`, which quantifies the computational cost of tightening the criterion.
+`convergence_speed_analysis.py` is the dedicated script for this question. It runs the tolerance sweep on `pud_final.pkl`, records only `steps_taken`, and produces:
+
+- **`convergence_speed.csv`** — raw stopping times (one row per run × tolerance)
+- **`convergence_speed_boxplot.png`** — box plots of stopping-time distributions per tolerance on a log scale
+- **`convergence_speed_ratio.png`** — bar chart of mean steps + line plot of stopping-time ratio vs. default
+
+The **stopping-time ratio** (`mean_steps(tol) / mean_steps(5e-3)`) is the key output: it directly quantifies the computational cost of tightening the criterion and reveals whether there is a plateau below which additional strictness yields no further delay.
 
 ---
 
@@ -142,35 +148,80 @@ These are proposed additions to `OPEN_QUESTIONS.md`:
 
 ---
 
-## 6. Evaluation Scripts
+## 6. The Role of Uncertainty and Experiment Count
 
-Three scripts in this folder test the above concerns empirically. All scripts:
+### 6.1 What `uncertainty` Controls
+
+In `VectorizedBandit`, `uncertainty` is the **bandit gap**:
+
+```python
+p_bad_theory  = 0.5
+p_good_theory = 0.5 + uncertainty
+```
+
+A higher `uncertainty` makes the true theory easier to distinguish from the false one, so agents accumulate decisive evidence faster and credences move more sharply per step. This shortens the time to convergence and increases truth-share.
+
+**Note on epsilon:** The epsilon-greedy exploration rate is hardcoded to `self.epsilon = 0` in `VectorizedModel` — agents are always greedy (exploit best credence). The "exploration phase" seen in `two_phase_dynamics.py` arises not from epsilon-greedy randomness but from uncertain initial priors: agents initialized near `credence ≈ 0.5` behave as if exploring until evidence pushes them to commit.
+
+### 6.2 What `n_experiments` Controls
+
+`n_experiments` is the number of bandit pulls per agent per step. More pulls per step means a larger evidence update each round, so credences move faster and the simulation converges in fewer steps — at the cost of higher computational load per step.
+
+### 6.3 Expected Interactions
+
+| Effect | Direction |
+|--------|-----------|
+| Higher `uncertainty` → larger bandit gap | Faster convergence, higher truth-share |
+| Higher `n_experiments` → more evidence per step | Fewer steps to convergence |
+| Stricter `tolerance` | More steps required |
+| Interaction `uncertainty × tolerance` | Large gap may allow loose tolerance to still be "safe"; small gap may require strict tolerance to capture the correct outcome |
+
+The variance in truth-share (not just the mean) is the key diagnostic: high variance at a given (tolerance, uncertainty) combination signals that the stopping point is unreliable — some runs stop while still in a transient state.
+
+---
+
+## 7. Evaluation Scripts
+
+Five scripts in this folder test the above concerns empirically. All scripts:
 - Import via `sys.path.insert` from project root.
-- Use `networks/network_generation.py` for topology.
-- Save outputs to `results/` at the project root.
+- Use `pud_final.pkl` (87 nodes, 160 edges) as the network.
 - Do **not** modify any core model file.
 
-### Script 1: `stopping_tolerance_sensitivity.py`
+### Script 1: `convergence_speed_analysis.py`
 
-Sweeps `tolerance ∈ {1e-1, 1e-2, 5e-3, 1e-3, 1e-4, 1e-5, 1e-6}` plus a fixed-step baseline (`tstep_stopping=True`, `max_steps=10**6`). Runs `N_RUNS` independent simulations per tolerance. Records `steps_taken`, `truth_share`, `mean_credence_correct`, and `fraction_consensus`.
+Dedicated to §4. Sweeps `tolerance ∈ {1e-1, 1e-2, 5e-3, 1e-3, 1e-4, 1e-5, 1e-6}` at fixed `uncertainty=0.1`, records only `steps_taken`, and produces stopping-time distributions and the stopping-time ratio table.
+
+**Outputs:** `convergence_speed.csv`, `convergence_speed_boxplot.png`, `convergence_speed_ratio.png`
+
+### Script 2: `parameter_search.py`
+
+Dedicated to §6. Full grid search over `tolerance × uncertainty × n_experiments`. Records `steps_taken` and `truth_share` for each combination, producing heatmaps of mean and variance for both quantities.
+
+**Grid:** tolerances `{1e-2 … 1e-6}` × uncertainties `{0.01, 0.05, 0.1, 0.2, 0.5}` × n_experiments `{5, 10, 20}` × 100 runs = 9,000 simulations.
+
+**Outputs:** `parameter_search.csv`, `parameter_search_summary.csv`, `parameter_search_heatmap_nexpN.png` (one per n_experiments), `parameter_search_lines.png`
+
+### Script 3: `stopping_tolerance_sensitivity.py`
+
+Sweeps the tolerance range plus a fixed-step baseline at default uncertainty. Records `steps_taken`, `truth_share`, `mean_credence_correct`, and `fraction_consensus`.
 
 **Output:** `results/tolerance_sensitivity.csv`
 
-### Script 2: `post_stopping_drift.py`
+### Script 4: `post_stopping_drift.py`
 
-Runs the model with default tolerance (`5e-3`) until it stops, saves the state (`alphas_betas`, `credences`), then resumes from that exact state and runs for additional `K ∈ {10_000, 50_000, 100_000}` steps. Measures drift in credences and theory-flip counts.
+Runs the model with default tolerance (`5e-3`) until it stops, resumes from that exact state for additional `K ∈ {10_000, 50_000, 100_000}` steps. Measures credence drift and theory-flip counts.
 
 **Output:** `results/post_stopping_drift.csv`
 
-### Script 3: `tolerance_vs_alphabeta.py`
+### Script 5: `tolerance_vs_alphabeta.py`
 
-Runs the same simulation under two parallel stopping criteria: (A) current credence-based `allclose`, (B) the same check applied to `alphas_betas` directly. Compares stopping times and truth-shares.
+Runs the same simulation under two stopping criteria: (A) `allclose` on credences, (B) `allclose` on `alphas_betas`. Compares stopping times and truth-shares.
 
 **Output:** `results/alphabeta_stopping_comparison.csv`
 
 ---
 
-## 7. Cross-References
+## 8. Cross-References
 
 - `OPEN_QUESTIONS.md` — Questions 2 (stability vs. convergence speed) and 3 (two-phase dynamics) are directly related.
 - `STOCHASTIC_HYPOTHESIS.md` — The Markov Chain framing assumes absorption; this analysis tests whether the simulation actually reaches absorption before stopping.
