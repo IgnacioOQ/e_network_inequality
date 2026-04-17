@@ -4,7 +4,7 @@
 # Convergence Speed vs. Tolerance Threshold
 # ==========================================
 # Measures how many steps the simulation takes to stop under each tolerance
-# level on the pud_final.pkl network. Produces stopping-time distributions
+# level on the pud_network.pkl network. Produces stopping-time distributions
 # (box plots) and stopping-time ratios relative to the default (5e-3).
 # See STOPPING_CONDITION_ANALYSIS.md §4.
 
@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 from model.vectorized_model import VectorizedModel
 
 # --- Load network ---
-network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_final.pkl')
+network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_network.pkl')
 with open(network_path, 'rb') as f:
     network = dill.load(f)
 print(f"Network loaded: {len(network.nodes())} nodes, {len(network.edges())} edges")
