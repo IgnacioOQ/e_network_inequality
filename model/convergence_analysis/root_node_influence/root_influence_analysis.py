@@ -11,7 +11,7 @@ import sys
 import os
 import json
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 import numpy as np
 import matplotlib
@@ -28,7 +28,7 @@ plt.style.use('seaborn-v0_8-whitegrid')
 # ## Load Network
 
 print("Loading pud_final.json network...")
-network_path = os.path.join(os.path.dirname(__file__), '..', '..', 'networks', 'citation_data', 'pud_final.json')
+network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_final.json')
 
 with open(network_path, 'r') as f:
     network_data = json.load(f)
@@ -164,7 +164,7 @@ table.scale(1.2, 1.5)
 ax.set_title('Convergence Summary', fontsize=12, pad=20)
 
 plt.tight_layout()
-plt.savefig('root_influence_analysis.png', dpi=150, bbox_inches='tight')
+plt.savefig(os.path.join(os.path.dirname(__file__), 'root_influence_analysis.png'), dpi=150, bbox_inches='tight')
 print("\nPlot saved to 'root_influence_analysis.png'")
 
 # ## Final Summary

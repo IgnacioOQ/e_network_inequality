@@ -20,7 +20,7 @@ import sys
 import os
 import json
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
 import numpy as np
 import matplotlib
@@ -38,6 +38,7 @@ plt.style.use("seaborn-v0_8-whitegrid")
 print("Loading pud_final.json network...")
 network_path = os.path.join(
     os.path.dirname(__file__),
+    "..",
     "..",
     "..",
     "networks",
