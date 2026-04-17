@@ -32,9 +32,7 @@ STOP_TOLERANCE = 5e-3
 # Steps to continue after initial stop
 CONTINUATION_STEPS = [10_000, 50_000, 100_000]
 
-results_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'results'))
-os.makedirs(results_dir, exist_ok=True)
-output_path = os.path.join(results_dir, 'post_stopping_drift.csv')
+output_path = os.path.join(os.path.dirname(__file__), 'post_stopping_drift.csv')
 
 
 def resume_from_state(network, alphas_betas_saved, credences_saved, extra_steps, uncertainty):
