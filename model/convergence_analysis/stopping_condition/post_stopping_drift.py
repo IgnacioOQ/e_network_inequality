@@ -24,7 +24,7 @@ print(f"Network loaded: {len(network.nodes())} nodes, {len(network.edges())} edg
 
 # --- Configuration ---
 N_EXPERIMENTS = 10
-UNCERTAINTY = 0.1
+UNCERTAINTY = 0.001
 N_RUNS = 200
 MAX_STEPS = 10 ** 6
 STOP_TOLERANCE = 5e-3
