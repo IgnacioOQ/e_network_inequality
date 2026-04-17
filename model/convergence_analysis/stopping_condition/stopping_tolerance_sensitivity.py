@@ -16,7 +16,7 @@ import pandas as pd
 from model.vectorized_model import VectorizedModel
 
 # --- Load network ---
-network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_final.pkl')
+network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_network.pkl')
 with open(network_path, 'rb') as f:
     network = dill.load(f)
 print(f"Network loaded: {len(network.nodes())} nodes, {len(network.edges())} edges")

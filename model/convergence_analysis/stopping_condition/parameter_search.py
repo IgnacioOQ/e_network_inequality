@@ -4,7 +4,7 @@
 # Parameter Search: Tolerance × Uncertainty × n_experiments
 # ==========================================================
 # For each combination of (tolerance, uncertainty, n_experiments), runs N_RUNS
-# independent simulations on pud_final.pkl and records:
+# independent simulations on pud_network.pkl and records:
 #   (a) truth_share  — fraction of agents converging to the correct theory
 #   (b) steps_taken  — steps until the stopping condition fires
 #
@@ -30,7 +30,7 @@ import itertools
 from model.vectorized_model import VectorizedModel
 
 # --- Load network ---
-network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_final.pkl')
+network_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'networks', 'citation_data', 'pud_network.pkl')
 with open(network_path, 'rb') as f:
     network = dill.load(f)
 print(f"Network loaded: {len(network.nodes())} nodes, {len(network.edges())} edges")
