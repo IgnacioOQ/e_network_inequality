@@ -2,12 +2,12 @@
 - status: active
 - type: research
 - owner: user
-- last_checked: 2026-04-17
+- last_checked: 2026-04-23
 <!-- content -->
 
 > **Scope reminder:** All scripts and outputs referenced here belong in `model/convergence_analysis/`. Do not modify any file outside this folder. See `MC_AGENT.md` for constraints.
 
-This document examines the tolerance-based stopping condition used in `VectorizedModel`, identifies a potential problem with it, and describes three empirical evaluation scripts.
+This document examines the tolerance-based stopping condition used in `VectorizedModel`, identifies a potential problem with it, and describes the empirical evaluation studies. Studies are run on Google Colab via `A. Stopping Condition Study.ipynb`, covering both `pud_network.pkl` and `tobacco_network.pkl`.
 
 ---
 
@@ -126,13 +126,15 @@ If stopping times differ by an order of magnitude across the plausible tolerance
 
 ### 4.4 Measurement
 
-`convergence_speed_analysis.py` is the dedicated script for this question. It runs the tolerance sweep on `pud_final.pkl`, records only `steps_taken`, and produces:
+**Study 1** in `A. Stopping Condition Study.ipynb` (§ "Convergence Speed Analysis") is the dedicated study for this question. It runs the tolerance sweep on both `pud_network.pkl` and `tobacco_network.pkl`, using `N_RUNS=100` and `MAX_STEPS=10^5`, records only `steps_taken`, and produces:
 
-- **`convergence_speed.csv`** — raw stopping times (one row per run × tolerance)
-- **`convergence_speed_boxplot.png`** — box plots of stopping-time distributions per tolerance on a log scale
-- **`convergence_speed_ratio.png`** — bar chart of mean steps + line plot of stopping-time ratio vs. default
+- **`{network}_convergence_speed.csv`** — raw stopping times (one row per run × tolerance)
+- **`{network}_convergence_speed_boxplot.png`** — box plots of stopping-time distributions per tolerance on a log scale
+- **`{network}_convergence_speed_ratio.png`** — bar chart of mean steps + line plot of stopping-time ratio vs. default
 
 The **stopping-time ratio** (`mean_steps(tol) / mean_steps(5e-3)`) is the key output: it directly quantifies the computational cost of tightening the criterion and reveals whether there is a plateau below which additional strictness yields no further delay.
+
+The reference implementation is `convergence_speed_analysis.py` (serial, single-network version).
 
 ---
 
@@ -180,44 +182,60 @@ The variance in truth-share (not just the mean) is the key diagnostic: high vari
 
 ---
 
-## 7. Evaluation Scripts
+## 7. Evaluation Studies
 
-Five scripts in this folder test the above concerns empirically. All scripts:
-- Import via `sys.path.insert` from project root.
-- Use `pud_final.pkl` (87 nodes, 160 edges) as the network.
-- Do **not** modify any core model file.
+### Primary Entry Point: Colab Notebook
 
-### Script 1: `convergence_speed_analysis.py`
+All active studies are run on Google Colab via **`A. Stopping Condition Study.ipynb`** in this folder. Compute-intensive runs require Colab; the `.py` scripts serve as reference implementations for local testing.
 
-Dedicated to §4. Sweeps `tolerance ∈ {1e-1, 1e-2, 5e-3, 1e-3, 1e-4, 1e-5, 1e-6}` at fixed `uncertainty=0.1`, records only `steps_taken`, and produces stopping-time distributions and the stopping-time ratio table.
+**Shared notebook parameters:**
+- Networks: `pud_network.pkl` and `tobacco_network.pkl`
+- `N_RUNS = 100` per condition
+- `MAX_STEPS = 100_000` (10⁵)
+- All outputs saved to Google Drive, prefixed by network name (`pud_*`, `tobacco_*`)
 
-**Outputs:** `convergence_speed.csv`, `convergence_speed_boxplot.png`, `convergence_speed_ratio.png`
+---
 
-### Script 2: `parameter_search.py`
+### Study 1: Convergence Speed Analysis (notebook § "Study 1")
 
-Dedicated to §6. Full grid search over `tolerance × uncertainty × n_experiments`. Records `steps_taken` and `truth_share` for each combination, producing heatmaps of mean and variance for both quantities.
+Dedicated to §4. Sweeps `tolerance ∈ {1e-1, 1e-2, 5e-3, 1e-3, 1e-4, 1e-5, 1e-6}` at fixed `uncertainty=0.00001` and `n_experiments=10`. Records only `steps_taken` and produces stopping-time distributions and the stopping-time ratio table.
 
-**Grid:** tolerances `{1e-2 … 1e-6}` × uncertainties `{0.01, 0.05, 0.1, 0.2, 0.5}` × n_experiments `{5, 10, 20}` × 100 runs = 9,000 simulations.
+**Reference script:** `convergence_speed_analysis.py`
 
-**Outputs:** `parameter_search.csv`, `parameter_search_summary.csv`, `parameter_search_heatmap_nexpN.png` (one per n_experiments), `parameter_search_lines.png`
+**Outputs (per network):**
+- `{network}_convergence_speed.csv` — raw stopping times
+- `{network}_convergence_speed_boxplot.png` — stopping-time distributions (log scale)
+- `{network}_convergence_speed_ratio.png` — mean steps + ratio vs. default
 
-### Script 3: `stopping_tolerance_sensitivity.py`
+---
 
-Sweeps the tolerance range plus a fixed-step baseline at default uncertainty. Records `steps_taken`, `truth_share`, `mean_credence_correct`, and `fraction_consensus`.
+### Study 2: Parameter Search (notebook § "Study 2")
 
-**Output:** `results/tolerance_sensitivity.csv`
+Dedicated to §6. Full grid search over `tolerance × uncertainty × n_experiments`. Records `steps_taken` and `truth_share` for each combination.
 
-### Script 4: `post_stopping_drift.py`
+**Grid:** tolerances `{1e-2 … 1e-6}` × uncertainties `{0.01, 0.05, 0.1, 0.2, 0.5}` × n_experiments `{5, 10, 20}` × 100 runs = **9,000 simulations per network**.
 
-Runs the model with default tolerance (`5e-3`) until it stops, resumes from that exact state for additional `K ∈ {10_000, 50_000, 100_000}` steps. Measures credence drift and theory-flip counts.
+**Reference script:** `parameter_search.py`
 
-**Output:** `results/post_stopping_drift.csv`
+**Outputs (per network):**
+- `{network}_parameter_search.csv` — raw results
+- `{network}_parameter_search_summary.csv` — group means and variances
+- `{network}_parameter_search_heatmap_nexp{5,10,20}.png` — heatmaps (one per n_experiments value)
+- `{network}_parameter_search_lines.png` — mean steps vs. tolerance, faceted by n_experiments
 
-### Script 5: `tolerance_vs_alphabeta.py`
+---
 
-Runs the same simulation under two stopping criteria: (A) `allclose` on credences, (B) `allclose` on `alphas_betas`. Compares stopping times and truth-shares.
+### Reference Scripts (local, single-network)
 
-**Output:** `results/alphabeta_stopping_comparison.csv`
+These `.py` scripts were the original implementations and remain useful for local testing and debugging.
+
+| Script | Purpose |
+|--------|----------|
+| `convergence_speed_analysis.py` | Tolerance sweep → stopping-time distributions (§4) |
+| `parameter_search.py` | Full grid: tolerance × uncertainty × n_experiments (§6) |
+| `stopping_tolerance_sensitivity.py` | Tolerance sweep + fixed-step baseline |
+| `post_stopping_drift.py` | Resume after stop; measure drift and theory flips |
+| `tolerance_vs_alphabeta.py` | Credence-based vs. parameter-based stopping comparison |
 
 ---
 
