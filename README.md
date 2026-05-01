@@ -112,7 +112,8 @@ e_network_inequality/
 ├── utils/                          # Shared utilities
 │   ├── imports.py                  # Central external library imports
 │   ├── network_utils.py            # Network statistics and helper functions
-│   └── mc_analysis.py              # Markov Chain analysis utilities
+│   ├── mc_analysis.py              # Markov Chain analysis utilities
+│   └── data_analysis_utils.py      # OLS regression, multicollinearity (VIF/Pearson), Cohen's f², diagnostics
 │
 ├── testing/                        # All tests
 │   ├── unit_tests/                 # Automated test suite (run with unittest discover)
