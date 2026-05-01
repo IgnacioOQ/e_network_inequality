@@ -126,7 +126,9 @@ If stopping times differ by an order of magnitude across the plausible tolerance
 
 ### 4.4 Measurement
 
-**Study 1** in `A. Stopping Condition Study.ipynb` (§ "Convergence Speed Analysis") is the dedicated study for this question. It runs the tolerance sweep on both `pud_network.pkl` and `tobacco_network.pkl`, using `N_RUNS=100` and `MAX_STEPS=10^5`, records only `steps_taken`, and produces:
+**Study 1** in `A. Stopping Condition Study v2.ipynb` (§ "Convergence Speed Analysis") is the dedicated study for this question. It runs the tolerance sweep on both `pud_network.pkl` and `tobacco_network.pkl`, using `N_RUNS=100` and `MAX_STEPS=10^5`, records only `steps_taken`, and produces:
+
+> **Note:** Study 1 was removed from `A. Stopping Condition Study Final.ipynb` because Study 2's full grid already sweeps tolerance as one of its axes. Refer to `A. Stopping Condition Study v2.ipynb` for the standalone tolerance sweep.
 
 - **`{network}_convergence_speed.csv`** — raw stopping times (one row per run × tolerance)
 - **`{network}_convergence_speed_boxplot.png`** — box plots of stopping-time distributions per tolerance on a log scale
@@ -186,7 +188,7 @@ The variance in truth-share (not just the mean) is the key diagnostic: high vari
 
 ### Primary Entry Point: Colab Notebook
 
-All active studies are run on Google Colab via **`A. Stopping Condition Study.ipynb`** in this folder. Compute-intensive runs require Colab; the `.py` scripts serve as reference implementations for local testing.
+All active studies are run on Google Colab via **`A. Stopping Condition Study Final.ipynb`** in this folder. Compute-intensive runs require Colab; the `.py` scripts serve as reference implementations for local testing.
 
 **Shared notebook parameters:**
 - Networks: `pud_network.pkl` and `tobacco_network.pkl`
@@ -213,7 +215,7 @@ Dedicated to §4. Sweeps `tolerance ∈ {1e-1, 1e-2, 5e-3, 1e-3, 1e-4, 1e-5, 1e-
 
 Dedicated to §6. Full grid search over `tolerance × uncertainty × n_experiments`. Records `steps_taken` and `truth_share` for each combination.
 
-**Grid:** tolerances `{1e-2 … 1e-6}` × uncertainties `{0.01, 0.05, 0.1, 0.2, 0.5}` × n_experiments `{5, 10, 20}` × 100 runs = **9,000 simulations per network**.
+**Grid:** tolerances `{1e-3, 1e-4, 1e-5, 1e-6, 5e-7}` × uncertainties `{0.0001, 0.001, 0.005, 0.01}` × n_experiments `{100, 500, 1000}` × 500 runs = **30,000 simulations per network**.
 
 **Reference script:** `parameter_search.py`
 
@@ -222,6 +224,24 @@ Dedicated to §6. Full grid search over `tolerance × uncertainty × n_experimen
 - `{network}_parameter_search_summary.csv` — group means and variances
 - `{network}_parameter_search_heatmap_nexp{5,10,20}.png` — heatmaps (one per n_experiments value)
 - `{network}_parameter_search_lines.png` — mean steps vs. tolerance, faceted by n_experiments
+
+---
+
+### Study 2 Data Analysis (notebook § "Study 2: Parameter Search — Data Analysis")
+
+Dedicated to testing the two hypotheses about which parameters drive outcomes. Loads the CSV output of Study 2 and applies OLS regression via `utils/data_analysis_utils.py`.
+
+**Hypotheses:**
+- **H1 (Steps):** Steps to convergence is driven mainly by `tolerance`; `uncertainty` and `n_experiments` have little effect.
+- **H2 (Truth share):** Mean truth share is driven mainly by `uncertainty`; `tolerance` and `n_experiments` have little effect.
+
+**Predictors** (all log₁₀-transformed): `log_tolerance`, `log_uncertainty`, `log_n_experiments`.
+
+**Per-network outputs:**
+- Pearson correlation matrix + VIF table (multicollinearity check; expect VIF ≈ 1.0 for orthogonal grid)
+- OLS for `steps`: R², standardised coefficients, Cohen's f² per predictor, regression diagnostics
+- OLS for `truth_share`: same
+- Grouped bar chart comparing Cohen's f² across both outcomes
 
 ---
 
