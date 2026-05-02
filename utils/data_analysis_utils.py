@@ -138,13 +138,13 @@ def run_ols(
         f2_values.append(max(f2, 0.0))
 
     # Standardised coefficients
-    X_std = zscore(X, ddof=1)
-    y_std = zscore(y, ddof=1)
+    X_std = pd.DataFrame(zscore(X, ddof=1), columns=X.columns, index=X.index)
+    y_std = pd.DataFrame(zscore(y, ddof=1), columns=y.columns, index=y.index)
     model_std = sm.OLS(y_std, sm.add_constant(X_std)).fit()
     coef_std = model_std.params[1:]
 
     predictors_df = pd.DataFrame({
-        "Norm. Coef": coef_std.values,
+        "Norm. Coef": np.asarray(coef_std),
         "f²": f2_values,
         "f² Interpretation": [f2_interpretation(v) for v in f2_values],
         "p-value": model.pvalues[1:].round(4).values,
