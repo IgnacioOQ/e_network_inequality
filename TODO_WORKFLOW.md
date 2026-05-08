@@ -109,8 +109,8 @@ opportunistically when scientific tasks are blocked.
 <!-- content -->
 13 of 20 notebooks are still on nbformat 4.0 / 4.2 and have no cell IDs, which prevents
 AI-assisted editing tools (and stable diffs / addressable cells in general) from targeting
-specific cells. See [HOW_TO_NOTEBOOKS.md](model/convergence_analysis/HOW_TO_NOTEBOOKS.md)
-section 0 for context.
+specific cells. See the KB skill `content/how-to/NOTEBOOK_WRITING_SKILL.md` §1 for context
+(nbformat 4.5 + cell IDs).
 
 Affected notebooks:
 - Root: `1. Citation Data and Networks Generation.ipynb`, `2. GColab Simulations.ipynb`,

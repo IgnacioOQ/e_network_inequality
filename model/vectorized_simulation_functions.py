@@ -23,7 +23,15 @@ def run_vectorized_simulation_with_params(
     auc_check_interval=500,
     snapshot_interval=0,
 ):
-    process_seed = int.from_bytes(os.urandom(4), byteorder="little")
+    # Per-job seed: prefer the one supplied in param_dict (typically derived
+    # from numpy.random.SeedSequence.spawn for a reproducible study); otherwise
+    # draw from OS entropy. The seed actually used is logged in result_dict so
+    # any single run can be replayed and the whole study can be re-derived from
+    # a master seed.
+    if param_dict.get("seed") is not None:
+        process_seed = int(param_dict["seed"])
+    else:
+        process_seed = int.from_bytes(os.urandom(4), byteorder="little")
     rd.seed(process_seed)
 
     # Extract the network
@@ -59,6 +67,7 @@ def run_vectorized_simulation_with_params(
         for key, value in param_dict.items()
         if isinstance(value, (int, float, str, tuple, list, bool))
     }
+    result_dict["seed"] = process_seed
 
     result_dict["share_of_correct_agents_at_convergence"] = my_model.conclusion
     result_dict["share_of_core_agents_at_convergence"] = my_model.conclusion_core
