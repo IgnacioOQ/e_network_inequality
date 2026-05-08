@@ -21,6 +21,7 @@ def run_vectorized_simulation_with_params(
     auc_stopping=False,
     auc_threshold=0.95,
     auc_check_interval=500,
+    snapshot_interval=0,
 ):
     process_seed = int.from_bytes(os.urandom(4), byteorder="little")
     rd.seed(process_seed)
@@ -42,6 +43,7 @@ def run_vectorized_simulation_with_params(
         agent_type=agent_type,
         compute_convergence=compute_convergence,
         compute_root_analysis=compute_root_analysis,
+        snapshot_interval=snapshot_interval,
     )
 
     my_model.run_simulation(
@@ -94,6 +96,9 @@ def run_vectorized_simulation_with_params(
         result_dict["node_auc_roc"] = ra.get("node_auc_roc")
         # Store full root analysis dict for detailed analysis
         result_dict["root_analysis"] = ra
+
+    if snapshot_interval > 0:
+        result_dict["snapshots"] = my_model.snapshots
 
     if "group_id" in param_dict:
         result_dict["group_id"] = param_dict["group_id"]

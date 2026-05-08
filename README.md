@@ -67,6 +67,8 @@ To verify the installation and core logic (run from project root):
 .venv/bin/python -m unittest discover -s testing/unit_tests -v
 ```
 
+For a deeper sanity check (unit tests + import check + network integrity + notebook validation + snapshot smoke test), follow the [Housekeeping Workflow](HOUSEKEEPING.md). Recommended after any non-trivial change to the model or before committing.
+
 ### Running Simulations
 - status: active
 
@@ -82,6 +84,40 @@ Appendices (standalone, may be incomplete):
 - `A. GColab Simulations Playground.ipynb` — Experimental simulation runs and sandbox work on Colab.
 
 For testing and debugging refer to `testing/notebooks/`.
+
+## Codebase Architecture and Execution Flow
+- status: active
+
+This section is designed to provide a comprehensive structural overview for developers and coding agents to understand how to navigate and modify the codebase.
+
+### 1. Object-Oriented vs Vectorized Paradigms
+The simulation logic is bifurcated into two separate implementations to guarantee both theoretical clarity and computational speed:
+- **Legacy Object-Oriented Implementation (`model/model.py`, `model/agents.py`)**: This is the original, easy-to-read implementation where each agent is an instantiated Python object. It is strictly **immutable** to serve as a baseline source of truth.
+- **Vectorized Implementation (`model/vectorized_model.py`, `model/bandit.py`)**: This is the primary execution engine. It relies heavily on NumPy matrix operations to execute updates across the entire network graph simultaneously. This is the implementation you should focus on when designing new large-scale studies.
+
+### 2. Execution Flow
+The typical simulation study utilizes a set of wrapper functions to execute iterations in parallel using Python's `multiprocessing.Pool`:
+1. **Network Initialization**: Networks are loaded from `networks/citation_data/` (empirical networks like PUD, Tobacco, Ego) or generated synthetically via `networks/network_generation.py`.
+2. **Wrapper Setup**: Functions in `model/vectorized_simulation_functions.py` (e.g., `run_vectorized_simulation_with_params`) act as the bridge between raw parameters and the model execution.
+3. **Simulation Loop**: The `VectorizedModel.run_simulation` method loops through steps, allowing agents to choose theories (Epsilon-greedy or Bayes choice), run bandit experiments, and update their beliefs (credences) using network adjacency matrices (`self.adj_matrix.T @ outcomes`).
+4. **Data Aggregation**: After the simulation loop completes (via step limit, tolerance threshold, or AUC-ROC threshold), the model concludes and the wrapper function packages the resulting metrics (e.g., truth share, convergence step, trajectory snapshots) into a dictionary, which is then concatenated into pandas DataFrames inside the Jupyter notebooks.
+
+### 3. Notebooks and Where Scripts Live
+- **Root Notebooks**: Designed as the high-level orchestrators (`1. Citation Data...`, `2. GColab Simulations...`).
+- **`model/convergence_analysis/`**: Contains targeted, detailed Colab notebooks specifically created to study convergence speeds, belief changes, and the impact of specific network conditions.
+- **`testing/notebooks/`**: Contains sandbox Jupyter notebooks (`basic_model_testing.ipynb`, `basic_model_testing_v2.ipynb`) useful for rapid prototyping and generating quick visualization plots locally without invoking the full multiprocessing overhead.
+
+## Project Documentation
+- status: active
+
+In addition to this README, the project root contains several living documents that track workflow, history, and feature design. New contributors (and AI assistants) should skim these before starting non-trivial work:
+
+- [TODO_WORKFLOW.md](TODO_WORKFLOW.md) — Active task list and goals, organised by priority with owners (Ignacio, Hein, Max). Replaces the previous `WORKPLAN.md`.
+- [WORKLOG.md](WORKLOG.md) — Append-only chronological log of significant changes and AI-assisted interventions. Most recent entry first.
+- [HOUSEKEEPING.md](HOUSEKEEPING.md) — Routine sanity-check workflow: unit tests, import checks, network integrity, notebook validation, and snapshot smoke test.
+- [ADD_SNAPSHOT_PLAN.md](ADD_SNAPSHOT_PLAN.md) — Design document for the snapshot feature in `VectorizedModel` (records truth share and max belief change at fixed intervals during long simulations).
+
+For deeper AI-agent–oriented context (conventions, repository map, intervention log), see the [AI_AGENTS/](AI_AGENTS/) folder.
 
 ## Directory Structure
 - status: active
@@ -138,7 +174,11 @@ e_network_inequality/
 │   ├── MD_CONVENTIONS.md           # Markdown-JSON schema conventions
 │   └── ...
 │
-├── README.md
+├── README.md                       # This file
+├── TODO_WORKFLOW.md                # Active task list and goals (replaces WORKPLAN.md)
+├── WORKLOG.md                      # Append-only chronological change log
+├── HOUSEKEEPING.md                 # Routine sanity-check workflow
+├── ADD_SNAPSHOT_PLAN.md            # Snapshot feature design document
 ├── requirements.txt
 └── setup.py
 ```
