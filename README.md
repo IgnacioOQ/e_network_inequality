@@ -102,6 +102,26 @@ The typical simulation study utilizes a set of wrapper functions to execute iter
 3. **Simulation Loop**: The `VectorizedModel.run_simulation` method loops through steps, allowing agents to choose theories (Epsilon-greedy or Bayes choice), run bandit experiments, and update their beliefs (credences) using network adjacency matrices (`self.adj_matrix.T @ outcomes`).
 4. **Data Aggregation**: After the simulation loop completes (via step limit, tolerance threshold, or AUC-ROC threshold), the model concludes and the wrapper function packages the resulting metrics (e.g., truth share, convergence step, trajectory snapshots) into a dictionary, which is then concatenated into pandas DataFrames inside the Jupyter notebooks.
 
+#### Random seeds in parallel studies
+- status: active
+
+Each parallel run gets a different random seed so the study reflects genuine stochastic variance — without this, `multiprocessing.Pool` workers fork-inherit the parent's RNG state and silently produce identical trajectories. `run_vectorized_simulation_with_params` handles this in two modes:
+
+- **Default (no seed in `param_dict`)**: the wrapper draws a fresh seed from OS entropy at the start of every job. Different seed per run, but **not reproducible** — you cannot re-run a specific outlier.
+- **Reproducible (recommended for published studies)**: derive child seeds from a master seed via `numpy.random.SeedSequence.spawn(N)` and attach them to each `param_dict` before the `Pool.imap_unordered` call:
+
+  ```python
+  from numpy.random import SeedSequence
+  ss = SeedSequence(MASTER_SEED)
+  child_seeds = [int(s.generate_state(1)[0]) for s in ss.spawn(n_simulations)]
+  for pd_, cs in zip(param_dicts, child_seeds):
+      pd_["seed"] = cs
+  ```
+
+  `SeedSequence` guarantees statistically independent streams. Using `seed = i` or `seed = master + i` does not.
+
+In both modes the seed actually used is written into `result_dict["seed"]`, so any single run can be replayed even when the study itself wasn't pre-seeded.
+
 ### 3. Notebooks and Where Scripts Live
 - **Root Notebooks**: Designed as the high-level orchestrators (`1. Citation Data...`, `2. GColab Simulations...`).
 - **`model/convergence_analysis/`**: Contains targeted, detailed Colab notebooks specifically created to study convergence speeds, belief changes, and the impact of specific network conditions.
