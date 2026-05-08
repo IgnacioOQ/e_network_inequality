@@ -8,3 +8,4 @@ seaborn
 dill
 statsmodels
 joblib
+scikit-learn

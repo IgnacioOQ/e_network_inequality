@@ -118,6 +118,7 @@ class VectorizedModel:
         seeded=False,
         compute_convergence=False,
         compute_root_analysis=False,
+        snapshot_interval: int = 0,
         # *args,
         # **kwargs
     ):
@@ -136,6 +137,9 @@ class VectorizedModel:
         self.tstep_stopping = tstep_stopping
         self.compute_convergence = compute_convergence
         self.compute_root_analysis = compute_root_analysis
+        self.snapshot_interval = snapshot_interval
+
+        self.snapshots = {"step": [], "truth_share": [], "max_belief_change": []}
 
         # Convergence tracking attributes (populated after simulation if
         # compute_convergence=True)
@@ -609,6 +613,18 @@ class VectorizedModel:
                         np.mean(abs_change[:, 1]),  # Theory 1
                     )
                 )
+
+            # Snapshots
+            if self.snapshot_interval > 0 and (step_num + 1) % self.snapshot_interval == 0:
+                current_truth_share = determine_conclusion()
+                self.snapshots["step"].append(step_num + 1)
+                self.snapshots["truth_share"].append(current_truth_share)
+                
+                if self.agent_type == "beta":
+                    max_change = np.max(np.abs(credences_prior - self.credences))
+                    self.snapshots["max_belief_change"].append(max_change)
+                else:
+                    self.snapshots["max_belief_change"].append(None)
 
             # Stopping Conditions
             if self.tolerance_stopping:

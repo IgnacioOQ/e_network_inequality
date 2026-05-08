@@ -1,6 +1,7 @@
-# WORKPLAN.md
+# TODO_WORKFLOW.md
 - status: active
-- last_checked: 2026-04-15
+- type: workflow
+- last_checked: 2026-05-08
 <!-- content -->
 Tasks assigned to Ignacio, Hein, and Max, ordered by priority.
 Technical context for each item is in [OBSERVATIONS.md](OBSERVATIONS.md).
@@ -91,3 +92,37 @@ Rewrite the discussion to clearly state what the results teach about how scienti
 <!-- content -->
 Clarify what phenomenon the model explains and how empirical topologies advance the mechanistic
 explanation beyond theoretical models.
+
+---
+
+## Goal 4: Repository Hygiene
+- status: active
+- priority: low
+<!-- content -->
+Non-scientific maintenance work that improves tooling and developer experience. Can be done
+opportunistically when scientific tasks are blocked.
+
+### Migrate Legacy Notebooks to nbformat 4.5
+- status: todo
+- owner: Ignacio
+- priority: low
+<!-- content -->
+13 of 20 notebooks are still on nbformat 4.0 / 4.2 and have no cell IDs, which prevents
+AI-assisted editing tools (and stable diffs / addressable cells in general) from targeting
+specific cells. See [HOW_TO_NOTEBOOKS.md](model/convergence_analysis/HOW_TO_NOTEBOOKS.md)
+section 0 for context.
+
+Affected notebooks:
+- Root: `1. Citation Data and Networks Generation.ipynb`, `2. GColab Simulations.ipynb`,
+  `A. GColab Simulations Playground.ipynb`
+- `model/convergence_analysis/`: `phase_dynamics/Colab_Ignacio_Convergence_Study.ipynb`,
+  `stopping_condition/A. 100k Stopping Study.ipynb`,
+  `stopping_condition/A. Stopping Condition Study Final.ipynb`,
+  `stopping_condition/A. Stopping Condition Study v2.ipynb`
+- `testing/notebooks/`: `basic_model_testing.ipynb`, `basic_model_testing_v2.ipynb`,
+  `vectorized_basic_model_testing.ipynb`
+
+Migration is a one-shot script: walk every `.ipynb`, bump `nbformat_minor` to `5`, and
+assign an 8-char hex `id` to every cell missing one (idempotent — already-IDed cells are
+left alone). Will produce a noisy diff (every cell gains an `id` field), so do it as a
+single dedicated commit on a quiet day.

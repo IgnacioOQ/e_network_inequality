@@ -12,6 +12,13 @@ This document explains how to set up Jupyter notebooks for Google Colab within t
 
 Use the accompanying `00_Colab_Template.ipynb` as your boilerplate when starting new studies.
 
+## 0. Notebook Format Requirements
+All notebooks must be saved with **nbformat ≥ 4.5** so that every cell carries a stable `id` field. Cell IDs make notebooks scriptable — individual cells can be addressed by AI tooling, migration scripts, and comment threads — and they stabilise diffs in version control by keeping a cell's identity invariant under reordering or insertions.
+
+Modern Jupyter, VS Code, and Colab assign IDs automatically when saving a 4.5+ notebook, so no manual work is required for new cells once the format is in place. If you start a notebook by copying `00_Colab_Template.ipynb`, IDs are already wired up and the editor will continue assigning them on save.
+
+If you ever encounter an older notebook (e.g. one created in pre-2021 Colab), bump its `nbformat_minor` to `5` and let the editor re-save it; existing cells will receive freshly-generated IDs.
+
 ## 1. Initial Setup and Environment Sourcing
 The first cells of any notebook must fetch the repository and install required packages (like `dill`). This ensures that the codebase used in Colab matches the `main` branch.
 
