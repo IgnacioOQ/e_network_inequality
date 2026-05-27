@@ -46,6 +46,30 @@ simulations. Use [`A. Visualizations.ipynb`](A.%20Visualizations.ipynb).
 Agree on fixed-step count (likely 1,000,000). Must replicate Zollman (2007) as a correctness
 check. Optionally: add early-stop check every 10k steps after a minimum run.
 
+### Investigate Theory-Flip Window Stopping Condition
+- status: todo
+- owner: Ignacio
+- priority: medium
+<!-- content -->
+Investigate a stopping condition of the form: "stop if no agent has changed theory (crossed the
+0.5 credence boundary) in the last X rounds." This is a macroscopic, window-based criterion that
+directly targets the False Convergence concern in
+[STOPPING_CONDITION_ANALYSIS.md](model/convergence_analysis/stopping_condition/STOPPING_CONDITION_ANALYSIS.md)
+§3.1 — single-step `allclose` on credences can fire on a quiet step while the network is still
+drifting. A theory-flip window measures whether the *choice landscape* has stabilised rather than
+whether one step happened to be small.
+
+Scope:
+- Implement as a new stopping mode in `VectorizedModel` (alongside `tolerance_stopping`,
+  `tstep_stopping`, `auc_stopping`); do **not** modify the immutable OO model.
+- Sweep window size `X` (e.g. `{50, 100, 500, 1000, 5000}`) on `pud_network.pkl` and
+  `tobacco_network.pkl` using the existing Colab harness in
+  `model/convergence_analysis/stopping_condition/`.
+- Compare against tolerance-based stopping on: steps-to-stop, truth-share at stop, and
+  post-stopping drift (resume simulation, check whether any agent eventually flips).
+- Relates to Open Questions 2 (post-stopping drift) and 5 (minimum safe tolerance) in the
+  analysis doc.
+
 ### Hyperparameter Optimization for Variation Methods
 - status: todo
 - owner: Hein
