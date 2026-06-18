@@ -1,0 +1,15 @@
+source_id,target_stat,targeted_predictor,drifting_predictor,drifting_stat,drift_slope_per_target_cell_sd,drift_corr,side_range_10_to_90,reference_range_when_it_is_targeted,relative_side_range,n_obs
+ego_network,density,sa_achieved_density,sa_achieved_degree_gini,degree_gini,-0.5806199349855433,-0.5806199349855441,0.00025298421167241347,0.44482643857279114,0.0005687256640682235,3934
+ego_network,density,sa_achieved_density,sa_achieved_clustering,clustering,0.08124437079245009,0.08124437079245034,0.0001456855371372856,0.34642179338864065,0.0004205437992575865,3934
+ego_network,degree_gini,sa_achieved_degree_gini,sa_achieved_density,density,-1.5178830414797062e-18,,0.0,0.012847219472012499,0.0,3537
+ego_network,degree_gini,sa_achieved_degree_gini,sa_achieved_clustering,clustering,0.07426451689925309,0.07426451689925281,2.3267078973265853e-05,0.34642179338864065,6.71640162868252e-05,3537
+ego_network,clustering,sa_achieved_clustering,sa_achieved_density,density,4.640385298237959e-17,,0.0,0.012847219472012499,0.0,2529
+ego_network,clustering,sa_achieved_clustering,sa_achieved_degree_gini,degree_gini,-4.640385298237959e-17,,0.0,0.44482643857279114,0.0,2529
+pud_network,density,sa_achieved_density,sa_achieved_degree_gini,degree_gini,0.07017768365733668,0.07017768365733693,0.0015515940388606264,0.5592500000000021,0.0027744193810650343,2718
+pud_network,density,sa_achieved_density,sa_achieved_clustering,clustering,0.17224659973864775,0.17224659973864823,0.0010806816607397685,0.44122683319903305,0.002449265501158411,2718
+pud_network,degree_gini,sa_achieved_degree_gini,sa_achieved_clustering,clustering,0.05005726438513395,0.05005726438513395,0.003482004682353823,0.44122683319903305,0.007891643074171614,3444
+tobacco_network,density,sa_achieved_density,sa_achieved_degree_gini,degree_gini,0.36692942135538487,0.36692942135538376,0.00042522462454863685,0.5410463960628518,0.0007859300563555362,3383
+tobacco_network,density,sa_achieved_density,sa_achieved_clustering,clustering,0.27787955909387163,0.2778795590938709,0.00035944156050998766,0.3640907079702873,0.0009872307989231106,3383
+tobacco_network,degree_gini,sa_achieved_degree_gini,sa_achieved_density,density,1.3877787807814457e-17,,0.0,0.0163398692810458,0.0,3060
+tobacco_network,degree_gini,sa_achieved_degree_gini,sa_achieved_clustering,clustering,0.4595400666743642,0.4595400666743636,0.00419003032917159,0.3640907079702873,0.011508204514556109,3060
+tobacco_network,clustering,sa_achieved_clustering,sa_achieved_density,density,-3.0357660829594124e-17,,0.0,0.0163398692810458,0.0,3557

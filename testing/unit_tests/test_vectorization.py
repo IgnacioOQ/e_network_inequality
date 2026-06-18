@@ -4,6 +4,7 @@ import numpy.random as rd
 import networkx as nx
 from model.model import Model
 from model.vectorized_model import VectorizedModel
+from model.vectorized_simulation_functions import run_vectorized_simulation_with_params
 from scipy.stats import beta
 
 
@@ -275,6 +276,59 @@ class TestVectorization(unittest.TestCase):
         np.testing.assert_array_almost_equal(
             model_credences, vec_model.credences, err_msg="Bayes Update Mismatch"
         )
+
+    def test_choice_variance_history_records_each_step(self):
+        """
+        Verify that each step stores the variance of agents' binary choices.
+        """
+        vec_model = VectorizedModel(
+            self.G,
+            n_experiments=0,
+            uncertainty=self.uncertainty,
+            seeded=True,
+            seed=self.seed,
+        )
+        vec_model.credences = np.array(
+            [
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [0.0, 1.0],
+                [1.0, 0.0],
+                [0.0, 1.0],
+            ]
+        )
+
+        vec_model.step()
+
+        expected_choices = np.array([0, 1, 1, 0, 1])
+        self.assertEqual(
+            vec_model.agent_choice_variance_history,
+            [float(np.var(expected_choices))],
+        )
+
+    def test_simulation_result_includes_choice_variance_history(self):
+        """
+        Verify saved result rows can include the per-step choice variance list.
+        """
+        result = run_vectorized_simulation_with_params(
+            {
+                "network": self.G,
+                "n_agents": self.G.number_of_nodes(),
+                "n_experiments": 0,
+                "uncertainty": self.uncertainty,
+            },
+            tolerance_stopping=False,
+            tstep_stopping=True,
+            seeded=True,
+            seed=self.seed,
+            number_of_steps=3,
+        )
+
+        history = result["agent_choice_variance_history"]
+        self.assertIsInstance(history, list)
+        self.assertEqual(len(history), result["convergence_step"])
+        self.assertEqual(len(history), 3)
+        self.assertTrue(all(isinstance(value, float) for value in history))
 
 
 if __name__ == "__main__":

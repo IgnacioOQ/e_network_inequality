@@ -62,6 +62,9 @@ def run_vectorized_simulation_with_params(
     result_dict["share_of_core_agents_at_convergence"] = my_model.conclusion_core
     result_dict["convergence_step"] = my_model.n_steps
     result_dict["proportion_reached_by_truth"] = my_model.proportion_reached_by_truth
+    result_dict["agent_choice_variance_history"] = (
+        my_model.agent_choice_variance_history
+    )
 
     # Add convergence metrics if computed (Beta agent only)
     if compute_convergence and my_model.belief_change_abs is not None:

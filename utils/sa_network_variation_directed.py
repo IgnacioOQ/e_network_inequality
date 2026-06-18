@@ -44,7 +44,7 @@ try:
 except ImportError:  # pragma: no cover - tqdm is optional at runtime
     tqdm = None
 
-from NetworkInequality.sa_network_variation import (
+from utils.sa_network_variation import (
     DEFAULT_SUFFIXES,
     bootstrap_ci,
     compute_overall_correlation_matrix,
@@ -2139,6 +2139,29 @@ def _anneal_impl(
             stop_reason = "stall_blocks"
             break
 
+    compression_start_edit_distance = math.nan
+    compression_uncapped_best_feasible_edit_distance = math.nan
+    compression_edit_cap_applied = False
+    if phase == "compress":
+        compression_start_edit_distance = int(state0.edit_distance())
+        if best_feasible is not None:
+            compression_uncapped_best_feasible_edit_distance = int(
+                best_feasible.edit_distance()
+            )
+            # Compression should never make the returned graph farther away
+            # than the feasible state it was asked to compress.
+            if best_feasible.edit_distance() > compression_start_edit_distance:
+                best_feasible = state0.clone()
+                best_feasible_key = feasible_lexicographic_key(
+                    best_feasible,
+                    baseline_stats,
+                    target_name,
+                    target_value,
+                    cfg,
+                )
+                best_feasible_improved_at_accepted = 0
+                compression_edit_cap_applied = True
+
     runtime = time.perf_counter() - started
     best_overall_stats = best_overall.stats()
     meta = {
@@ -2171,6 +2194,16 @@ def _anneal_impl(
         **_flatten_counter(proposal_counts, "proposed"),
         **_flatten_counter(accepted_counts, "accepted"),
     }
+    if phase == "compress":
+        meta.update(
+            {
+                "start_edit_distance": compression_start_edit_distance,
+                "uncapped_best_feasible_edit_distance": (
+                    compression_uncapped_best_feasible_edit_distance
+                ),
+                "edit_cap_applied": int(compression_edit_cap_applied),
+            }
+        )
     if cfg.record_acceptance_trace:
         meta["acceptance_trace"] = pd.DataFrame(trace_rows)
     if cfg.record_state_matrices:
@@ -2627,6 +2660,17 @@ def replay_result_trace(
         "compress_best_feasible_edit_distance": (
             None if compress_meta is None else compress_meta.get("best_feasible_edit_distance")
         ),
+        "compress_start_edit_distance": (
+            None if compress_meta is None else compress_meta.get("start_edit_distance")
+        ),
+        "compress_uncapped_best_feasible_edit_distance": (
+            None
+            if compress_meta is None
+            else compress_meta.get("uncapped_best_feasible_edit_distance")
+        ),
+        "compress_edit_cap_applied": (
+            None if compress_meta is None else compress_meta.get("edit_cap_applied")
+        ),
         "attain_acceptance_rate": attain_meta.get("acceptance_rate"),
         "compress_acceptance_rate": (
             None if compress_meta is None else compress_meta.get("acceptance_rate")
@@ -2753,6 +2797,8 @@ def plot_optimization_traces(
     x: str = "accepted_step_global",
     title: str | None = None,
     show_best_feasible: bool = True,
+    final_values: Mapping[str, float] | None = None,
+    final_label: str = "returned solution",
     target_tolerances: Mapping[str, float] | None = None,
     preserve_tolerances: Mapping[str, float] | None = None,
     y_ranges: Mapping[str, tuple[float, float]] | None = None,
@@ -2771,6 +2817,8 @@ def plot_optimization_traces(
     phases = list(dict.fromkeys(plot_df["phase"])) if "phase" in plot_df.columns else [None]
     colors = {"attain": "#1f77b4", "compress": "#ff7f0e"}
     best_color = "#2ca02c"
+    final_color = "#111111"
+    final_x = float(plot_df[x].max())
     baseline_reference = {
         column: float(plot_df[column].iloc[0])
         for column in ("density", "degree_gini", "clustering")
@@ -2815,6 +2863,24 @@ def plot_optimization_traces(
                     linewidth=1.4,
                     alpha=0.9,
                     label="best feasible" if column != "energy" else "best energy",
+                )
+        if final_values is not None and column in final_values:
+            final_value = float(final_values[column])
+            if math.isfinite(final_value):
+                ax.axhline(
+                    final_value,
+                    color=final_color,
+                    linestyle=(0, (1, 2)),
+                    linewidth=1.0,
+                    alpha=0.75,
+                )
+                ax.scatter(
+                    [final_x],
+                    [final_value],
+                    color=final_color,
+                    marker="D",
+                    s=34,
+                    zorder=6,
                 )
         if column in baseline_reference:
             ax.axhline(
@@ -2911,6 +2977,19 @@ def plot_optimization_traces(
                     label="best feasible",
                 )
             )
+    if final_values is not None:
+        legend_handles.append(
+            Line2D(
+                [0],
+                [0],
+                color=final_color,
+                marker="D",
+                linestyle=(0, (1, 2)),
+                linewidth=1.0,
+                markersize=5,
+                label=final_label,
+            )
+        )
     if any(column in baseline_reference for column in columns):
         legend_handles.append(
             Line2D(
@@ -2996,10 +3075,30 @@ def plot_replayed_result_traces(
     y_ranges = trace_y_ranges_for_runs(grid_df, runs, cfg)
     figures: list[plt.Figure] = []
     for run in runs:
+        chosen_state = run.get("chosen_state")
+        if isinstance(chosen_state, GraphState):
+            final_values = {
+                **chosen_state.stats(),
+                "edit_distance": float(chosen_state.edit_distance()),
+            }
+        else:
+            final_values = None
+        summary = run.get("row", {})
+        baseline_stats = run.get("baseline_stats", {})
+        target_stat = str(run["target_stat"])
+        target_value = float(run["target_value"])
+        target_delta = target_value - float(baseline_stats.get(target_stat, math.nan))
+        target_tolerance = cfg.target_tolerances.get(target_stat, math.nan)
+        cap_applied = summary.get("compress_edit_cap_applied")
         title = (
-            f"{run['source_id']}: batch row {run['result_index']}: "
-            f"{run['target_stat']} target {float(run['target_value']):.4f}, "
-            f"seed {run['seed']}"
+            f"{run['source_id']}: row {run['result_index']} | "
+            f"{target_stat} target {target_value:.4g} "
+            f"(delta {target_delta:+.3g}), seed {run['seed']}\n"
+            f"returned edit {summary.get('replay_edit_distance')}, "
+            f"target tol {float(target_tolerance):.3g}, "
+            f"attain {summary.get('attain_stop_reason')}, "
+            f"compress {summary.get('compress_stop_reason')}, "
+            f"edit cap {cap_applied}"
         )
         figures.append(
             plot_optimization_traces(
@@ -3010,6 +3109,7 @@ def plot_replayed_result_traces(
                 target_tolerances=cfg.target_tolerances,
                 preserve_tolerances=cfg.preserve_tolerances,
                 y_ranges=y_ranges,
+                final_values=final_values,
             )
         )
     return figures

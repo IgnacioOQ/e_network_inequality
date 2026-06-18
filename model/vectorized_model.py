@@ -83,6 +83,8 @@ class VectorizedModel:
             (Beta only).
         belief_change_history (list): Per-step mean belief changes
             (if compute_convergence=True).
+        agent_choice_variance_history (list): Per-step population variance of
+            agents' binary theory choices (0/1).
         root_analysis (dict): Analysis of root nodes and their influence
             (if compute_root_analysis=True).
 
@@ -236,6 +238,7 @@ class VectorizedModel:
         self.conclusion = 0.0
         self.conclusion_core = 0.0
         self.proportion_reached_by_truth = 0.0
+        self.agent_choice_variance_history = []
 
     def step(self):
         self.n_steps += 1
@@ -275,6 +278,8 @@ class VectorizedModel:
             # Bayes Agent Choice: if cred > 0.5 -> 1 (Good), else 0 (Bad)
             # self.credences is shape (N,)
             theory_indices = (self.credences > 0.5).astype(int)  # type: ignore
+
+        self.agent_choice_variance_history.append(float(np.var(theory_indices)))
 
         # 2. Run Experiments
         # BayesAgent logic in agents.py: if choice is 0, return 0,0,0.

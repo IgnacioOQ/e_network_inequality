@@ -1,0 +1,20 @@
+{
+  "default": "redp1",
+  "fallbacks": {
+    "oryel": "YlOrBr",
+    "oryel_r": "YlOrBr_r",
+    "teal": "GnBu",
+    "teal_r": "GnBu_r",
+    "redp1": "viridis"
+  },
+  "network_colormaps": {
+    "pud": "oryel_r",
+    "tobacco": "teal_r",
+    "ego_depletion": "redp1"
+  },
+  "basic_network_type_colormaps": {
+    "cycle": "oryel_r",
+    "wheel": "teal_r",
+    "complete": "redp1"
+  }
+}

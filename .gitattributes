@@ -1,0 +1,2 @@
+results/SA_approach_run_v7_1k_steps_trajectories/*.csv filter=lfs diff=lfs merge=lfs -text
+results/SA_approach_run_v8_10k_steps_trajectories/*.csv filter=lfs diff=lfs merge=lfs -text

@@ -22,14 +22,16 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from typing import Tuple, Optional, Sequence
 
-# the tiny (pure-python) library used in the HF-app
-from NetworkInequality.edgebundling import run_and_plot_bundling
+# The tiny pure-Python library used in the HF app is not always present in
+# local checkouts. If it is missing, drawing falls back to straight edges.
+try:
+    from utils.edgebundling import run_and_plot_bundling
+except ModuleNotFoundError:
+    run_and_plot_bundling = None
 
-def _rgba_from_hex(hex_color: str) -> Tuple[float, float, float, float]:
-    """'#rrggbb' ➜ (r, g, b, 1.0) in 0-1 range – handy for edge gradients."""
-    return tuple(int(hex_color.lstrip("#")[i : i + 2], 16) / 255 for i in (0, 2, 4)) + (
-        1.0,
-    )
+def _rgba_from_color(color) -> Tuple[float, float, float, float]:
+    """Convert any Matplotlib color spec to RGBA for edge gradients."""
+    return mcolors.to_rgba(color)
 
 
 # --------------------------------------------------------------------------- #
@@ -114,6 +116,7 @@ def draw_citation_graph(
     linewidths: float = 0.8,
     alpha: float = 0.5,
     edge_color: str = "#f98e31",
+    edge_gradient: bool = True,
     node_size: int = 0,
     hammer_kwargs: Optional[dict] = None,
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -130,7 +133,7 @@ def draw_citation_graph(
     min_max_coordinates
         Optional `[xmin, xmax, ymin, ymax]` to keep the plot perfectly aligned
         with an already shown UMAP background.
-    linewidths, alpha, edge_color, node_size
+    linewidths, alpha, edge_color, edge_gradient, node_size
         forwarded to Matplotlib / the bundling routine.
     hammer_kwargs
         Optional dictionary of parameters to pass to the hammer bundling algorithm.
@@ -167,9 +170,12 @@ def draw_citation_graph(
     # --------------------------------------------------------------------- #
     # Actual drawing
     # --------------------------------------------------------------------- #
-    if bundle_edges:
+    if bundle_edges and run_and_plot_bundling is not None:
         # RGB-look-up for every node (needed for edge-gradient)
-        node_rgba = {n: _rgba_from_hex(G.nodes[n]["color"]) for n in G.nodes()}
+        node_rgba = {
+            n: _rgba_from_color(G.nodes[n].get("color", edge_color))
+            for n in G.nodes()
+        }
 
         # the bundling code can take into account a pre-computed distance
         for u, v in G.edges():
@@ -184,7 +190,7 @@ def draw_citation_graph(
             G,
             method="hammer",
             ax=ax,
-            edge_gradient=True,
+            edge_gradient=edge_gradient,
             node_colors=node_rgba,
             linewidths=linewidths,
             alpha=alpha,
