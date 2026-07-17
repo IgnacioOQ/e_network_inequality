@@ -295,9 +295,41 @@ Choice-stability guarantees *decision* stability, not *parameter* stability (§3
 Run via **`A. Choice Stability Stopping Study.ipynb`** (mirrors the Study-2 grid on `pud_network.pkl` and `tobacco_network.pkl`), with `choice_stability_stopping.py` as the local reference driver. The grid sweeps `uncertainty × n_experiments`, derives `W ∈ {100,250,500,1000}` offline, and tests:
 
 - **H1′ (Steps):** steps-to-stabilisation grow with the window `W` (and shrink with `uncertainty`, `n_experiments`).
-- **H2′ (Truth-share):** truth-share at stabilisation is driven by `uncertainty` and is **~invariant to `W`** — the headline prediction. Smoke-scale OLS already shows `log_window` insignificant (p ≈ 0.65) for truth-share while `log_uncertainty` and `log_n_experiments` dominate.
+- **H2′ (Truth-share):** truth-share at stabilisation is driven by `uncertainty` and is **~invariant to `W`** — the headline prediction (confirmed at full scale in §9.4).
 
-A comparison sub-study (Study 2 in the notebook, reusing the `post_stopping_drift.py` resume pattern) pits choice-stability against tolerance stopping on shared seeds, measuring the **post-stop flip rate** after resuming `K` steps — directly answering open question #2. Early runs show tolerance stopping firing extremely early with post-stop flips in ~100% of runs, versus a near-zero flip rate under choice-stability.
+A comparison sub-study (Study 2 in the notebook, reusing the `post_stopping_drift.py` resume pattern) pits choice-stability against tolerance stopping on shared seeds, measuring the **post-stop flip rate** after resuming `K` steps — directly answering open question #2 (results in §9.4).
+
+### 9.4 Results (full-scale run, 250 runs/combo)
+
+Run on Google Colab, 2026-07-17, both networks recomputed at `CS_N_RUNS = 250` (12 combos × 250 runs × 4 windows = 12,000 rows/network). Grid wall-clock: PUD 20.2 min, Tobacco 74.1 min.
+
+**Comparison vs tolerance stopping** (Study 2: `uncertainty = 0.001`, `n_experiments = 500`, tolerance `5e-3`, 100 shared seeds/criterion, `K = 10,000` resume steps). `mean_stop` = steps at stop; `truth` = truth-share at stop; `flip` = mean fraction of agents that cross the 0.5 boundary in the `K` steps after stopping; `any-flip` = fraction of runs with at least one post-stop flip.
+
+_PUD network (90 nodes):_
+
+| criterion | mean_stop | truth | flip | any-flip |
+|:---|---:|---:|---:|---:|
+| tolerance | 9.7 | 0.526 | 0.255 | 1.00 |
+| choice_W100 | 1,288 | 0.705 | 0.027 | 0.81 |
+| choice_W250 | 2,090 | 0.722 | 0.010 | 0.44 |
+| choice_W500 | 2,905 | 0.726 | 0.005 | 0.22 |
+| choice_W1000 | 3,952 | 0.730 | 0.001 | 0.10 |
+
+_Tobacco network (289 nodes):_
+
+| criterion | mean_stop | truth | flip | any-flip |
+|:---|---:|---:|---:|---:|
+| tolerance | 12.8 | 0.564 | 0.326 | 1.00 |
+| choice_W100 | 2,207 | 0.869 | 0.009 | 0.89 |
+| choice_W250 | 3,212 | 0.875 | 0.003 | 0.53 |
+| choice_W500 | 4,332 | 0.877 | 0.002 | 0.32 |
+| choice_W1000 | 5,841 | 0.878 | 0.001 | 0.19 |
+
+**Findings.**
+
+1. **The tolerance rule confirms the §3.1 defect.** It fires at ~10–13 steps — essentially the initial random state — leaving truth-share at a coin-flip (0.53 PUD, 0.56 Tobacco) with **every** run drifting afterward (`any-flip = 1.00`). It measures the first quiet step, not the consensus.
+2. **Choice-stability reaches genuine consensus and eliminates drift.** Truth-share rises to 0.70 (PUD) / 0.87 (Tobacco), and the post-stop flip rate falls **monotonically** with `W`, to ~0.1% at `W = 1000` — resolving open question #2 (post-stopping drift).
+3. **H2′ holds — truth-share is ~invariant to `W`.** Across `W ∈ {100…1000}` truth-share moves only 0.705→0.730 (PUD) and 0.869→0.878 (Tobacco) while the stop step grows ~3× (H1′). The window governs *when* stabilisation is certified, not *which* consensus is reached.
 
 **Outputs (per network, folder-local):** `{network}_choice_stability.csv`, `_summary.csv`, `_boxplot.png`, `_steps_lines.png`, `_truth_share_lines.png`, and `{network}_stopping_comparison.csv` / `.png`.
 
