@@ -10,6 +10,28 @@ Most recent event comes first.
 
 ---
 
+### 2026-07-17: Choice-Stability Stopping Criterion + Study
+- id: worklog.2026_07_17_choice_stability_stopping
+- status: done
+- type: log
+- last_checked: 2026-07-17
+<!-- content -->
+**AI Assistant**: Claude Opus 4.8 (Claude Code, VSCode extension)
+**Task**: Add a decision-stability ("choice-stability") stopping criterion to `VectorizedModel` and a Study-2-style evaluation. Stop when *every* agent's chosen theory (`argmax` credence, i.e. `credences[:,1] > credences[:,0]` since `epsilon=0`) has been unchanged for the last `W` steps — a direct response to the false-convergence / theory-flip failure mode of tolerance stopping (`STOPPING_CONDITION_ANALYSIS.md` §3.1).
+
+#### Changes made
+- **`model/vectorized_model.py`** (user-authorized core edit; documented, backwards-compatible): new `choice_stability_stopping` / `choice_stability_window` / `record_choice_flips` params, all default OFF. New mutually-exclusive `elif` branch in `run_simulation` tracks `_last_flip_step`; `record_choice_flips` logs `(step, truth_share)` to `choice_flip_history` so all windows derive from one *record-once* run offline.
+- **`model/vectorized_simulation_functions.py`**: threaded the three params through the wrapper; `choice_flip_history` added to `result_dict`.
+- **`testing/unit_tests/test_stopping_conditions.py`**: +5 tests (gap==window per W; native==offline equivalence; determinism; oscillation→cap; defaults-off). Full suite **32 passed**.
+- **New** `model/convergence_analysis/stopping_condition/`: `choice_stability_stopping.py` (reference driver), `A. Choice Stability Stopping Study.ipynb` (grid + OLS H1′/H2′ + tolerance comparison, mirrors Study 2), `CHOICE_STABILITY_STOPPING_PLAN.md` (plan).
+- **Docs**: `STOPPING_CONDITION_ANALYSIS.md` §9 + open-questions; `MC_AGENT.md` immutability exception reconciled.
+
+#### Verification
+- Native and offline (record-once) stops match exactly on the real PUD network across `W ∈ {100,250,500,1000}` and in unit tests.
+- Full notebook ran end-to-end headlessly (smoke mode). Early results already support **H2′** (truth-share ~invariant to W: `log_window` p≈0.65) and the post-stop-drift hypothesis (tolerance stopping → flips in ~100% of resumed runs; choice-stability → near-zero).
+
+---
+
 ### 2026-05-30: Housekeeping Run
 - id: worklog.2026_05_30_housekeeping
 - status: done

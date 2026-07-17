@@ -40,6 +40,27 @@ class VectorizedModel:
             every step and stops early if converged. Default: True.
         tstep_stopping: If True, only stops at max steps (no convergence
             check). Default: False.
+        choice_stability_stopping: If True, stop when *every* agent's chosen
+            theory (greedy argmax of its credence) has been unchanged for the
+            last ``choice_stability_window`` steps. This is a decision-stability
+            criterion: since ``epsilon == 0`` an agent's choice is the
+            deterministic pick ``credences[:, 1] > credences[:, 0]`` (Beta) or
+            ``credences > 0.5`` (Bayes), so the rule is equivalent to "no agent
+            has crossed the 0.5 decision boundary in the last W steps". It is
+            mutually exclusive with tolerance_stopping / tstep_stopping (see the
+            dispatch in run_simulation) and defaults OFF, so existing callers
+            are unaffected. NOTE: it guarantees *decision* stability, not
+            *parameter* stability — α/β may keep growing while a credence stays
+            on one side of 0.5. Default: False.
+        choice_stability_window: Number of consecutive flip-free steps required
+            before choice_stability_stopping fires (the W above). Default: 500.
+        record_choice_flips: If True, record ``(step, truth_share)`` into
+            self.choice_flip_history on every step where at least one agent
+            flips its choice (plus a baseline entry at run start). Orthogonal to
+            the stopping mode — enable it alongside tstep_stopping to run to
+            max_steps once and derive the choice-stability stop step for *any*
+            window W offline (truth_share is constant between flips). Default:
+            False.
         directed_network: Whether network is directed. Default: True.
         seed: Random seed for reproducibility. If None and seeded=True,
             generates random seed.
@@ -113,6 +134,9 @@ class VectorizedModel:
         # variance_stopping=False,
         tolerance_stopping=True,
         tstep_stopping=False,
+        choice_stability_stopping: bool = False,
+        choice_stability_window: int = 500,
+        record_choice_flips: bool = False,
         # directed_network=True,
         seed=None,
         seeded=False,
@@ -135,6 +159,18 @@ class VectorizedModel:
         self.tolerance = tolerance
         self.tolerance_stopping = tolerance_stopping
         self.tstep_stopping = tstep_stopping
+        self.choice_stability_stopping = choice_stability_stopping
+        self.choice_stability_window = choice_stability_window
+        self.record_choice_flips = record_choice_flips
+        # Choice-stability tracking state (initialized in run_simulation when
+        # choice_stability_stopping or record_choice_flips is enabled):
+        #   _prev_choices    : bool vector of each agent's last chosen theory
+        #   _last_flip_step  : most recent step (any agent) at which a choice flipped
+        #   choice_flip_history : list of (step, truth_share) at each flip, for the
+        #                         offline window sweep (record_choice_flips only)
+        self._prev_choices = None
+        self._last_flip_step = 0
+        self.choice_flip_history = []
         self.compute_convergence = compute_convergence
         self.compute_root_analysis = compute_root_analysis
         self.snapshot_interval = snapshot_interval
@@ -587,6 +623,26 @@ class VectorizedModel:
         # Track AUC stopping
         auc_stopped = False
 
+        # Choice-stability tracking init (choice_stability_stopping and/or
+        # record_choice_flips). Seeded from the current state so it also works
+        # when run_simulation is called on an injected/resumed state. n_steps is
+        # cumulative across calls, so _last_flip_step is anchored to it.
+        def _current_choices():
+            # Each agent's chosen theory = greedy argmax of its credence (epsilon
+            # is hardcoded to 0). For beta this is the indicator
+            # credences[:,1] > credences[:,0]; for bayes, credences > 0.5. A
+            # "flip" is any change in this boolean vector between steps.
+            if self.agent_type == "beta":
+                return self.credences[:, 1] > self.credences[:, 0]
+            return self.credences > 0.5
+
+        if self.choice_stability_stopping or self.record_choice_flips:
+            self._prev_choices = _current_choices()
+            self._last_flip_step = self.n_steps
+            if self.record_choice_flips:
+                # Baseline entry: truth_share holding until the first flip.
+                self.choice_flip_history = [(self.n_steps, determine_conclusion())]
+
         for step_num in iterable:
             credences_prior = self.credences.copy()
             if self.agent_type == "beta" and self.compute_convergence:
@@ -626,12 +682,30 @@ class VectorizedModel:
                 else:
                     self.snapshots["max_belief_change"].append(None)
 
+            # Choice-stability tracking (runs regardless of stopping mode so
+            # record_choice_flips works alongside tstep_stopping). Detect a
+            # flip in any agent's chosen theory since the previous step.
+            if self.choice_stability_stopping or self.record_choice_flips:
+                current_choices = _current_choices()
+                if np.any(current_choices != self._prev_choices):
+                    self._last_flip_step = self.n_steps
+                    self._prev_choices = current_choices
+                    if self.record_choice_flips:
+                        self.choice_flip_history.append(
+                            (self.n_steps, determine_conclusion())
+                        )
+
             # Stopping Conditions
             if self.tolerance_stopping:
                 if stop_condition(credences_prior):
                     break  # Old convergence-based stopping
             elif self.tstep_stopping:
                 continue  # tstep mode: run for fixed number of steps
+            elif self.choice_stability_stopping:
+                # Stop once no agent has flipped for `choice_stability_window`
+                # consecutive steps (i.e. all agents' choices have been stable).
+                if self.n_steps - self._last_flip_step >= self.choice_stability_window:
+                    break
             elif auc_stopping:
                 # AUC-based stopping (check every auc_check_interval steps)
                 if (step_num + 1) % auc_check_interval == 0:

@@ -145,10 +145,11 @@ The reference implementation is `convergence_speed_analysis.py` (serial, single-
 These are proposed additions to `OPEN_QUESTIONS.md`:
 
 1. **Stopping-time sensitivity**: Does truth-share vary monotonically with tolerance, or is there a plateau below which outputs stabilise?
-2. **Post-stopping drift**: After `tolerance_stopping` fires, how much do credences drift if the simulation is resumed? Do agents flip theories?
+2. **Post-stopping drift**: After `tolerance_stopping` fires, how much do credences drift if the simulation is resumed? Do agents flip theories? *(Addressed in §9 — the choice-stability criterion is a direct response, and its comparison study measures post-stop flip rate against tolerance stopping.)*
 3. **Topology interaction**: Is sensitivity higher on sparse networks (where signals take longer to propagate) than on dense ones?
-4. **Credence vs. parameter stopping**: Does checking `np.allclose` on `alphas_betas` instead of `credences` meaningfully delay stopping and change output?
+4. **Credence vs. parameter stopping**: Does checking `np.allclose` on `alphas_betas` instead of `credences` meaningfully delay stopping and change output? *(Related to §9: choice-stability sidesteps the credence-magnitude question entirely by checking the decision `argmax`, not the credence value.)*
 5. **Minimum safe tolerance**: Is there a tolerance value below which simulation outputs converge to the same distribution as fixed-step runs?
+6. **Window-invariance of truth-share**: Under choice-stability stopping (§9), is the truth-share at stabilisation invariant to the window `W` (H2′), even as the stopping time grows with `W` (H1′)?
 
 ---
 
@@ -265,3 +266,39 @@ These `.py` scripts were the original implementations and remain useful for loca
 - `STOCHASTIC_HYPOTHESIS.md` — The Markov Chain framing assumes absorption; this analysis tests whether the simulation actually reaches absorption before stopping.
 - `convergence_studies.py` — Existing script tracking per-step belief change; its output motivates the tolerance sweep here.
 - `two_phase_dynamics.py` — Uses a stricter `1e-6` tolerance with max-credence-change check; an implicit acknowledgment that the default `5e-3` may be insufficient.
+
+---
+
+## 9. Choice-Stability Stopping (Decision-Stability Criterion)
+
+A different answer to the false-convergence problem (§3.1): stop when the network's **decisions** have settled, not when a single step was quiet.
+
+### 9.1 The Criterion
+
+Stop when **every** agent's chosen theory has been unchanged for the last `W` steps. An agent's choice is the greedy pick `argmax(credence)`; since `epsilon = 0` is hardcoded (§6.1), this is the deterministic indicator `credences[:, 1] > credences[:, 0]`. So the rule is equivalent to:
+
+> No agent has crossed the 0.5 decision boundary in the last `W` steps.
+
+This targets exactly what the tolerance rule misses. Where `allclose` asks "was *this* step quiet?" (and a low-variance draw can spuriously satisfy it while the network still drifts), choice-stability asks "has the *consensus* stopped moving?" — the quantity the study's truth-share output actually depends on.
+
+**Implementation** (`model/vectorized_model.py`, documented, backwards-compatible — all flags default OFF):
+
+- `choice_stability_stopping=True`, `choice_stability_window=W` — a fourth stopping mode, a mutually-exclusive `elif` after `tolerance_stopping` / `tstep_stopping`. It tracks `_last_flip_step` (the most recent step any agent flipped) and stops when `n_steps - _last_flip_step >= W`.
+- `record_choice_flips=True` — orthogonal instrumentation appending `(step, truth_share)` to `choice_flip_history` on every flip. Because truth-share is constant between flips, one run recorded at the largest window yields the stop step and truth-share for **every** `W` offline (the *record-once* trick). Native and offline agree exactly (`testing/unit_tests/test_stopping_conditions.py`).
+
+### 9.2 Boundary — Decision vs. Parameter Stability
+
+Choice-stability guarantees *decision* stability, not *parameter* stability (§3.2). An agent at `(α, β) = (100, 1)` never flips even as α keeps growing. This is acceptable — indeed desirable — because the epistemic outcome of interest (which theory the network settles on) is a function of decisions, not of the raw parameter magnitudes.
+
+### 9.3 Hypotheses and Evaluation
+
+Run via **`A. Choice Stability Stopping Study.ipynb`** (mirrors the Study-2 grid on `pud_network.pkl` and `tobacco_network.pkl`), with `choice_stability_stopping.py` as the local reference driver. The grid sweeps `uncertainty × n_experiments`, derives `W ∈ {100,250,500,1000}` offline, and tests:
+
+- **H1′ (Steps):** steps-to-stabilisation grow with the window `W` (and shrink with `uncertainty`, `n_experiments`).
+- **H2′ (Truth-share):** truth-share at stabilisation is driven by `uncertainty` and is **~invariant to `W`** — the headline prediction. Smoke-scale OLS already shows `log_window` insignificant (p ≈ 0.65) for truth-share while `log_uncertainty` and `log_n_experiments` dominate.
+
+A comparison sub-study (Study 2 in the notebook, reusing the `post_stopping_drift.py` resume pattern) pits choice-stability against tolerance stopping on shared seeds, measuring the **post-stop flip rate** after resuming `K` steps — directly answering open question #2. Early runs show tolerance stopping firing extremely early with post-stop flips in ~100% of runs, versus a near-zero flip rate under choice-stability.
+
+**Outputs (per network, folder-local):** `{network}_choice_stability.csv`, `_summary.csv`, `_boxplot.png`, `_steps_lines.png`, `_truth_share_lines.png`, and `{network}_stopping_comparison.csv` / `.png`.
+
+See `CHOICE_STABILITY_STOPPING_PLAN.md` for the full task decomposition.

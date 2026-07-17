@@ -12,7 +12,7 @@
     *   `model/agents.py` — immutable
     *   `model/model.py` — immutable
     *   `model/simulation_functions.py` — immutable
-    *   `model/vectorized_model.py` — immutable (primary simulation engine)
+    *   `model/vectorized_model.py` — normally immutable (primary simulation engine). **Exception (user-authorized, 2026-07-17):** the choice-stability stopping mode (`choice_stability_stopping` / `choice_stability_window` / `record_choice_flips`) was added here. Such core edits require explicit user authorization and must be documented and backwards-compatible — all new flags default OFF, added as a mutually-exclusive `elif` in the run loop, so every existing caller is unaffected. See `stopping_condition/CHOICE_STABILITY_STOPPING_PLAN.md`.
     *   `model/bandit.py` — immutable
     *   Anything under `networks/` — immutable
     *   Anything under `utils/` — immutable

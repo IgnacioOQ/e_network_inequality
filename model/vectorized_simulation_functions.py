@@ -22,6 +22,10 @@ def run_vectorized_simulation_with_params(
     auc_threshold=0.95,
     auc_check_interval=500,
     snapshot_interval=0,
+    # Choice-stability (decision-stability) stopping — see VectorizedModel:
+    choice_stability_stopping=False,  # stop when every agent's choice is stable for W steps
+    choice_stability_window=500,      # the window W (consecutive flip-free steps)
+    record_choice_flips=False,        # log (step, truth_share) flips -> result_dict for offline W-sweep
 ):
     # Per-job seed: prefer the one supplied in param_dict (typically derived
     # from numpy.random.SeedSequence.spawn for a reproducible study); otherwise
@@ -52,6 +56,9 @@ def run_vectorized_simulation_with_params(
         compute_convergence=compute_convergence,
         compute_root_analysis=compute_root_analysis,
         snapshot_interval=snapshot_interval,
+        choice_stability_stopping=choice_stability_stopping,
+        choice_stability_window=choice_stability_window,
+        record_choice_flips=record_choice_flips,
     )
 
     my_model.run_simulation(
@@ -108,6 +115,11 @@ def run_vectorized_simulation_with_params(
 
     if snapshot_interval > 0:
         result_dict["snapshots"] = my_model.snapshots
+
+    # Flip history for the offline choice-stability window sweep: a list of
+    # (step, truth_share) pairs. All windows W are derived from this single run.
+    if record_choice_flips:
+        result_dict["choice_flip_history"] = my_model.choice_flip_history
 
     if "group_id" in param_dict:
         result_dict["group_id"] = param_dict["group_id"]

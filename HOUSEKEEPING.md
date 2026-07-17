@@ -4,7 +4,7 @@
 - description: Routine sanity check for the e_network_inequality repository — runs the unit test suite, checks for import errors, verifies notebooks are intact, and keeps the codebase clean and functional.
 - injection: procedural
 - volatility: evolving
-- last_checked: 2026-05-08
+- last_checked: 2026-07-17
 <!-- content -->
 This workflow is the routine sanity check for the `e_network_inequality` repository. It covers three concerns: (1) running the unit test suite to verify model correctness; (2) checking that the codebase imports cleanly and has no dead dependencies; and (3) ensuring notebooks and data files remain intact. Run this workflow after any significant batch of code changes, before committing, and before running large-scale simulations.
 
@@ -39,7 +39,7 @@ Expected test files and what they cover:
 | File | Coverage |
 |:---|:---|
 | `test_vectorization.py` | Validates that `VectorizedModel` produces identical results to the original `Model` given the same seed |
-| `test_stopping_conditions.py` | Verifies tolerance-stopping, step-stopping, and early-exit behavior of `VectorizedModel` |
+| `test_stopping_conditions.py` | Verifies tolerance-stopping, step-stopping, AUC-stopping, early-exit, and choice-stability (decision-stability) stopping behavior of `VectorizedModel` |
 | `test_agents.py` | Checks that `BetaAgent` and `BayesAgent` update beliefs correctly |
 | `test_mc_analysis.py` | Validates Markov Chain analysis utilities |
 
