@@ -25,6 +25,7 @@ def run_vectorized_simulation_with_params(
     # Choice-stability (decision-stability) stopping — see VectorizedModel:
     choice_stability_stopping=False,  # stop when every agent's choice is stable for W steps
     choice_stability_window=500,      # the window W (consecutive flip-free steps)
+    choice_stability_min_steps=0,     # never stop before this many steps (0 = no floor)
     record_choice_flips=False,        # log (step, truth_share) flips -> result_dict for offline W-sweep
 ):
     # Per-job seed: prefer the one supplied in param_dict (typically derived
@@ -58,6 +59,7 @@ def run_vectorized_simulation_with_params(
         snapshot_interval=snapshot_interval,
         choice_stability_stopping=choice_stability_stopping,
         choice_stability_window=choice_stability_window,
+        choice_stability_min_steps=choice_stability_min_steps,
         record_choice_flips=record_choice_flips,
     )
 

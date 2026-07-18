@@ -54,6 +54,11 @@ class VectorizedModel:
             on one side of 0.5. Default: False.
         choice_stability_window: Number of consecutive flip-free steps required
             before choice_stability_stopping fires (the W above). Default: 500.
+        choice_stability_min_steps: Minimum number of steps a run must complete
+            before choice_stability_stopping may fire, regardless of how long
+            choices have been stable. Guards against stopping on transient early
+            agreement, and guarantees a recorded flip history at least this long
+            for the offline window sweep. Default: 0 (no floor).
         record_choice_flips: If True, record ``(step, truth_share)`` into
             self.choice_flip_history on every step where at least one agent
             flips its choice (plus a baseline entry at run start). Orthogonal to
@@ -136,6 +141,7 @@ class VectorizedModel:
         tstep_stopping=False,
         choice_stability_stopping: bool = False,
         choice_stability_window: int = 500,
+        choice_stability_min_steps: int = 0,
         record_choice_flips: bool = False,
         # directed_network=True,
         seed=None,
@@ -161,6 +167,7 @@ class VectorizedModel:
         self.tstep_stopping = tstep_stopping
         self.choice_stability_stopping = choice_stability_stopping
         self.choice_stability_window = choice_stability_window
+        self.choice_stability_min_steps = choice_stability_min_steps
         self.record_choice_flips = record_choice_flips
         # Choice-stability tracking state (initialized in run_simulation when
         # choice_stability_stopping or record_choice_flips is enabled):
@@ -703,8 +710,15 @@ class VectorizedModel:
                 continue  # tstep mode: run for fixed number of steps
             elif self.choice_stability_stopping:
                 # Stop once no agent has flipped for `choice_stability_window`
-                # consecutive steps (i.e. all agents' choices have been stable).
-                if self.n_steps - self._last_flip_step >= self.choice_stability_window:
+                # consecutive steps (i.e. all agents' choices have been stable),
+                # but never before `choice_stability_min_steps`. The floor exists
+                # because a run can look stable very early (all agents briefly
+                # agreeing) and stop long before the dynamics have played out;
+                # it also guarantees the recorded flip history covers at least
+                # that many steps, which the offline window sweep depends on.
+                if (self.n_steps >= self.choice_stability_min_steps
+                        and self.n_steps - self._last_flip_step
+                        >= self.choice_stability_window):
                     break
             elif auc_stopping:
                 # AUC-based stopping (check every auc_check_interval steps)
