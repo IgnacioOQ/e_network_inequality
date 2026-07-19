@@ -2,7 +2,7 @@
 - status: active
 - type: research
 - owner: user
-- last_checked: 2026-04-23
+- last_checked: 2026-07-19
 <!-- content -->
 
 > **Scope reminder:** All scripts and outputs referenced here belong in `model/convergence_analysis/`. Do not modify any file outside this folder. See `MC_AGENT.md` for constraints.
@@ -292,7 +292,9 @@ Choice-stability guarantees *decision* stability, not *parameter* stability (§3
 
 ### 9.3 Hypotheses and Evaluation
 
-Run via **`A. Choice Stability Stopping Study.ipynb`** (mirrors the Study-2 grid on `pud_network.pkl` and `tobacco_network.pkl`), with `choice_stability_stopping.py` as the local reference driver. The grid sweeps `uncertainty × n_experiments`, derives `W ∈ {100,250,500,1000}` offline, and tests:
+Run via **`A. Choice Stability Stopping Study.ipynb`** (mirrors the Study-2 grid, now on `pud_network.pkl`, `tobacco_network.pkl` and `ego_network.pkl`), with `choice_stability_stopping.py` as the local reference driver. The grid sweeps `uncertainty × n_experiments`, derives `W ∈ {100,500,1000}` offline, and tests:
+
+> **Note on the window set.** The notebook currently derives `W ∈ {100,500,1000}`. The `W = 250` column reported in §9.4 comes from an earlier run that included it; adding a window changes the config fingerprint and invalidates every existing checkpoint, so it was not re-added retroactively. Windows are derived offline from one recorded run, so restoring 250 costs no extra simulation — only a full recompute of the grid.
 
 - **H1′ (Steps):** steps-to-stabilisation grow with the window `W` (and shrink with `uncertainty`, `n_experiments`).
 - **H2′ (Truth-share):** truth-share at stabilisation is driven by `uncertainty` and is **~invariant to `W`** — the headline prediction (confirmed at full scale in §9.4).
@@ -334,3 +336,53 @@ _Tobacco network (289 nodes):_
 **Outputs (per network, folder-local):** `{network}_choice_stability.csv`, `_summary.csv`, `_boxplot.png`, `_steps_lines.png`, `_truth_share_lines.png`, and `{network}_stopping_comparison.csv` / `.png`.
 
 See `CHOICE_STABILITY_STOPPING_PLAN.md` for the full task decomposition.
+
+---
+
+### 9.5 Criterion Comparison at Fixed 100k Steps
+
+Run via **`A. 100k Stopping Study.ipynb`** on Google Colab, 2026-07-19. This is the decisive comparison between the two criteria, and it settles a discrepancy that had appeared *between* notebooks: the choice-stability studies report Ego converging to near-total consensus, while tolerance-based studies report much lower truth-share on the same network.
+
+**Design — derive, don't stop.** Every run executes the full `MAX_STEPS = 100_000` with `tstep_stopping=True`; neither criterion is allowed to halt anything. `record_choice_flips=True` logs the flip history and snapshots are taken every 500 steps, so *both* criteria are reconstructed offline from the same trajectory:
+
+- **choice-stability** stop for each `W` — from the flip history via `offline_stop` (exact)
+- **tolerance** stop for each `τ` — first snapshot where max `|Δcredence| < τ` (snapshot-resolution, so an **upper bound**: the live rule tests every step and may fire between snapshots)
+
+Because the run continues past both stop points, what each criterion *missed* is directly observable — the flips and truth-share drift that occurred after it would have fired. That is not measurable in a run that actually stops, and it is the whole point of the design.
+
+**Parameters.** A single grid corner: `uncertainty = 1e-4`, `n_experiments = 1000`, `N_RUNS = 500` per network, `MASTER_SEED = 20260513`, on all three networks. This is the slowest-converging corner (lowest bandit gap), chosen so it is directly comparable to the equivalent cell of the §9.4 grid. **Absolute values here are not comparable to §9.4's 12-combo averages** — only the within-run criterion contrast is.
+
+**Stop step and truth-share at stop, versus the 100k asymptote:**
+
+| criterion | PUD stop | PUD truth | Tobacco stop | Tobacco truth | Ego stop | Ego truth |
+|:---|---:|---:|---:|---:|---:|---:|
+| `tol 1e-3` | 506 | 0.528 | 515 | 0.563 | 528 | 0.582 |
+| `tol 1e-5` | 4,160 | 0.570 | 5,898 | 0.687 | 5,633 | 0.762 |
+| `tol 1e-6` | 31,163 | 0.648 | 39,145 | 0.823 | 35,085 | 0.933 |
+| `choice W=100` | 2,782 | 0.560 | 15,673 | 0.770 | 17,836 | 0.877 |
+| `choice W=500` | 12,220 | 0.611 | 39,152 | 0.828 | 41,549 | 0.941 |
+| `choice W=1000` | 21,481 | 0.635 | 54,785 | 0.843 | 56,125 | **0.958** |
+| **at 100,000 steps** | — | **0.690** | — | **0.857** | — | **0.968** |
+
+**Criterion never fires within 100k steps** (`fired_rate`):
+
+| network | W=100 | W=500 | W=1000 | all tolerances |
+|:---|---:|---:|---:|---:|
+| PUD | 1.000 | 1.000 | 1.000 | 1.000 |
+| Tobacco | 1.000 | 0.998 | **0.972** | 1.000 |
+| Ego | 1.000 | **0.974** | **0.896** | 1.000 |
+
+**Findings.**
+
+1. **Tolerance stopping measures a transient, at every threshold tested.** On Ego, `τ = 1e-3` fires at step **528** reporting truth-share 0.582, after which the network flips a further ~14,600 times and settles at 0.968 — a drift of **+0.39**. Even the 5000× stricter `τ = 1e-6` stops at 35,085 with 0.933. This is §3.1's false-convergence defect measured directly, and it quantifies §4.3's warning that truth-share is a time-dependent quantity.
+2. **Choice-stability approximates the asymptote closely.** At `W = 1000` the truth-share error against the 100k value is 0.010 (Ego), 0.014 (Tobacco), 0.055 (PUD) — an order of magnitude better than any tolerance at comparable cost. Ego at `W=1000` stops at 56,125 steps versus `τ=1e-6` at 35,085, so it is not merely buying accuracy with runtime.
+3. **This reconciles the cross-notebook discrepancy.** The two families of study do not disagree about Ego's behaviour; they disagree about *when to look*. Ego genuinely reaches ~0.97 truth-share, and choice-stability certifies it while tolerance reports the state at step ~500.
+4. **The strictest windows do not always fire.** 10.4% of Ego runs and 2.8% of Tobacco runs never produce a flip-free window of 1000 steps within 100,000. These are recorded with `fired = 0` and **excluded from the stopped fraction** in the stop-time CDF, so each curve plateaus at its firing rate rather than reaching 1.0. This is a property of the network at this corner, not a defect — but it must be reported, since a criterion that silently returns `max_steps` would look identical to one that converged.
+
+**Caveats.**
+
+- **`mean_stop` is censored wherever `fired_rate < 1`.** Non-firing runs enter the mean at `MAX_STEPS`, so Ego's `W=1000` mean of 56,125 mixes 89.6% genuine stops with 10.4% floored at 100,000, and is therefore a **lower bound**.
+- **`premature_rate` (≥1 flip after stopping) saturates at ~1.0** for nearly every criterion and network, and does not discriminate between them. `mean_abs_drift` is the informative column (Ego: 0.388 for `τ=1e-3` versus 0.011 for `W=1000`).
+- The tolerance stop is an upper bound by at most `SNAPSHOT_INTERVAL = 500` steps; the bias is identical across tolerances, so tolerance-vs-tolerance comparisons remain fair, while choice-stability stops carry no such bias.
+
+**Outputs:** `criterion_comparison.csv` (one row per network × run × criterion, 15,000 rows), `criterion_comparison_summary.csv`, `criterion_premature_stop.png`, and `{network}_snapshot_trajectories.png` — the last now a three-panel figure whose third panel is the stop-time CDF per rule.
