@@ -179,7 +179,9 @@ In both modes the seed actually used is written into `result_dict["seed"]`, so a
 ### 3. Notebooks and Where Scripts Live
 - **Root Notebooks**: The high-level orchestrators (`1. Citation Data...` → `4. Network-Visualizations...`), listed under [Running Simulations](#running-simulations) above.
 - **`model/convergence_analysis/`**: Targeted studies of convergence behaviour, organised into four themed subdirectories. Each pairs Colab notebooks with standalone `.py` drivers and a markdown analysis document:
-    - `stopping_condition/` — the largest: four study notebooks, six `.py` drivers (`choice_stability_stopping.py`, `convergence_speed_analysis.py`, `parameter_search.py`, `post_stopping_drift.py`, `stopping_tolerance_sensitivity.py`, `tolerance_vs_alphabeta.py`), plus `STOPPING_CONDITION_ANALYSIS.md` and `CHOICE_STABILITY_STOPPING_PLAN.md`.
+    - `stopping_condition/` — the largest: seven notebooks, six `.py` drivers (`choice_stability_stopping.py`, `convergence_speed_analysis.py`, `parameter_search.py`, `post_stopping_drift.py`, `stopping_tolerance_sensitivity.py`, `tolerance_vs_alphabeta.py`), plus `STOPPING_CONDITION_ANALYSIS.md` and `CHOICE_STABILITY_STOPPING_PLAN.md`.
+
+      The seven notebooks are four *source* studies plus three *executed snapshots*, distinguished by naming convention: spaced names (`A. Choice Stability Stopping Study.ipynb`) are the editable sources; underscored names (`A_Choice_Stability_Stopping_Study.ipynb`) are committed snapshots of a completed Colab run, carrying full outputs and running to several MB. Three of the four sources have a snapshot; `A. Stopping Condition Study v2.ipynb` does not. Edit the spaced files; treat the underscored ones as read-only results.
     - `phase_dynamics/` — `convergence_studies.py`, `two_phase_dynamics.py`, and a Colab study notebook.
     - `root_node_influence/` — `root_influence_analysis.py`, a Colab notebook, and `ROOTNODE_HYPOTHESIS.md`.
     - `formal_markov/` — Markov-chain formalisation: a Colab notebook plus `HYPOTHESIS.md` and `STOCHASTIC_HYPOTHESIS.md`.
@@ -233,7 +235,8 @@ e_network_inequality/
 │       ├── 00_Colab_Template.ipynb # Starting template for a new study
 │       ├── MC_AGENT.md             # Markov-chain analysis brief
 │       ├── OPEN_QUESTIONS.md
-│       ├── stopping_condition/     # Stopping-criterion studies (4 notebooks, 6 drivers, 2 analyses)
+│       ├── stopping_condition/     # Stopping-criterion studies (7 notebooks = 4 sources
+│       │                           #   + 3 executed snapshots; 6 drivers, 2 analyses)
 │       ├── phase_dynamics/         # Two-phase convergence dynamics
 │       ├── root_node_influence/    # Influence of root/source nodes
 │       └── formal_markov/          # Formal Markov-chain treatment
