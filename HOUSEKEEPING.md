@@ -4,7 +4,7 @@
 - description: Routine sanity check for the e_network_inequality repository — runs the unit test suite, checks for import errors, verifies notebooks are intact, and keeps the codebase clean and functional.
 - injection: procedural
 - volatility: evolving
-- last_checked: 2026-07-17
+- last_checked: 2026-07-23
 <!-- content -->
 This workflow is the routine sanity check for the `e_network_inequality` repository. It covers three concerns: (1) running the unit test suite to verify model correctness; (2) checking that the codebase imports cleanly and has no dead dependencies; and (3) ensuring notebooks and data files remain intact. Run this workflow after any significant batch of code changes, before committing, and before running large-scale simulations.
 
@@ -218,28 +218,33 @@ After completing the checks, append a brief entry to [WORKLOG.md](WORKLOG.md):
 
 ## Latest Report
 
-**Date:** 2026-05-08
-**Trigger:** Initial HOUSEKEEPING.md creation after snapshot feature implementation.
+**Date:** 2026-07-23
+**Trigger:** Routine sanity check — first full run since the choice-stability stopping criterion landed (2026-07-17). Working tree clean at `8bb2697`.
 
 ### Test results
-- `unittest discover -s testing/unit_tests`: Not run (initial creation). Run before next commit.
-
-### Import check
-- All core imports: ✅ (verified via smoke test during snapshot implementation)
-- Networks: PUD (87 nodes, 160 edges), Tobacco, Ego — ✅
+- `unittest discover -s testing/unit_tests`: **32 passed, 0 failed** (12.98s) — ✅
+- Up from 27 at the 2026-05-30 run; the +5 `TestChoiceStabilityStopping` tests are in and green.
 
 ### Snapshot smoke test
 - 5 snapshots at steps [1000, 2000, 3000, 4000, 5000] ✅
-- Truth shares in [0, 1] ✅
-- Max belief change decreasing ✅
+- Truth share 0.678 → 0.611, within [0, 1] ✅
+- Max belief change decays monotonically 7.46e-4 → 1.65e-4 ✅
+
+### Import check
+- All core imports: ✅
+- Networks: PUD (90 nodes, 160 edges), Tobacco (289 nodes, 1229 edges), Ego (503 nodes, 2933 edges) — ✅
+- PUD node count is stable at **90** across the 2026-05-30 and 2026-07-23 runs. The 87 figure in the 2026-05-08 report predates a network regeneration and is superseded.
+
+### Notebook integrity
+- **23 of 23** notebooks parse as valid JSON — ✅
+- Up from 21: new since the last run are `A. Choice Stability Stopping Study.ipynb` (52 cells) and `2. GColab Simulations Equality.ipynb` (24 cells).
+
+### Phase 5 — code cleanliness
+- `ruff --select F401`: 93 unused imports, unchanged from 2026-05-30. Concentrated in `utils/imports.py` (the intentional re-export hub) and `utils/sa_network_variation_directed.py`. **No action** — removing them would break the re-export surface.
+- `vulture --min-confidence 80`: remaining hits are `args`/`kwargs` signature padding and immutable `model/model.py` internals. **No action.**
+- **Fixed:** `networks/variation_methods.py:480` — duplicate unreachable `return G_new` immediately after line 479. Flagged in the 2026-05-30 run and left open; verified unreachable with no side effect and deleted (1 line). Test suite re-run after the edit: 32 passed. Vulture now reports clean on that file.
 
 ### Files modified in this session
-- `model/vectorized_model.py`: Added `snapshot_interval`, `self.snapshots`, per-step capture logic.
-- `model/vectorized_simulation_functions.py`: Threaded `snapshot_interval` through wrapper.
-- `model/convergence_analysis/stopping_condition/A. 100k Stopping Study.ipynb`: New snapshot analysis section.
-- `testing/notebooks/basic_model_testing_v2.ipynb`: New notebook with snapshot plots.
-- `README.md`: Added "Codebase Architecture and Execution Flow" section.
-- `ADD_SNAPSHOT_PLAN.md`: Design document saved at project root.
-- `WORKLOG.md`: Created (append-only working log).
-- `TODO_WORKFLOW.md`: Created (renamed from WORKPLAN.md with type: workflow).
-- `HOUSEKEEPING.md`: This file created.
+- `networks/variation_methods.py`: Removed the duplicate `return G_new` (1-line deletion).
+- `HOUSEKEEPING.md`: This report; `last_checked` bumped to 2026-07-23.
+- `WORKLOG.md`: Appended the 2026-07-23 housekeeping entry.

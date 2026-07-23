@@ -477,4 +477,3 @@ def randomize_network(G, n_edges: int):
     G_new.clear_edges()
     G_new.add_edges_from(new_edges_set)
     return G_new
-    return G_new

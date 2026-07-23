@@ -10,6 +10,25 @@ Most recent event comes first.
 
 ---
 
+### 2026-07-23: Housekeeping Run
+- id: worklog.2026_07_23_housekeeping
+- status: done
+- type: log
+- last_checked: 2026-07-23
+<!-- content -->
+**Tests:** 32 passed, 0 failed (`unittest discover -s testing/unit_tests`)
+**Imports:** OK — core modules + `utils.imports` re-export hub load cleanly
+**Networks:** OK — PUD 90n/160e, Tobacco 289n/1229e, Ego 503n/2933e
+**Notebooks:** 23 parsed OK, 0 failed
+**Notes:**
+- Trigger: routine sanity check; first full run since the choice-stability stopping criterion landed on 2026-07-17. Working tree clean at `8bb2697`.
+- Test count 27 → 32 — the five `TestChoiceStabilityStopping` cases are in and green. Notebook count 21 → 23 (`A. Choice Stability Stopping Study.ipynb`, `2. GColab Simulations Equality.ipynb`).
+- PUD node count confirmed stable at **90** across two consecutive runs; the 87 figure carried in the old `HOUSEKEEPING.md` report was pre-regeneration and has been superseded.
+- Optional Phase 5 run. **One fix applied:** deleted the duplicate unreachable `return G_new` at `networks/variation_methods.py:480` — flagged in the 2026-05-30 run and left open then; verified unreachable with no side effect. Suite re-run after the edit (32 passed); vulture clean on that file.
+- F401 (93) and the remaining vulture hits are unchanged and intentional — the `utils/imports.py` re-export hub and `args`/`kwargs` signature padding. No action.
+
+---
+
 ### 2026-07-17: Choice-Stability Stopping Criterion + Study
 - id: worklog.2026_07_17_choice_stability_stopping
 - status: done
