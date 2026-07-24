@@ -10,3 +10,5 @@ statsmodels
 joblib
 scikit-learn
 pyarrow
+pyalex
+dotenv
