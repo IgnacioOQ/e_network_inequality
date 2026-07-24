@@ -25,8 +25,6 @@ Arm              Mechanism                                   Invariant
 ===============  ==========================================  ====================
 randomization    rewire k random edges (remove one/add one)  ``|E|``
 equalize         rewire k triangle edges toward equality     ``|E|``
-cluster          degree-preserving double-edge swaps, up     ``|E|`` and degrees
-decluster        degree-preserving double-edge swaps, down   ``|E|`` and degrees
 ===============  ==========================================  ====================
 
 Reproducibility
@@ -142,9 +140,8 @@ def build_setting(
     — options 1 and 2) or a ``(lo, hi)`` pair drawn uniformly per setting
     (option 3, the phase-transition sweep).
 
-    `proportion_edges` is the intensity knob shared by all four arms: the
-    fraction of edges rewired for randomization/equalize, and the fractional
-    shift in average clustering relative to baseline for cluster/decluster. The
+    `proportion_edges` is the intensity knob shared by all arms: the
+    fraction of edges rewired for randomization/equalize. The
     1/3 cap exists because `equalize` samples that many triangles and raises
     "Sample larger than population" beyond it.
 
@@ -168,20 +165,6 @@ def build_setting(
         variant = randomize_network(G, n_edges=int(n_edges * proportion_edges))
     elif method == "equalize":
         variant = generate_equalize_variant(G, n_edges=int(n_edges * proportion_edges))[0]
-    elif method in ("cluster", "decluster"):
-        # n_edges=0 -> add no edges, so |E| and the whole degree sequence are
-        # preserved and the shift is purely in clustering. utils.network_utils
-        # .cluster_network is NOT used: it is purely additive and would confound
-        # clustering with density.
-        base_clustering = float(np.average(list(nx.clustering(G).values())))
-        sign = 1.0 if method == "cluster" else -1.0
-        variant = generate_network_variant(
-            G,
-            n_edges=0,
-            target_clustering=base_clustering * (1.0 + sign * proportion_edges),
-            max_post_rewires=max_post_rewire_factor * n_edges,
-            rewiring_tolerance=rewiring_tolerance,
-        )[0]
     else:
         raise ValueError(f"unknown variation method: {method!r} (expected one of {METHODS})")
 
@@ -464,9 +447,7 @@ def run_study(
     """Run every (network, arm) cell, isolating per-arm failures.
 
     `networks` is a list of ``(label, graph)`` pairs. `skip` holds
-    ``(network_label, method)`` pairs to leave out — the option notebooks skip
-    the Ego clustering arms by default (the O(|E|^2) rewiring blocker,
-    ``todo.variation_methods.ego_rewiring_perf``).
+    ``(network_label, method)`` pairs to leave out.
 
     With ``continue_on_error`` (the default) a raising arm does not abort the
     study: the exception is caught, recorded to ``failed_arms.json`` in
