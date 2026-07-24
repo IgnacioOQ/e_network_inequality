@@ -24,7 +24,7 @@ and the manipulated dimensions are degree equality and clustering:
 Arm              Mechanism                                   Invariant
 ===============  ==========================================  ====================
 randomization    rewire k random edges (remove one/add one)  ``|E|``
-equalize         rewire k triangle edges toward equality     ``|E|``
+generate_equalize_variant rewire k triangle edges toward equality     ``|E|``
 ===============  ==========================================  ====================
 
 Reproducibility
