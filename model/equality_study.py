@@ -131,8 +131,6 @@ def build_setting(
     uncertainty,
     n_experiments,
     proportion_edges_max=0.1,
-    rewiring_tolerance=1e-3,
-    max_post_rewire_factor=10,
 ):
     """Draw one parameter setting and build its network variant.
 
