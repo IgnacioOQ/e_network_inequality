@@ -67,7 +67,7 @@ from utils.network_utils import network_statistics
 
 # The four density-preserving arms. Density arms ('densify', 'densify_fixed')
 # belong to "2. GColab Simulations.ipynb" and are deliberately absent here.
-METHODS = ("randomization", "equalize", "cluster", "decluster")
+METHODS = ("randomization", "equalize")
 
 # Shards are Parquet where pyarrow is available (Colab) and CSV otherwise, so a
 # laptop smoke run works without adding a dependency. Resume tolerates both.
