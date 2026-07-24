@@ -9,3 +9,4 @@ dill
 statsmodels
 joblib
 scikit-learn
+pyarrow

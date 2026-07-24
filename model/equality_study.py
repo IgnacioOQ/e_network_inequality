@@ -49,6 +49,7 @@ import json
 import os
 import random
 import time
+import traceback
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -457,24 +458,60 @@ def run_study(
     *,
     methods=METHODS,
     skip=(),
+    continue_on_error=True,
     **kwargs,
 ):
-    """Run every (network, arm) cell.
+    """Run every (network, arm) cell, isolating per-arm failures.
 
     `networks` is a list of ``(label, graph)`` pairs. `skip` holds
-    ``(network_label, method)`` pairs to leave out — the Ego/equalize arm is
-    excluded by default in the option notebooks while TODO_WORKFLOW's
-    "Fix Ego Depletion — Equalize Variation" remains open, since running it
-    would spend weeks of compute producing suspect data.
+    ``(network_label, method)`` pairs to leave out — the option notebooks skip
+    the Ego clustering arms by default (the O(|E|^2) rewiring blocker,
+    ``todo.variation_methods.ego_rewiring_perf``).
+
+    With ``continue_on_error`` (the default) a raising arm does not abort the
+    study: the exception is caught, recorded to ``failed_arms.json`` in
+    ``results_dir`` with its traceback, and the remaining arms still run. Arms
+    finished before the failure are already checkpointed per variant, so nothing
+    done is lost and a rerun resumes past them. This matters because some arms
+    are known-fragile — Ego/equalize is flagged unreliable by TODO_WORKFLOW —
+    and one bad arm should not forfeit a multi-day run of the others. Pass
+    ``continue_on_error=False`` to let the first failure propagate instead.
+
+    ``failed_arms.json`` is written on every run (an empty list means no arm
+    failed), so its contents are never stale.
     """
     skip = {tuple(s) for s in skip}
-    costs = []
+    results_dir = Path(results_dir)
+    results_dir.mkdir(parents=True, exist_ok=True)
+    costs, failures = [], []
     for label, G in networks:
         for method in methods:
             if (label, method) in skip:
                 print(f"  [{label}/{method}] SKIPPED by configuration")
                 continue
-            costs.append(run_arm(G, label, method, results_dir, **kwargs))
+            try:
+                costs.append(run_arm(G, label, method, results_dir, **kwargs))
+            except Exception as exc:
+                if not continue_on_error:
+                    raise
+                failures.append({
+                    "network": label,
+                    "method": method,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "traceback": traceback.format_exc(),
+                })
+                print(f"\n  !!! [{label}/{method}] FAILED — isolated, continuing "
+                      "with the remaining arms.")
+                print(f"      {type(exc).__name__}: {exc}")
+                print("      Arms finished before this point are checkpointed; "
+                      "a rerun resumes past them.")
+
+    (results_dir / "failed_arms.json").write_text(json.dumps(failures, indent=2))
+    if failures:
+        print(f"\n  ⚠ {len(failures)} arm(s) FAILED this run and were skipped: "
+              f"{[(f['network'], f['method']) for f in failures]}")
+        print(f"    Details + tracebacks: {results_dir / 'failed_arms.json'}")
+
     return pd.concat(costs, ignore_index=True) if costs else pd.DataFrame(columns=COST_COLS)
 
 
