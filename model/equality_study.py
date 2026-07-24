@@ -62,8 +62,8 @@ from numpy.random import SeedSequence
 from tqdm.auto import tqdm
 
 from model.vectorized_simulation_functions import run_vectorized_simulation_with_params
-from networks.variation_methods import generate_network_variant, randomize_network
-from utils.network_utils import equalize, network_statistics
+from networks.variation_methods import generate_network_variant, randomize_network, generate_equalize_variant
+from utils.network_utils import network_statistics
 
 # The four density-preserving arms. Density arms ('densify', 'densify_fixed')
 # belong to "2. GColab Simulations.ipynb" and are deliberately absent here.
@@ -132,7 +132,7 @@ def build_setting(
     *,
     uncertainty,
     n_experiments,
-    proportion_edges_max=1.0 / 3.0,
+    proportion_edges_max=0.1,
     rewiring_tolerance=1e-3,
     max_post_rewire_factor=10,
 ):
@@ -167,7 +167,7 @@ def build_setting(
     if method == "randomization":
         variant = randomize_network(G, n_edges=int(n_edges * proportion_edges))
     elif method == "equalize":
-        variant = equalize(G, int(n_edges * proportion_edges))
+        variant = generate_equalize_variant(G, n_edges=int(n_edges * proportion_edges))[0]
     elif method in ("cluster", "decluster"):
         # n_edges=0 -> add no edges, so |E| and the whole degree sequence are
         # preserved and the shift is purely in clustering. utils.network_utils
