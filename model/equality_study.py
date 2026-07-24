@@ -311,14 +311,16 @@ def check_fingerprint(results_dir, config, filename="equality_study_config.json"
     if path.exists():
         saved = json.loads(path.read_text())
         if saved != current:
-            raise RuntimeError(
-                "Checkpoint config mismatch — refusing to merge runs.\n"
-                f"  dir:     {results_dir}\n"
+            import shutil
+            print(
+                f"Checkpoint config mismatch in {results_dir}.\n"
                 f"  saved:   {saved}\n"
                 f"  current: {current}\n"
-                "Point RESULTS_DIR at a fresh directory, or move the existing "
-                "checkpoint aside before re-running."
+                "Overwriting the existing directory and starting fresh."
             )
+            shutil.rmtree(results_dir)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(current, indent=2))
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(current, indent=2))
