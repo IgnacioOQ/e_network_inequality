@@ -46,6 +46,7 @@ import hashlib
 import json
 import os
 import random
+import shutil
 import time
 import traceback
 from multiprocessing import Pool
@@ -123,6 +124,32 @@ def variant_seeds(variant_sequence, n_runs):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def draw_setting_params(variation_seed, *, uncertainty, proportion_edges_max=0.1):
+    """The parameter draw for one variant, without building its network.
+
+    Split out of :func:`build_setting`, which draws exactly these values and only
+    then spends seconds constructing the variant graph. Keeping the draw callable
+    on its own is what makes :func:`parameter_coverage` possible: the parameters
+    of a *pending* variant can be reported instantly, so the coverage table is a
+    plan for the whole grid rather than a report on the part already finished.
+
+    Seeds both RNGs, exactly as ``build_setting`` did, because the variation
+    helpers it calls next consume the stdlib ``random`` stream. Callers that go
+    on to build the variant therefore see an unchanged RNG state.
+    """
+    random.seed(variation_seed)
+    rd.seed(variation_seed)
+
+    proportion_edges = float(rd.rand() * proportion_edges_max)
+    if isinstance(uncertainty, (tuple, list)):
+        lo, hi = uncertainty
+        unc = float(rd.uniform(lo, hi))
+    else:
+        unc = float(uncertainty)
+
+    return {"uncertainty": unc, "proportion_edges": proportion_edges}
+
+
 def build_setting(
     G,
     method,
@@ -148,15 +175,13 @@ def build_setting(
     ``network`` plus the scalar covariates that the simulation copies into every
     result row.
     """
-    random.seed(variation_seed)
-    rd.seed(variation_seed)
-
-    proportion_edges = float(rd.rand() * proportion_edges_max)
-    if isinstance(uncertainty, (tuple, list)):
-        lo, hi = uncertainty
-        unc = float(rd.uniform(lo, hi))
-    else:
-        unc = float(uncertainty)
+    drawn = draw_setting_params(
+        variation_seed,
+        uncertainty=uncertainty,
+        proportion_edges_max=proportion_edges_max,
+    )
+    proportion_edges = drawn["proportion_edges"]
+    unc = drawn["uncertainty"]
 
     n_edges = G.number_of_edges()
     if method == "randomization":
@@ -298,33 +323,145 @@ def _jsonable(value):
     return value
 
 
-def check_fingerprint(results_dir, config, filename="equality_study_config.json"):
-    """Stamp the configuration on first use; refuse to resume when it changed.
+# Which configuration keys mean "this is a different study" versus "this is the
+# same study, carried further".
+#
+# The distinction is what makes a multi-session run possible at all. Banking 500
+# variants today and 500 more tomorrow raises `n_variants`; if that counted as a
+# different study, the first 500 would be thrown away. Because variant seeds are
+# keyed on (network, arm, index) and SeedSequence.spawn is incremental,
+# `variant_sequences(..., 1000)[:500]` is bit-identical to
+# `variant_sequences(..., 500)` — so a grown grid genuinely extends the old one
+# rather than reinterpreting it.
+IDENTITY_KEYS = (
+    "option",
+    "master_seed",
+    "smoke",
+    "uncertainty",
+    "n_experiments",
+    "max_steps",
+    "window",
+    "min_steps",
+    "proportion_edges_max",
+    # n_runs is identity, not extent: raising it would leave already-banked
+    # shards holding fewer replicates than new ones, making the study ragged and
+    # every cross-variant mean silently weight-inconsistent. Topping shards up
+    # is a separate feature, not a side effect of editing a parameter cell.
+    "n_runs",
+)
 
-    Two runs whose fingerprints differ must never share a checkpoint. Without
-    this a smoke run and a full run silently merge: the smoke variants already
-    exist, every variant is skipped, zero simulations execute, and the summaries
-    are then built from the other run's data under this run's label.
+EXTENT_KEYS = ("n_variants", "methods", "skip_arms")
+
+
+def check_fingerprint(
+    results_dir,
+    config,
+    *,
+    accumulate=True,
+    filename="equality_study_config.json",
+):
+    """Reconcile this session's configuration with the study already on disk.
+
+    ``accumulate=True`` (the default) carries an existing study further. Every
+    key in :data:`IDENTITY_KEYS` must match what was stamped; the keys in
+    :data:`EXTENT_KEYS` may *grow*. Raising ``n_variants`` from 500 to 1000 adds
+    variants 500..999 to the 500 already banked, and the earlier ones are left
+    exactly as the first session built them.
+
+    ``accumulate=False`` starts clean: the run-tag subtree is deleted and
+    re-stamped.
+
+    A conflict on an identity key **raises and deletes nothing**. The previous
+    behaviour was to ``rmtree`` the whole study on any difference whatsoever,
+    which turned a one-character edit in a parameter cell into the loss of a
+    multi-day run.
     """
-    path = Path(results_dir) / filename
+    results_dir = Path(results_dir)
+    path = results_dir / filename
     current = {"schema": 1, **{k: _jsonable(v) for k, v in sorted(config.items())}}
-    if path.exists():
-        saved = json.loads(path.read_text())
-        if saved != current:
-            import shutil
-            print(
-                f"Checkpoint config mismatch in {results_dir}.\n"
-                f"  saved:   {saved}\n"
-                f"  current: {current}\n"
-                "Overwriting the existing directory and starting fresh."
-            )
+
+    # ── ACCUMULATE=False — deliberate clean slate ────────────────────────────
+    if not accumulate:
+        if results_dir.exists():
+            # Scoped hard: only ever a run-tag subtree, never its parent. A
+            # mis-set RESULTS_DIR must not be able to take the study with it.
+            if results_dir.name not in ("smoke", "full"):
+                raise ValueError(
+                    f"refusing to wipe {results_dir} — expected a 'smoke' or 'full' "
+                    "directory. Check RESULTS_DIR before setting ACCUMULATE=False."
+                )
+            doomed = [p for p in results_dir.rglob("*") if p.is_file()]
+            print(f"  ACCUMULATE=False — deleting {len(doomed)} file(s) under {results_dir}")
             shutil.rmtree(results_dir)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(current, indent=2))
-    else:
-        path.parent.mkdir(parents=True, exist_ok=True)
+        results_dir.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(current, indent=2))
-    return current
+        print("  Fresh study stamped; this run starts from variant 0.")
+        return current
+
+    # ── First session for this configuration ─────────────────────────────────
+    if not path.exists():
+        results_dir.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(current, indent=2))
+        print("  New study — configuration stamped.")
+        return current
+
+    saved = json.loads(path.read_text())
+
+    # ── Identity keys must match, or we refuse (without touching anything) ───
+    differing = [k for k in ("schema",) + IDENTITY_KEYS
+                 if k in current and saved.get(k) != current.get(k)]
+    if differing:
+        lines = "\n".join(
+            f"    {k}:  on disk {saved.get(k)!r}   ->   this session {current.get(k)!r}"
+            for k in differing
+        )
+        raise ValueError(
+            "Configuration conflict — this session describes a different study "
+            f"from the one already in\n  {results_dir}\n{lines}\n"
+            "  NOTHING HAS BEEN DELETED. Either restore the values shown on disk, "
+            "or set ACCUMULATE = False\n"
+            "  to start this configuration from scratch (which discards that "
+            "directory)."
+        )
+
+    # ── Extent keys may grow ─────────────────────────────────────────────────
+    merged, notes = dict(saved), []
+
+    saved_nv, current_nv = saved.get("n_variants"), current.get("n_variants")
+    if isinstance(saved_nv, int) and isinstance(current_nv, int):
+        if current_nv > saved_nv:
+            notes.append(
+                f"n_variants {saved_nv} -> {current_nv}: "
+                f"variants {saved_nv}..{current_nv - 1} are new this session"
+            )
+        elif current_nv < saved_nv:
+            notes.append(
+                f"n_variants {saved_nv} -> {current_nv} (LOWER). Shards for variants "
+                f"{current_nv}..{saved_nv - 1} stay on disk and are STILL counted by "
+                "summarise_arm/check_variance, which read every shard present."
+            )
+        merged["n_variants"] = max(saved_nv, current_nv)
+
+    saved_methods = list(saved.get("methods") or [])
+    current_methods = list(current.get("methods") or [])
+    added = [m for m in current_methods if m not in saved_methods]
+    dropped = [m for m in saved_methods if m not in current_methods]
+    if added:
+        notes.append(f"methods: added {added}")
+    if dropped:
+        notes.append(f"methods: {dropped} not run this session (their shards remain)")
+    merged["methods"] = saved_methods + added
+    merged["skip_arms"] = current.get("skip_arms", saved.get("skip_arms"))
+    merged["schema"] = current["schema"]
+
+    path.write_text(json.dumps(merged, indent=2))
+    if notes:
+        print("  ACCUMULATE=True — continuing the existing study:")
+        for note in notes:
+            print(f"    {note}")
+    else:
+        print("  ACCUMULATE=True — continuing the existing study (config unchanged).")
+    return merged
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -666,3 +803,173 @@ def project_runtime(cost, n_variants, n_runs):
         n_variants * (per["mean_build_sec"] + per["mean_run_sec"]) / 3600.0
     )
     return per.reset_index()
+
+
+def study_report(results_dir, networks, methods, n_variants, n_runs, verbose=True):
+    """Progress against the goal: simulations banked, time left, and done-or-not.
+
+    The multi-session dashboard. Answers the question you actually have when
+    reopening the notebook on day three — how far did earlier sessions get, how
+    much is left, and is this finished.
+
+    Reads only directory listings and each arm's small ``cost.csv``, never the
+    shards, so it stays instant on a finished study holding millions of rows —
+    which matters most on Colab, where every shard read crosses a Drive mount.
+    Safe to run at any point: an arm with nothing on disk simply reports zero.
+
+    ``sims_done`` is exact rather than estimated: :func:`run_arm` writes one
+    shard per variant holding exactly ``n_runs`` rows, so banked variants times
+    ``n_runs`` is the true simulation count.
+    """
+    results_dir = Path(results_dir)
+    rows = []
+    for label, _ in networks:
+        for method in methods:
+            directory = arm_dir(results_dir, label, method)
+            done = completed_variants(directory)
+            within = {i for i in done if i < n_variants}
+            beyond = done - within
+            left = n_variants - len(within)
+            row = {
+                "network": label,
+                "method": method,
+                "variants_done": len(within),
+                "variants_target": n_variants,
+                "sims_done": len(within) * n_runs,
+                "sims_target": n_variants * n_runs,
+                "pct_complete": round(100.0 * len(within) / n_variants, 1) if n_variants else 0.0,
+                "variants_left": left,
+                "sims_left": left * n_runs,
+                # Shards above the current target, left by a session that ran a
+                # larger grid. summarise_arm still counts them.
+                "beyond_target": len(beyond),
+                "sec_per_variant": np.nan,
+                "hours_left": np.nan,
+                "status": "complete" if left <= 0 else ("not started" if not within else "in progress"),
+            }
+            cost_path = directory / "cost.csv"
+            if cost_path.exists():
+                cost = pd.read_csv(cost_path)
+                if len(cost):
+                    per_variant = float((cost["build_sec"] + cost["run_sec"]).mean())
+                    row["sec_per_variant"] = round(per_variant, 1)
+                    row["hours_left"] = round(max(left, 0) * per_variant / 3600.0, 2)
+            rows.append(row)
+
+    report = pd.DataFrame(rows)
+    if verbose and len(report):
+        sims_done = int(report["sims_done"].sum())
+        sims_target = int(report["sims_target"].sum())
+        pct = 100.0 * sims_done / sims_target if sims_target else 0.0
+        n_complete = int((report["status"] == "complete").sum())
+
+        print(f"Progress report — {results_dir}")
+        print(f"  {sims_done:,} / {sims_target:,} simulations  ({pct:.1f}% of goal)")
+        print(f"  {int(report['variants_done'].sum()):,} / {int(report['variants_target'].sum()):,} "
+              f"variants   |   arms complete: {n_complete}/{len(report)}")
+
+        # A 40-cell text bar, so progress is legible without reading the table.
+        filled = int(round(pct / 2.5))
+        print(f"  [{'#' * filled}{'.' * (40 - filled)}]")
+
+        hours = report["hours_left"].dropna()
+        if n_complete == len(report):
+            print("  STATUS: DONE — every arm has reached n_variants.")
+        elif len(hours):
+            total = float(hours.sum())
+            covered = "all" if len(hours) == len(report) else f"{len(hours)}/{len(report)}"
+            print(f"  STATUS: IN PROGRESS — ~{total:,.1f}h left ({covered} arm(s) timed)")
+            if total > 11:
+                print(f"          ~{total / 11:.1f} more Colab sessions at ~11h each. "
+                      "Keep ACCUMULATE = True and re-run,")
+                print("          or split the work with VARIANT_SLICE across machines.")
+        else:
+            print("  STATUS: IN PROGRESS — no timing data yet (no variant has finished).")
+
+        if int(report["beyond_target"].sum()):
+            print(f"  NOTE: {int(report['beyond_target'].sum())} shard(s) sit above the current "
+                  "n_variants and are still counted by summarise_arm/check_variance.")
+    return report
+
+
+def parameter_coverage(
+    results_dir,
+    networks,
+    methods,
+    n_variants,
+    *,
+    master_seed,
+    uncertainty,
+    n_runs,
+    proportion_edges_max=0.1,
+    verbose=True,
+):
+    """Which parameter settings are banked, and which are still pending.
+
+    One row per planned variant: its seed, the parameters it draws, and whether
+    its shard is on disk. Derived from the seed sequences via
+    :func:`draw_setting_params`, **not** from the shards — ``build_setting``
+    draws its parameters before constructing the variant graph, so a pending
+    variant's parameters are knowable without paying to build it. The table is
+    therefore a plan for the entire grid, not a report on the finished part, and
+    it costs one directory listing per arm.
+
+    Use it to see whether the settings already banked span the intended range —
+    a session stopped halfway, or a `variant_slice` claimed by another machine,
+    both leave gaps that a bare count of completed variants would hide.
+    """
+    results_dir = Path(results_dir)
+    rows = []
+    for label, _ in networks:
+        for method in methods:
+            done = completed_variants(arm_dir(results_dir, label, method))
+            sequences = variant_sequences(master_seed, label, method, n_variants)
+            for i in range(n_variants):
+                variation_seed, _ = variant_seeds(sequences[i], n_runs)
+                drawn = draw_setting_params(
+                    variation_seed,
+                    uncertainty=uncertainty,
+                    proportion_edges_max=proportion_edges_max,
+                )
+                rows.append({
+                    "network": label,
+                    "method": method,
+                    "variant_index": i,
+                    "variation_seed": variation_seed,
+                    "uncertainty": drawn["uncertainty"],
+                    "proportion_edges": drawn["proportion_edges"],
+                    "done": i in done,
+                })
+
+    coverage = pd.DataFrame(rows)
+    if verbose and len(coverage):
+        swept = [
+            c for c in ("uncertainty", "proportion_edges")
+            if coverage[c].nunique() > 1
+        ]
+        print(f"Parameter coverage — {int(coverage['done'].sum()):,} of "
+              f"{len(coverage):,} planned variants banked")
+        if not swept:
+            print("  (no parameter is swept in this option — every variant shares one setting)")
+        for col in swept:
+            done_vals = coverage.loc[coverage["done"], col]
+            allv = coverage[col]
+            print(f"  {col}: planned [{allv.min():.6g}, {allv.max():.6g}]")
+            if len(done_vals):
+                # Quartile occupancy of the planned range: a banked set that
+                # fills only the low quartiles means the sweep is not yet
+                # representative, however healthy the raw count looks.
+                edges = np.linspace(allv.min(), allv.max(), 5)
+                counts = [int(((done_vals >= edges[q]) & (done_vals <= edges[q + 1])).sum())
+                          for q in range(4)]
+                print(f"    banked [{done_vals.min():.6g}, {done_vals.max():.6g}]  "
+                      f"quartile occupancy {counts}")
+            else:
+                print("    banked: none yet")
+
+        pending = coverage.loc[~coverage["done"]]
+        if len(pending):
+            per_arm = pending.groupby(["network", "method"])["variant_index"]
+            print(f"  {len(pending):,} pending; next index per arm: "
+                  + ", ".join(f"{n}/{m}={int(v.min())}" for (n, m), v in per_arm))
+    return coverage
