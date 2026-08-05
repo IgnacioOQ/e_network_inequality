@@ -422,20 +422,6 @@ def check_fingerprint(
 
     saved = json.loads(path.read_text())
 
-    # ── A stamp with no shards behind it is not a study ─────────────────────
-    # The fingerprint is written before the first unit runs, so any session that
-    # died between the two — a Colab disconnect, an interrupted run cell, a
-    # notebook opened and abandoned — leaves a stamp describing work that was
-    # never done. Refusing against it blocks the next session over a study that
-    # does not exist, and on a multi-day run that death is routine rather than
-    # exceptional. There is nothing here for a conflict to protect, so adopt
-    # this session's configuration. The refusal below stays fully in force the
-    # moment even one variant is banked.
-    if not _banked_units(results_dir):
-        path.write_text(json.dumps(current, indent=2))
-        print("  Existing stamp had no completed variants — re-stamped for this configuration.")
-        return current
-
     # ── Identity keys must match, or we refuse (without touching anything) ───
     differing = [k for k in ("schema",) + IDENTITY_KEYS
                  if k in current and saved.get(k) != current.get(k)]
@@ -444,13 +430,29 @@ def check_fingerprint(
             f"    {k}:  on disk {saved.get(k)!r}   ->   this session {current.get(k)!r}"
             for k in differing
         )
+        # An earlier revision auto-re-stamped when no shards were found, on the
+        # reasoning that a stamp with no work behind it protects nothing. That
+        # is true, but it cannot be acted on: this count comes from a directory
+        # listing, and a cloud-mounted filesystem (Drive under Colab) can report
+        # an empty or partial listing for a directory holding thousands of
+        # files. Acting on a false zero would silently adopt a conflicting
+        # config over a completed study — the precise failure this guard exists
+        # to prevent. So report the observation and let a human judge it.
+        hint = ""
+        if not _banked_units(results_dir):
+            hint = (
+                "\n  NOTE: no completed variants are visible here, so this stamp may be left over "
+                "from a\n  session that died before finishing its first variant. Confirm with a "
+                "directory listing\n  before trusting that — a cloud-mounted filesystem can report "
+                "an empty or partial\n  listing for a directory that is not actually empty."
+            )
         raise ValueError(
             "Configuration conflict — this session describes a different study "
             f"from the one already in\n  {results_dir}\n{lines}\n"
             "  NOTHING HAS BEEN DELETED. Either restore the values shown on disk, "
             "or set ACCUMULATE = False\n"
             "  to start this configuration from scratch (which discards that "
-            "directory)."
+            f"directory).{hint}"
         )
 
     # ── Extent keys may grow ─────────────────────────────────────────────────
