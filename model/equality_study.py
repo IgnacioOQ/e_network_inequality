@@ -17,15 +17,19 @@ with ``n_variants`` distinct network variants per (network, arm) cell and
 setting and differ only in their simulation seed — which is exactly what makes
 :func:`check_variance` a real test of the seeding rather than a formality.
 
-Every arm is density-preserving, so density is constant across the whole study
-and the manipulated dimensions are degree equality and clustering:
+Both arms are density-preserving, so density is constant across the whole study
+and the manipulated dimension is degree equality:
 
 ===============  ==========================================  ====================
 Arm              Mechanism                                   Invariant
 ===============  ==========================================  ====================
 randomization    rewire k random edges (remove one/add one)  ``|E|``
-generate_equalize_variant rewire k triangle edges toward equality     ``|E|``
+equalize         rewire k triangle edges toward equality     ``|E|``
 ===============  ==========================================  ====================
+
+The notebooks set ``INCLUDE_RANDOMIZATION = False``, so ``equalize`` is the only
+arm that runs by default. Clustering arms once lived here and were removed; no
+arm manipulates clustering any more.
 
 Reproducibility
 ---------------
@@ -64,7 +68,7 @@ from model.vectorized_simulation_functions import run_vectorized_simulation_with
 from networks.variation_methods import generate_network_variant, randomize_network, generate_equalize_variant
 from utils.network_utils import network_statistics
 
-# The four density-preserving arms. Density arms ('densify', 'densify_fixed')
+# The two density-preserving arms. Density arms ('densify', 'densify_fixed')
 # belong to "2. GColab Simulations.ipynb" and are deliberately absent here.
 METHODS = ("randomization", "equalize")
 
@@ -165,10 +169,10 @@ def build_setting(
     — options 1 and 2) or a ``(lo, hi)`` pair drawn uniformly per setting
     (option 3, the phase-transition sweep).
 
-    `proportion_edges` is the intensity knob shared by all arms: the
-    fraction of edges rewired for randomization/equalize. The
-    1/3 cap exists because `equalize` samples that many triangles and raises
-    "Sample larger than population" beyond it.
+    `proportion_edges` is the intensity knob shared by both arms: the fraction
+    of edges rewired. The `proportion_edges_max` cap (0.1 in the notebooks)
+    exists because `equalize` samples that many triangles and raises "Sample
+    larger than population" beyond it.
 
     Returns the parameter dict consumed by
     :func:`run_vectorized_simulation_with_params`, carrying the variant under
