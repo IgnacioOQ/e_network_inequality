@@ -357,6 +357,17 @@ IDENTITY_KEYS = (
 EXTENT_KEYS = ("n_variants", "methods", "skip_arms")
 
 
+def _banked_units(results_dir):
+    """How many variant shards actually exist under `results_dir`, across all arms.
+
+    Counted by directory listing, so it stays cheap on a finished study.
+    """
+    results_dir = Path(results_dir)
+    if not results_dir.is_dir():
+        return 0
+    return sum(len(completed_variants(d)) for d in results_dir.iterdir() if d.is_dir())
+
+
 def check_fingerprint(
     results_dir,
     config,
@@ -410,6 +421,20 @@ def check_fingerprint(
         return current
 
     saved = json.loads(path.read_text())
+
+    # ── A stamp with no shards behind it is not a study ─────────────────────
+    # The fingerprint is written before the first unit runs, so any session that
+    # died between the two — a Colab disconnect, an interrupted run cell, a
+    # notebook opened and abandoned — leaves a stamp describing work that was
+    # never done. Refusing against it blocks the next session over a study that
+    # does not exist, and on a multi-day run that death is routine rather than
+    # exceptional. There is nothing here for a conflict to protect, so adopt
+    # this session's configuration. The refusal below stays fully in force the
+    # moment even one variant is banked.
+    if not _banked_units(results_dir):
+        path.write_text(json.dumps(current, indent=2))
+        print("  Existing stamp had no completed variants — re-stamped for this configuration.")
+        return current
 
     # ── Identity keys must match, or we refuse (without touching anything) ───
     differing = [k for k in ("schema",) + IDENTITY_KEYS
