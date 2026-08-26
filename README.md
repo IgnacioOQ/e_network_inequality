@@ -73,6 +73,29 @@ To validate the models against real-world scientific dynamics, the project incor
     - Removal of self-loops.
 - **Purpose**: These networks serve as realistic topologies for running the belief dynamics simulations, allowing for the comparison of theoretical predictions with historical consensus shifts.
 
+> ### ⚠ Collaborators: protect your raw data before your next pull
+>
+> The ~150 MB of raw OpenAlex dumps (`networks/citation_data/*_works.pkl`) were untracked on
+> 2026-08-26. They are now gitignored, and the *derived* networks the studies actually use
+> (`pud_network.pkl`, `tobacco_network.pkl`, `ego_network.pkl`) remain tracked and are unaffected.
+>
+> **The commit that untracked them will delete your local copies the first time you pull** — that is
+> how git applies a deletion, and no `.gitignore` entry can prevent it. This was verified, not
+> assumed. Back them up first:
+>
+> ```bash
+> mkdir -p ~/enq_raw_data_backup
+> cp networks/citation_data/*_works.pkl ~/enq_raw_data_backup/   # if you have them
+> git pull
+> cp ~/enq_raw_data_backup/*_works.pkl networks/citation_data/   # put them back
+> ```
+>
+> This is a **one-time** hazard. Once the files sit in your working tree as untracked-and-ignored,
+> git no longer sees them: they survive `git pull`, `git reset --hard`, and `git clean -fd`
+> (only `git clean -fdx`, which deliberately removes ignored files, would delete them). If you
+> have already pulled and lost them, regenerate them with
+> `1. Citation Data and Networks Generation.ipynb` — that is why they are safe to untrack.
+
 ## Installation
 - status: active
 
