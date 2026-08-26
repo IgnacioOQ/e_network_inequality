@@ -49,6 +49,33 @@ helpfully re-adds the excluded material undoes the boundary.
 - Absolute home-directory paths in committed cell outputs (three collaborators' machines) were
   replaced with `/Users/<user>`.
 
+## Repository history — a settled decision, not an oversight
+
+**The raw OpenAlex dumps remain in git history, and that is deliberate (decided 2026-08-26).**
+`networks/citation_data/*_works.pkl` were untracked, so they appear in no checkout of any commit
+from `d00ee0b` onward. They are still reachable in history, which is why GitHub reports the
+repository at ~586 MB while a checkout is ~20 MB.
+
+Purging them would mean `git filter-repo` plus force-replacing the remote. That was considered and
+**declined**, for two reasons:
+
+1. It rewrites *every* ref. The repository's 24 other branches would have to go with it — they
+   point at the old objects and would otherwise keep the data reachable. Those branches were
+   explicitly left alone.
+2. Both co-authors are actively pushing and would each have to re-clone.
+
+Do not "clean this up" without raising it first. The cost of the rewrite is coordination, not
+disk, and the current state is correct for every practical purpose: nobody who clones gets the
+150 MB in their working tree.
+
+### The one-time hazard when a collaborator first pulls
+
+Git applies the untracking commit as a deletion, so the first pull past `d00ee0b` **removes a
+collaborator's local `*_works.pkl` from disk**. No `.gitignore` entry prevents this; it is verified
+behaviour, not a theory, and it already destroyed one working copy locally before being caught.
+The README carries the backup recipe. After that first pull the files are untracked and ignored,
+and they survive `pull`, `reset --hard` and `clean -fd` — only `git clean -fdx` removes them.
+
 ## Remaining steps before submission
 
 - [ ] **Add a data-and-code-availability statement to the paper.** The current draft never cites
