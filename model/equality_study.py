@@ -301,15 +301,33 @@ def completed_variants(directory):
     return done
 
 
-def load_arm(directory):
-    """Concatenate every shard in an arm directory."""
+def _variant_index(path):
+    """The variant index encoded in a shard filename, or None if it is not one."""
+    if not path.name.startswith("variant_") or path.suffix not in _SHARD_EXTS:
+        return None
+    try:
+        return int(path.stem.split("_")[1])
+    except (IndexError, ValueError):
+        return None
+
+
+def load_arm(directory, variants=None):
+    """Concatenate the shards in an arm directory.
+
+    ``variants`` restricts the read to those variant indices. That is what makes
+    aggregation resumable: a caller holding a summary of the variants it read
+    last session can ask for only the ones banked since, instead of paying to
+    re-read a million rows across a Drive mount to learn what it already knows.
+    ``None`` (the default) reads the whole arm.
+    """
     directory = Path(directory)
-    paths = sorted(
-        p for p in directory.iterdir() if p.name.startswith("variant_") and p.suffix in _SHARD_EXTS
-    )
-    if not paths:
+    indexed = [(i, p) for p in directory.iterdir() if (i := _variant_index(p)) is not None]
+    if variants is not None:
+        wanted = {int(v) for v in variants}
+        indexed = [(i, p) for i, p in indexed if i in wanted]
+    if not indexed:
         return pd.DataFrame()
-    return pd.concat([read_shard(p) for p in paths], ignore_index=True)
+    return pd.concat([read_shard(p) for _, p in sorted(indexed)], ignore_index=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -747,14 +765,22 @@ VARIANT_COVARIATES = (
 )
 
 
-def summarise_arm(directory, outcomes=OUTCOMES):
+def summarise_arm(directory, outcomes=OUTCOMES, variants=None):
     """One row per variant: its covariates plus aggregates over its replicates.
 
     This is the analysis-facing table. A finished option is twelve million
     replicate rows but only twelve thousand variant rows, and the variant is the
     unit at which the equality and clustering covariates actually vary.
+
+    ``variants`` is passed through to :func:`load_arm`, summarising only those
+    variant indices. Because every aggregate here is computed *within* a variant
+    — the groupby key is ``(network, method, variant_index)`` — a subset
+    produces exactly the rows it would have produced as part of the whole, so
+    summaries built over several sessions concatenate without qualification.
+    That would not hold for an aggregate taken across variants, and nothing here
+    may become one.
     """
-    df = load_arm(directory)
+    df = load_arm(directory, variants=variants)
     if df.empty:
         return pd.DataFrame()
 
