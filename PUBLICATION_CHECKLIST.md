@@ -15,7 +15,6 @@ The full pre-cleanup state is preserved on the annotated tag **`pre-cleanup-2026
 | Excluded | Why | Reversible? |
 |:---|:---|:---|
 | `*.pdf`, `manuscript/`, `slides/` | Publisher owns the accepted and published versions; drafts are correspondence, not the scientific record | Link the DOI or a preprint instead |
-| `networks/citation_data/*_works.pkl` (~150 MB) | Raw OpenAlex API responses; regenerated end-to-end by `1. Citation Data and Networks Generation.ipynb`. The derived networks are tracked instead | Yes — rerun notebook 1 |
 | `.claude/`, `.vscode/`, `AI_AGENTS/`, `docs/` | Agent and editor config, local absolute paths, internal workflow notes | n/a |
 | `.env` | OpenAlex polite-pool email / API credentials. `.env.example` shows the shape | n/a |
 
@@ -68,13 +67,26 @@ Do not "clean this up" without raising it first. The cost of the rewrite is coor
 disk, and the current state is correct for every practical purpose: nobody who clones gets the
 150 MB in their working tree.
 
-### The one-time hazard when a collaborator first pulls
+### Raw data is tracked on purpose
 
-Git applies the untracking commit as a deletion, so the first pull past `d00ee0b` **removes a
-collaborator's local `*_works.pkl` from disk**. No `.gitignore` entry prevents this; it is verified
-behaviour, not a theory, and it already destroyed one working copy locally before being caught.
-The README carries the backup recipe. After that first pull the files are untracked and ignored,
-and they survive `pull`, `reset --hard` and `clean -fd` — only `git clean -fdx` removes them.
+`networks/citation_data/*_works.pkl` (~150 MB) are **tracked**. They were untracked on 2026-08-26
+and re-tracked the same day, once two things became clear:
+
+1. **They are not regenerable.** OpenAlex is a living database. Re-running notebook 1 today returns
+   a different set of records and does not reproduce the April-2026 networks the paper reports. The
+   dumps are the only surviving snapshot of the inputs behind the published results — precisely the
+   artifact a reproducibility reviewer asks for.
+2. **Untracking them deletes collaborators' copies.** Git applies the untracking commit as a
+   deletion, removing the file from the working tree of everyone who pulls. Verified against a
+   throwaway clone: a byte-identical copy is deleted silently; a locally modified one makes git
+   refuse the checkout. No `.gitignore` entry prevents either outcome. One local working copy was
+   destroyed this way before it was caught.
+
+Re-tracking cost nothing in repository size: the blobs were already in history (that purge was
+declined, see above), so re-adding them introduced no new objects. The only difference is ~150 MB
+in the working tree.
+
+**Do not untrack these again** without a plan for both points.
 
 ## Remaining steps before submission
 

@@ -54,7 +54,9 @@ all three blocks would otherwise write to the same three filenames and only the 
 | `zollman_2007.csv` | transcribed from Zollman (2007) | replication baseline referenced in §2.2 |
 
 These CSVs are committed deliberately: the runs behind them are multi-day Colab jobs, and the
-CSVs are the evidentiary basis for the published regression figures. Intermediate `.pkl` / `.npy`
+CSVs are the evidentiary basis for the published regression figures. The raw OpenAlex dumps behind
+the networks are likewise committed — see `PUBLICATION_CHECKLIST.md`; they are an April-2026
+snapshot that a fresh API query no longer reproduces. Intermediate `.pkl` / `.npy`
 simulation state is not committed — regenerate it.
 
 All three conditions now have a committed aggregate; each holds the same 19-column contract that

@@ -73,28 +73,23 @@ To validate the models against real-world scientific dynamics, the project incor
     - Removal of self-loops.
 - **Purpose**: These networks serve as realistic topologies for running the belief dynamics simulations, allowing for the comparison of theoretical predictions with historical consensus shifts.
 
-> ### ⚠ Collaborators: protect your raw data before your next pull
+> ### Raw data is tracked — nothing to do before you pull
 >
-> The ~150 MB of raw OpenAlex dumps (`networks/citation_data/*_works.pkl`) were untracked on
-> 2026-08-26. They are now gitignored, and the *derived* networks the studies actually use
-> (`pud_network.pkl`, `tobacco_network.pkl`, `ego_network.pkl`) remain tracked and are unaffected.
+> The raw OpenAlex dumps (`networks/citation_data/*_works.pkl`, ~150 MB) are **tracked**, alongside
+> the derived networks. They were briefly untracked on 2026-08-26 and re-tracked the same day.
 >
-> **The commit that untracked them will delete your local copies the first time you pull** — that is
-> how git applies a deletion, and no `.gitignore` entry can prevent it. This was verified, not
-> assumed. Back them up first:
+> Two reasons they stay tracked. They are an **April-2026 snapshot**: OpenAlex is a living
+> database, so re-running `1. Citation Data and Networks Generation.ipynb` today returns different
+> records and does not reproduce the published networks. And untracking them makes git delete a
+> collaborator's local copy on their next pull — that is how git applies a recorded deletion, and no
+> `.gitignore` entry prevents it.
+>
+> If you pulled during that window and lost your copies, restore them exactly — no OpenAlex call,
+> byte-identical:
 >
 > ```bash
-> mkdir -p ~/enq_raw_data_backup
-> cp networks/citation_data/*_works.pkl ~/enq_raw_data_backup/   # if you have them
-> git pull
-> cp ~/enq_raw_data_backup/*_works.pkl networks/citation_data/   # put them back
+> git checkout pre-cleanup-2026-08-26 -- networks/citation_data/
 > ```
->
-> This is a **one-time** hazard. Once the files sit in your working tree as untracked-and-ignored,
-> git no longer sees them: they survive `git pull`, `git reset --hard`, and `git clean -fd`
-> (only `git clean -fdx`, which deliberately removes ignored files, would delete them). If you
-> have already pulled and lost them, regenerate them with
-> `1. Citation Data and Networks Generation.ipynb` — that is why they are safe to untrack.
 
 ## Installation
 - status: active
