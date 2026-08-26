@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# This file is a script, not an importable module: the analysis below runs at
+# module level, so importing it would execute a full simulation (minutes) and
+# write plots into the working tree. Fail fast and say so instead.
+if __name__ != "__main__":
+    raise ImportError(
+        f"{__name__} is an analysis script, not a library module. "
+        f"Run it directly: python {__file__}"
+    )
+
 # # Convergence Studies for Vectorized Beta Agent
 #
 # Shows how the mean belief change (prior vs posterior) decreases over time steps,

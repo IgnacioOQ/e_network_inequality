@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# This file is a script, not an importable module: the analysis below runs at
+# module level, so importing it would execute a full simulation (minutes) and
+# write plots into the working tree. Fail fast and say so instead.
+if __name__ != "__main__":
+    raise ImportError(
+        f"{__name__} is an analysis script, not a library module. "
+        f"Run it directly: python {__file__}"
+    )
+
 # Reference (local, single-network) driver for the CHOICE-STABILITY stopping
 # criterion: stop when *every* agent's chosen theory (greedy argmax of its
 # credence, i.e. credences[:,1] > credences[:,0] since epsilon=0) has been
@@ -45,7 +54,6 @@ CROSS_CHECK_RUNS = 5   # runs to also execute in native mode as an equivalence c
 
 output_path = os.path.join(os.path.dirname(__file__), 'choice_stability_stopping.csv')
 
-
 def offline_stop(flip_history, window, max_steps):
     """Derive (stop_step, truth_share, stabilized) for a window from a
     record_choice_flips history [(step, truth_share), ...] (baseline entry at
@@ -57,7 +65,6 @@ def offline_stop(flip_history, window, max_steps):
         if steps[i + 1] - steps[i] >= window:
             return steps[i] + window, shares[i], True
     return max_steps, shares[-1] if shares else np.nan, False
-
 
 rows = []
 

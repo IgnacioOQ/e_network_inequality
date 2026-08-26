@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# This file is a script, not an importable module: the analysis below runs at
+# module level, so importing it would execute a full simulation (minutes) and
+# write plots into the working tree. Fail fast and say so instead.
+if __name__ != "__main__":
+    raise ImportError(
+        f"{__name__} is an analysis script, not a library module. "
+        f"Run it directly: python {__file__}"
+    )
+
 # Sweep tolerance values and compare final simulation outputs.
 # See STOPPING_CONDITION_ANALYSIS.md §5 Script 1.
 
@@ -31,7 +40,6 @@ TOLERANCES = [1e-1, 1e-2, 5e-3, 1e-3, 1e-4, 1e-5, 1e-6]
 
 output_path = os.path.join(os.path.dirname(__file__), 'tolerance_sensitivity.csv')
 
-
 def run_single(network, tolerance, tstep, seed):
     model = VectorizedModel(
         network=network,
@@ -61,7 +69,6 @@ def run_single(network, tolerance, tstep, seed):
         "mean_credence_correct": mean_credence_correct,
         "fraction_consensus": fraction_consensus,
     }
-
 
 rows = []
 configs = [(tol, False) for tol in TOLERANCES] + [(None, True)]

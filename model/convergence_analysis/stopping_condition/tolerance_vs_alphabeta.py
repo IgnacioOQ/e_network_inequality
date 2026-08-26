@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# This file is a script, not an importable module: the analysis below runs at
+# module level, so importing it would execute a full simulation (minutes) and
+# write plots into the working tree. Fail fast and say so instead.
+if __name__ != "__main__":
+    raise ImportError(
+        f"{__name__} is an analysis script, not a library module. "
+        f"Run it directly: python {__file__}"
+    )
+
 # Compare stopping on credences (current behaviour) vs. stopping on raw
 # alpha/beta parameters (stricter criterion). Same tolerance sweep for both.
 # See STOPPING_CONDITION_ANALYSIS.md §5 Script 3.
@@ -32,7 +41,6 @@ TOLERANCES = [1e-2, 5e-3, 1e-3, 1e-4, 1e-5, 1e-6]
 
 output_path = os.path.join(os.path.dirname(__file__), 'alphabeta_stopping_comparison.csv')
 
-
 def run_credence_stopping(network, tolerance, seed):
     """Criterion A: current behaviour — allclose on credences."""
     model = VectorizedModel(
@@ -48,7 +56,6 @@ def run_credence_stopping(network, tolerance, seed):
     model.run_simulation(number_of_steps=MAX_STEPS, show_bar=False)
     truth_share = np.mean(model.credences[:, 1] > model.credences[:, 0])
     return model.n_steps, truth_share
-
 
 def run_alphabeta_stopping(network, tolerance, seed):
     """Criterion B: allclose on alphas_betas — stricter proposed criterion.
@@ -75,7 +82,6 @@ def run_alphabeta_stopping(network, tolerance, seed):
 
     truth_share = np.mean(model.credences[:, 1] > model.credences[:, 0])
     return model.n_steps, truth_share
-
 
 rows = []
 total = len(TOLERANCES) * N_RUNS

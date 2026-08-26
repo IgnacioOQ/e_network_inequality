@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# This file is a script, not an importable module: the analysis below runs at
+# module level, so importing it would execute a full simulation (minutes) and
+# write plots into the working tree. Fail fast and say so instead.
+if __name__ != "__main__":
+    raise ImportError(
+        f"{__name__} is an analysis script, not a library module. "
+        f"Run it directly: python {__file__}"
+    )
+
 # After the model stops (default tol=5e-3), resume from that exact state and
 # measure how much credences drift. Directly tests whether the stopping point
 # is truly stable. See STOPPING_CONDITION_ANALYSIS.md §5 Script 2.
@@ -34,7 +43,6 @@ CONTINUATION_STEPS = [10_000, 50_000, 100_000]
 
 output_path = os.path.join(os.path.dirname(__file__), 'post_stopping_drift.csv')
 
-
 def resume_from_state(network, alphas_betas_saved, credences_saved, extra_steps, uncertainty):
     """Create a fresh model and inject saved state, then run extra_steps."""
     model = VectorizedModel(
@@ -53,7 +61,6 @@ def resume_from_state(network, alphas_betas_saved, credences_saved, extra_steps,
     model.credences = credences_saved.copy()
     model.run_simulation(number_of_steps=extra_steps, show_bar=False)
     return model.credences.copy()
-
 
 rows = []
 
