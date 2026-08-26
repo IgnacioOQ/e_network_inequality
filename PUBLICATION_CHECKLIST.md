@@ -38,6 +38,16 @@ helpfully re-adds the excluded material undoes the boundary.
   (`STOPPING_CONDITION_ANALYSIS.md`, the hypothesis documents) were kept: they are the
   justification for the stability window of 100 and the horizon of 100,000 used in §6.1.
 - `setup.py` — superseded by `pyproject.toml`.
+- `3. Results Data Analysis.ipynb` cells 58–171 — the author-labelled `# Older stuff` /
+  `# IGNORE THE REST` / `# Archive` tail: 114 cells and 6.9 MB of stale outputs, including
+  redefinitions of functions the paper cells already define and a read from a `data/` directory
+  that is not in the repository.
+- `4. Network-Visualizations.ipynb` — one code cell containing a natural-language prompt
+  (`make all of these only consider outdegrees…`) that had been executed and committed as a
+  `SyntaxError`, plus committed tracebacks and pip-install logs. That notebook still needs a
+  substantive pass; see the `NetworkInequality` item below.
+- Absolute home-directory paths in committed cell outputs (three collaborators' machines) were
+  replaced with `/Users/<user>`.
 
 ## Remaining steps before submission
 
@@ -56,6 +66,11 @@ helpfully re-adds the excluded material undoes the boundary.
       index, so notebook 4 cannot be run by a reader. Vendor the helper in or drop the import.
       (`utils/sa_network_variation_directed.py`, which had the same problem and no remaining
       consumer, was removed in the cleanup.)
+- [ ] **Decide whether options 2 and 3 need per-network regression figures.** Their `filename=`
+      arguments are commented out (cells 40–42, 54–56), so only option 1 writes
+      `pud_`/`tobacco_`/`ego_regression_plot.png`; options 2 and 3 appear only as grid figures. If
+      you re-enable them, give them condition-specific filenames — all three blocks currently target
+      the same three names.
 - [ ] **Run the Restart-and-Run-All sweep** over the surviving notebooks (see `HOUSEKEEPING.md`),
       confirming they execute against a clean `.venv` from `requirements.txt`.
 - [ ] **Decide on the `2b. … Harder` condition** — its summary CSV is not committed and it is not

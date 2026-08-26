@@ -16,9 +16,9 @@ this file is the only surviving link between the published figures and the code.
 | `pud_network_black.png` | not in repo — see *Gaps* | Figure 1 panel / §2.1 | **No** |
 | `tobacco_network_black.png` | not in repo — see *Gaps* | §4 network illustrations | **No** |
 | `tobacco_variant_network_black.png` | not in repo — see *Gaps* | §5 network variants | **No** |
-| `pud_regression_plot.png` | `3. Results Data Analysis.ipynb` | §6.2 regression results (PUD) | Yes, but see *filename collision* |
-| `tobacco_regression_plot.png` | `3. Results Data Analysis.ipynb` | §6.2 regression results (tobacco) | Yes, but see *filename collision* |
-| `ego_regression_plot.png` | `3. Results Data Analysis.ipynb` | §6.2 regression results (ego depletion) | Yes, but see *filename collision* |
+| `pud_regression_plot.png` | `3. Results Data Analysis.ipynb`, cell 25 | §6.2 regression results (PUD), **option 1 only** | Yes |
+| `tobacco_regression_plot.png` | `3. Results Data Analysis.ipynb`, cell 26 | §6.2 regression results (tobacco), **option 1 only** | Yes |
+| `ego_regression_plot.png` | `3. Results Data Analysis.ipynb`, cell 27 | §6.2 regression results (ego depletion), **option 1 only** | Yes |
 | `hard_problems_regression_grid.png` | `3. Results Data Analysis.ipynb`, cell 28 | §6.2 overview, option 1 (literature parameters) | Yes |
 | `super_hard_problems_regression_grid.png` | `3. Results Data Analysis.ipynb`, cell 43 | §6.2 overview, option 2 (harder) | Yes |
 | `varying_easiness_regression_grid.png` | `3. Results Data Analysis.ipynb`, cell 57 | §6.2 overview, option 3 (phase transition) | Yes |
@@ -29,24 +29,20 @@ the notebook for a `.png` name finds nothing — the name appears only as a `fil
 This table is the navigation path from paper to code. Notebook 3 also writes to `results/` only
 when `RUNNING_LOCALLY` is true; on Colab it targets `STUDY_ROOT / 'figures'`.
 
-**⚠ Filename collision across the three conditions.** The notebook runs the same three per-network
-regression plots once per experimental condition, each time under the *same* filename:
+**Only option 1 writes the per-network regression figures.** All three condition blocks call the
+same plotting helper, but the `filename=` argument is *commented out* in options 2 and 3:
 
-| Cells | Condition | Per-network figures written | Grid figure written |
+| Cells | Condition | Per-network figures written? | Grid figure |
 |:---|:---|:---|:---|
-| 25–28 | option 1 — literature | `pud_` / `tobacco_` / `ego_regression_plot.png` | `hard_problems_regression_grid.png` |
-| 40–43 | option 2 — harder | *the same three filenames, overwritten* | `super_hard_problems_regression_grid.png` |
-| 54–57 | option 3 — phase transition | *the same three filenames, overwritten again* | `varying_easiness_regression_grid.png` |
+| 25–28 | option 1 — literature | Yes — `pud_` / `tobacco_` / `ego_regression_plot.png` | `hard_problems_regression_grid.png` |
+| 40–43 | option 2 — harder | No — `# filename=...` is commented out | `super_hard_problems_regression_grid.png` |
+| 54–57 | option 3 — phase transition | No — `# filename=...` is commented out | `varying_easiness_regression_grid.png` |
 
-A full top-to-bottom run therefore leaves `results/*_regression_plot.png` holding **option 3**
-output, and the option 1 and option 2 versions of those figures are destroyed. The three grid
-figures are unaffected — each has a distinct name.
-
-**Which condition the committed `*_regression_plot.png` files represent is not determinable from
-the repository.** They were last written on 2026-08-26 12:27, before the grid figures (17:26), so
-they are not from the same run. Anyone using them in the paper should re-run the intended condition
-and confirm, or give the three per-condition variants distinct filenames
-(e.g. `pud_regression_plot__option1.png`) so that a single run produces all nine.
+So the three unsuffixed `*_regression_plot.png` files in this folder are **option 1 (literature
+parameters)** output, and nothing overwrites them. Options 2 and 3 are represented in the repository
+only by their grid figures. If the paper needs per-network figures for those conditions too,
+uncomment the `filename=` arguments — and give them condition-specific names at the same time, since
+all three blocks would otherwise write to the same three filenames and only the last would survive.
 
 ## Data
 
@@ -68,6 +64,12 @@ option 2 is read with a hard-coded `pd.read_csv("results/option2_harder_summary.
 option 2 cell works locally but not on Colab.
 
 ## Gaps
+
+`3. Results Data Analysis.ipynb` was trimmed on 2026-08-26 to cells 0–57, the option 1/2/3 analysis
+that the paper reports. The 114 cells that followed — headed `# Older stuff`, `# IGNORE THE REST`
+and `# Archive`, and holding 6.9 MB of the notebook's 7.6 MB — were removed; they redefined
+functions the kept cells already define in cells 7–8, and one of them read a `data/` directory that
+is not in the repository. Recover them from the `pre-cleanup-2026-08-26` tag if ever needed.
 
 The four black-and-white network figures were produced outside this repository and their
 generating code was not recovered (the paper's own footnote in §1 records this). They are
