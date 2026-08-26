@@ -15,8 +15,10 @@ This workflow is the routine sanity check for the `e_network_inequality` reposit
 Before running checks, orient yourself:
 
 1. Read [README.md](README.md) — understand the project structure and current status.
-2. Read [TODO_WORKFLOW.md](TODO_WORKFLOW.md) — check for any blocked or in-progress tasks that might affect what to test.
-3. Read [WORKLOG.md](WORKLOG.md) — check the most recent entry to understand what changed since the last housekeeping run.
+2. Read [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md) — what is deliberately excluded from
+   this repository, and what still stands between it and submission. Do not "restore" a gap it
+   documents.
+3. Read the *Latest Run* report at the foot of this file to see what changed since the last run.
 
 **Exit criterion:** You understand the current state of the project and which modules were recently modified.
 
@@ -181,7 +183,8 @@ Review output carefully — some "dead code" may be intentionally kept as API su
 
 ## Phase 6 — Report and Log
 
-After completing the checks, append a brief entry to [WORKLOG.md](WORKLOG.md):
+After completing the checks, replace the *Latest Run* report at the foot of this file (the run
+history lives in git, not in a parallel log file) with:
 
 ```markdown
 ### YYYY-MM-DD: Housekeeping Run
@@ -197,21 +200,21 @@ After completing the checks, append a brief entry to [WORKLOG.md](WORKLOG.md):
 **Notes:** <Any notable findings or fixes applied>
 ```
 
-**Exit criterion:** WORKLOG.md updated with today's run.
+**Exit criterion:** the *Latest Run* report reflects today's run and `last_checked` is bumped.
 
 ---
 
 ## Quick Reference — Housekeeping Checklist
 
 ```
-[ ] Phase 1: README, TODO_WORKFLOW, WORKLOG reviewed
+[ ] Phase 1: README, PUBLICATION_CHECKLIST, latest-run report reviewed
 [ ] Phase 2a: .venv/bin/python -m unittest discover -s testing/unit_tests -v — all pass
 [ ] Phase 2b: Snapshot smoke test — PASSED
 [ ] Phase 3a: Core module imports — OK
 [ ] Phase 3b: Network files loadable — OK
 [ ] Phase 4:  All notebooks parse as valid JSON — OK
 [ ] Phase 5:  (Optional) ruff + vulture checks reviewed
-[ ] Phase 6:  WORKLOG.md updated
+[ ] Phase 6:  Latest Run report updated
 ```
 
 ---
@@ -237,7 +240,7 @@ After completing the checks, append a brief entry to [WORKLOG.md](WORKLOG.md):
 
 ### Notebook integrity
 - **23 of 23** notebooks parse as valid JSON — ✅
-- Up from 21: new since the last run are `A. Choice Stability Stopping Study.ipynb` (52 cells) and `2. GColab Simulations Equality.ipynb` (24 cells).
+- Up from 21: new since the last run are `A. Choice Stability Stopping Study.ipynb` (52 cells) and `2. GColab Simulations Equality.ipynb` (24 cells). *(Both were removed in the 2026-08-26 cleanup; the notebook count is lower now — recount on the next run.)*
 
 ### Phase 5 — code cleanliness
 - `ruff --select F401`: 93 unused imports, unchanged from 2026-05-30. Concentrated in `utils/imports.py` (the intentional re-export hub) and `utils/sa_network_variation_directed.py`. **No action** — removing them would break the re-export surface.
@@ -247,4 +250,5 @@ After completing the checks, append a brief entry to [WORKLOG.md](WORKLOG.md):
 ### Files modified in this session
 - `networks/variation_methods.py`: Removed the duplicate `return G_new` (1-line deletion).
 - `HOUSEKEEPING.md`: This report; `last_checked` bumped to 2026-07-23.
-- `WORKLOG.md`: Appended the 2026-07-23 housekeeping entry.
+- `WORKLOG.md`: Appended the 2026-07-23 housekeeping entry. *(This file was removed in the
+  2026-08-26 cleanup; run history now lives in git.)*

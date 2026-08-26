@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this software or the derived networks, please cite the paper below."
+title: "Inequality and the Reliability of Science — simulation code and empirically grounded networks"
+abstract: >-
+  Agent-based network-epistemology simulations testing the equality effect:
+  whether more equally connected scientific communities are more reliable.
+  Includes the bibliometric network-construction pipeline (OpenAlex), the
+  network variation method, the vectorized Bayesian bandit model, and the
+  statistical analysis behind the paper's figures and tables.
+type: software
+license: MIT
+repository-code: "https://github.com/IgnacioOQ/e_network_inequality"
+keywords:
+  - network epistemology
+  - agent-based modelling
+  - philosophy of science
+  - inequality
+  - bibliometric networks
+  - multi-armed bandits
+authors:
+  # Author order is alphabetical; all authors contributed equally.
+  - family-names: Duijf
+    given-names: Hein
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+  - family-names: Noichl
+    given-names: Max
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+  - family-names: "Ojea Quintana"
+    given-names: Ignacio
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+preferred-citation:
+  type: unpublished
+  title: "Inequality and the Reliability of Science"
+  year: 2026
+  authors:
+    - family-names: Duijf
+      given-names: Hein
+    - family-names: Noichl
+      given-names: Max
+    - family-names: "Ojea Quintana"
+      given-names: Ignacio

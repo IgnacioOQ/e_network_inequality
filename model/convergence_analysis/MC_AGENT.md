@@ -237,7 +237,7 @@ Before any MC analysis code is complete, verify:
 - `notebooks/convergence_analysis/convergence_studies.py`: Existing convergence tracking
 - `notebooks/convergence_analysis/root_influence_analysis.py`: Root node influence studies
 - `src/net_epistemology/core/vectorized_model.py`: Main simulation engine
-- `AI_AGENTS/LINEARIZE_AGENT.md`: Vectorization details
+- `AI_AGENTS/LINEARIZE_AGENT.md`: Vectorization details *(removed in the 2026-08-26 cleanup; see the `pre-cleanup-2026-08-26` tag)*
 
 ## Mathematical Notes
 - status: active

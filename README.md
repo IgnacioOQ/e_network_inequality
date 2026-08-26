@@ -1,6 +1,32 @@
-# Network Epistemology Simulation
+# Inequality and the Reliability of Science — Companion Code
 - status: active
-- owner: user
+- type: reference
+- description: Simulation code, empirically grounded citation networks, and statistical analysis for the paper "Inequality and the Reliability of Science" (Duijf, Noichl & Ojea Quintana).
+
+This repository is the companion code for the paper **"Inequality and the Reliability of Science"**
+by Hein Duijf, Max Noichl and Ignacio Ojea Quintana (author order alphabetical; all authors
+contributed equally).
+
+**The claim under test — the equality effect:** scientific communities are more vulnerable to
+getting trapped in a false consensus when certain results or scientists are too influential.
+Everything else being equal, more equally connected communities should be more reliable. The paper
+evaluates this as a *counterfactual* — had the community been more equally connected, would it have
+been more reliable? — and that requires more than empirical networks alone: it requires
+counterfactual networks that differ in inequality but are otherwise maximally similar to the real
+one. Supplying those is the job of the **network variation method**
+([`networks/variation_methods.py`](networks/variation_methods.py)), the methodological core of this
+repository.
+
+Three strands run through the code: **(1)** building empirically grounded communication networks
+from bibliometric data (peptic ulcer disease, tobacco and health, ego depletion); **(2)** generating
+inequality-varying counterfactual variants of each; **(3)** running Bayesian bandit simulations
+across both and testing statistically whether equality predicts reliability.
+
+The manuscript itself is not tracked here — see [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md)
+for what is deliberately excluded and why.
+
+## What the code does
+- status: active
 
 This project is a simulation framework for agent-based models on various network structures, specifically focusing on network epistemology and theory choice using Bandit problems. It allows for studying how agents update their beliefs in networked environments using Bayesian inference.
 
@@ -83,8 +109,13 @@ what the test suite is exercised against.
     `requirements.txt` — `pyvis` and `graphviz` (`3. Results Data Analysis.ipynb`), `powerlaw`,
     `graphistry` and `colormaps` (`4. Network-Visualizations.ipynb`). Install them on demand.
 
-> **Note:** `setup.py`'s `install_requires` is narrower than `requirements.txt` — it omits
-> `statsmodels`, `joblib`, and `scikit-learn`. Prefer `requirements.txt` for a working environment.
+> **Known gap — `NetworkInequality`.** `utils/network_plot_utils.py` imports
+> `NetworkInequality.edgebundling`, a small package that lives outside this repository (it was
+> written for a separate Hugging Face app) and is on no package index. Importing that module, and
+> therefore running `4. Network-Visualizations.ipynb` end to end, currently fails for anyone but the
+> authors. The simulation and analysis path (notebooks 1, 2a–2d, 3) is unaffected. Resolving this —
+> by vendoring the edge-bundling helper or dropping the dependency — is tracked in
+> [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md).
 
 ## Usage
 - status: active
@@ -94,8 +125,11 @@ what the test suite is exercised against.
 
 To verify the installation and core logic (run from project root):
 ```bash
-.venv/bin/python -m unittest discover -s testing/unit_tests -v
+.venv/bin/python -m pytest testing/unit_tests -q
 ```
+
+`unittest discover -s testing/unit_tests` also works for all but
+`test_equality_study_aggregation.py`, which uses `pytest` fixtures.
 
 For a deeper sanity check (unit tests + import check + network integrity + notebook validation + snapshot smoke test), follow the [Housekeeping Workflow](HOUSEKEEPING.md). Recommended after any non-trivial change to the model or before committing.
 
@@ -108,15 +142,23 @@ two notebooks sharing a number are alternatives at that stage, not sequential st
 | Stage | Notebook | Purpose |
 |:--|:---|:---|
 | 1 | `1. Citation Data and Networks Generation.ipynb` | Fetch data from OpenAlex and build the three empirical citation networks. Needs an API key (see Setup). |
-| 2 | `2. GColab Simulations.ipynb` | Run large-scale simulations on Google Colab — the primary simulation entry point. |
-| 2 | `2. GColab Simulations Equality.ipynb` | Colab variant for the equality and clustering simulations. |
-| 3 | `3. Results Data Analysis.ipynb` | Load simulation outputs, analyse and plot results. |
-| 3 | `3. Local Simulations SA.ipynb` | Local sensitivity-analysis runs, as an alternative to the Colab path. |
-| 4 | `4. Network-Visualizations.ipynb` | Network statistics and visualisations. |
-| A | `A. GColab Simulations Playground.ipynb` | Appendix: experimental runs and sandbox work on Colab. Standalone, may be incomplete. |
+| 2a | `2a. GColab Simulations Equality - Literature.ipynb` | Colab study, literature-standard parameters. |
+| 2b | `2b. GColab Simulations Equality - Harder.ipynb` | Colab study, harder inquiry regime. |
+| 2c | `2c. GColab Simulations Equality - Phase Transition.ipynb` | Colab study, phase-transition regime. |
+| 2d | `2d. GColab Simulations Equality - Aggregation.ipynb` | Aggregates the 2a/2b/2c partial runs into the summary CSVs in `results/`. Resumable across sessions. |
+| 3 | `3. Results Data Analysis.ipynb` | Load the summary CSVs, run the regressions, produce the paper's §6.2 figures. |
+| 4 | `4. Network-Visualizations.ipynb` | Network statistics and visualisations (Figure 1 family). |
 
-For testing and debugging refer to `testing/notebooks/`. For the targeted convergence and
-stopping-condition studies, see `model/convergence_analysis/` (described below).
+Stages 2a–2c are the three parameter conditions of the simulation study reported in §6.1 of the
+paper; they are **alternatives at the same stage, not sequential steps**, and each is a multi-day
+Google Colab job whose partial outputs 2d accumulates. The paper's headline runs use problem
+easiness 0.001, 1,000 experiments per step, a stability window of 100 and a horizon of 100,000
+steps, with 1,000 network variants per empirical network at rewiring probabilities sampled
+uniformly in [0, 10%].
+
+For the convergence work that justifies those stopping parameters, see
+`model/convergence_analysis/` (described below). For the mapping from each committed figure and CSV
+back to the notebook that produced it, see [results/MANIFEST.md](results/MANIFEST.md).
 
 ## Codebase Architecture and Execution Flow
 - status: active
@@ -178,36 +220,40 @@ In both modes the seed actually used is written into `result_dict["seed"]`, so a
 
 ### 3. Notebooks and Where Scripts Live
 - **Root Notebooks**: The high-level orchestrators (`1. Citation Data...` → `4. Network-Visualizations...`), listed under [Running Simulations](#running-simulations) above.
-- **`model/convergence_analysis/`**: Targeted studies of convergence behaviour, organised into four themed subdirectories. Each pairs Colab notebooks with standalone `.py` drivers and a markdown analysis document:
-    - `stopping_condition/` — the largest: seven notebooks, six `.py` drivers (`choice_stability_stopping.py`, `convergence_speed_analysis.py`, `parameter_search.py`, `post_stopping_drift.py`, `stopping_tolerance_sensitivity.py`, `tolerance_vs_alphabeta.py`), plus `STOPPING_CONDITION_ANALYSIS.md` and `CHOICE_STABILITY_STOPPING_PLAN.md`.
+- **`model/convergence_analysis/`**: The methodological groundwork behind the stopping condition used
+  in the paper, in four themed subdirectories of standalone `.py` drivers and written analyses. The
+  exploratory Colab notebooks were removed in the 2026-08-26 cleanup; recover them from the
+  `pre-cleanup-2026-08-26` tag if a referee asks.
+    - `stopping_condition/` — six drivers (`choice_stability_stopping.py`,
+      `convergence_speed_analysis.py`, `parameter_search.py`, `post_stopping_drift.py`,
+      `stopping_tolerance_sensitivity.py`, `tolerance_vs_alphabeta.py`) plus
+      `STOPPING_CONDITION_ANALYSIS.md` and `CHOICE_STABILITY_STOPPING_PLAN.md`. **This is the
+      justification for the stability window of 100 and the horizon of 100,000 used in §6.1.**
+    - `phase_dynamics/` — `convergence_studies.py`, `two_phase_dynamics.py`.
+    - `root_node_influence/` — `root_influence_analysis.py`, `ROOTNODE_HYPOTHESIS.md`,
+      `BANDITSxNETWORKS_ANALYSIS_BRIEF.md`.
+    - `formal_markov/` — Markov-chain formalisation: `HYPOTHESIS.md`, `STOCHASTIC_HYPOTHESIS.md`.
 
-      The seven notebooks are four *source* studies plus three *executed snapshots*, distinguished by naming convention: spaced names (`A. Choice Stability Stopping Study.ipynb`) are the editable sources; underscored names (`A_Choice_Stability_Stopping_Study.ipynb`) are committed snapshots of a completed Colab run, carrying full outputs and running to several MB. Three of the four sources have a snapshot; `A. Stopping Condition Study v2.ipynb` does not. Edit the spaced files; treat the underscored ones as read-only results.
-    - `phase_dynamics/` — `convergence_studies.py`, `two_phase_dynamics.py`, and a Colab study notebook.
-    - `root_node_influence/` — `root_influence_analysis.py`, a Colab notebook, and `ROOTNODE_HYPOTHESIS.md`.
-    - `formal_markov/` — Markov-chain formalisation: a Colab notebook plus `HYPOTHESIS.md` and `STOCHASTIC_HYPOTHESIS.md`.
-
-    `00_Colab_Template.ipynb` is the starting template for a new study; `MC_AGENT.md` and `OPEN_QUESTIONS.md` sit at the top of the folder.
-- **`testing/notebooks/`**: Sandbox Jupyter notebooks (`basic_model_testing.ipynb`, `basic_model_testing_v2.ipynb`, `vectorized_basic_model_testing.ipynb`, `reproducing_zollman.ipynb`, `variation_methods_test.ipynb`) useful for rapid prototyping and generating quick visualization plots locally without invoking the full multiprocessing overhead.
-- **`results/`**: Analysis notebooks (`simulation_analysis.ipynb`, `playground_Hein.ipynb`) and the `zollman_2007.csv` reference dataset. Bulk simulation outputs are not committed — large runs write to Google Drive.
-- **`scripts/archive/`**: Historical one-shot scripts, retained for provenance only. Not runnable against the current tree.
+    `MC_AGENT.md` and `OPEN_QUESTIONS.md` sit at the top of the folder.
+- **`results/`**: The committed paper figures, the two simulation summary CSVs, the
+  `zollman_2007.csv` reference dataset, and [`MANIFEST.md`](results/MANIFEST.md), which maps each
+  artifact to its source and its place in the paper. Bulk simulation state is not committed — large
+  runs write to Google Drive and are aggregated by notebook 2d.
 
 ## Project Documentation
 - status: active
 
-In addition to this README, the project root contains several living documents that track workflow, history, and feature design. New contributors (and AI assistants) should skim these before starting non-trivial work:
+This repository keeps a deliberately small governance bundle:
 
-- [TODO_WORKFLOW.md](TODO_WORKFLOW.md) — Active task list and goals, organised by priority with owners (Ignacio, Hein, Max). Replaces the previous `WORKPLAN.md`.
-- [WORKLOG.md](WORKLOG.md) — Append-only chronological log of significant changes and AI-assisted interventions. Most recent entry first.
-- [HOUSEKEEPING.md](HOUSEKEEPING.md) — Routine sanity-check workflow: unit tests, import checks, network integrity, notebook validation, and snapshot smoke test.
-- [docs/COLAB_MCP_WORKFLOW.md](docs/COLAB_MCP_WORKFLOW.md) — Protocol for driving this project's notebooks on Google Colab from an MCP client, and snapshotting executed state back into git.
-
-The `AI_AGENTS/` folder holds AI-agent–oriented context and historical design documents:
-
-- [AI_AGENTS/REPOSITORY_MAP.md](AI_AGENTS/REPOSITORY_MAP.md) — Module dependency map. **Note:** last verified 2026-03-15 and now partly stale — its directory listing still uses pre-rename notebook names. Treat this README's Directory Structure as authoritative.
-- [AI_AGENTS/MD_CONVENTIONS.md](AI_AGENTS/MD_CONVENTIONS.md) — Markdown-JSON hybrid schema all `.md` files follow.
-- [AI_AGENTS/WORKLOG.md](AI_AGENTS/WORKLOG.md) — Earlier AI-agent reference and intervention log, superseded by the root `WORKLOG.md`.
-- [AI_AGENTS/LINEARIZE_AGENT.md](AI_AGENTS/LINEARIZE_AGENT.md) — Brief for the vectorization effort that produced `VectorizedModel`.
-- [AI_AGENTS/ADD_SNAPSHOT_PLAN.md](AI_AGENTS/ADD_SNAPSHOT_PLAN.md) — Design document for the snapshot feature in `VectorizedModel` (records truth share and max belief change at fixed intervals during long simulations).
+- [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md) — What is excluded from the public repository
+  and why, what the 2026-08-26 cleanup removed, and the steps remaining before submission. **Read
+  this before restoring anything that looks missing.**
+- [HOUSEKEEPING.md](HOUSEKEEPING.md) — Routine sanity-check workflow: unit tests, import checks,
+  network integrity, notebook validation.
+- [results/MANIFEST.md](results/MANIFEST.md) — Figure and data traceability from the paper back to
+  the code, including an honest record of which figures are *not* reproducible from this repo.
+- [CITATION.cff](CITATION.cff) — Machine-readable citation metadata.
+- [LICENSE](LICENSE) — MIT.
 
 ## Directory Structure
 - status: active
@@ -215,89 +261,60 @@ The `AI_AGENTS/` folder holds AI-agent–oriented context and historical design 
 ```
 e_network_inequality/
 │
-├── 1. Citation Data and Networks Generation.ipynb   # Step 1: fetch OpenAlex data, build networks
-├── 2. GColab Simulations.ipynb                      # Step 2: run simulations on Colab
-├── 2. GColab Simulations Equality.ipynb             # Step 2 (variant): equality + clustering runs
-├── 3. Results Data Analysis.ipynb                   # Step 3: analyse and plot results
-├── 3. Local Simulations SA.ipynb                    # Step 3 (variant): local sensitivity analysis
-├── 4. Network-Visualizations.ipynb                  # Step 4: network stats and visualisations
-├── A. GColab Simulations Playground.ipynb           # Appendix: experimental Colab sandbox
+├── 1. Citation Data and Networks Generation.ipynb   # Stage 1: fetch OpenAlex data, build networks
+├── 2a. GColab Simulations Equality - Literature.ipynb        # Stage 2: literature parameters
+├── 2b. GColab Simulations Equality - Harder.ipynb            # Stage 2: harder regime
+├── 2c. GColab Simulations Equality - Phase Transition.ipynb  # Stage 2: phase-transition regime
+├── 2d. GColab Simulations Equality - Aggregation.ipynb       # Stage 2: aggregate partial runs
+├── 3. Results Data Analysis.ipynb                   # Stage 3: regressions and paper figures
+├── 4. Network-Visualizations.ipynb                  # Stage 4: network stats and visualisations
 │
 ├── model/                          # All model and simulation code
-│   ├── __init__.py
 │   ├── agents.py                   # Legacy OO agent classes: Bandit, BetaAgent, BayesAgent (immutable)
 │   ├── model.py                    # Legacy OO Model class (immutable)
 │   ├── simulation_functions.py     # Wrappers for running Model in parallel (immutable)
 │   ├── bandit.py                   # VectorizedBandit — vectorized multi-armed bandit
 │   ├── vectorized_model.py         # Fast vectorized simulation (primary engine)
 │   ├── vectorized_simulation_functions.py  # Wrappers for VectorizedModel
-│   └── convergence_analysis/       # Targeted convergence studies (notebooks + .py drivers + .md analyses)
-│       ├── 00_Colab_Template.ipynb # Starting template for a new study
-│       ├── MC_AGENT.md             # Markov-chain analysis brief
-│       ├── OPEN_QUESTIONS.md
-│       ├── stopping_condition/     # Stopping-criterion studies (7 notebooks = 4 sources
-│       │                           #   + 3 executed snapshots; 6 drivers, 2 analyses)
+│   ├── equality_study.py           # The paper's simulation study: variants, runs, aggregation
+│   └── convergence_analysis/       # Stopping-condition groundwork (.py drivers + .md analyses)
+│       ├── stopping_condition/     # Justifies the §6.1 stopping parameters
 │       ├── phase_dynamics/         # Two-phase convergence dynamics
 │       ├── root_node_influence/    # Influence of root/source nodes
 │       └── formal_markov/          # Formal Markov-chain treatment
 │
 ├── networks/                       # Network generation and manipulation
-│   ├── __init__.py
 │   ├── network_generation.py       # Synthetic graph generators (BA, WS, etc.)
-│   ├── variation_methods.py        # Network variation utilities (densify, equalize)
-│   └── citation_data/              # Pickled empirical networks and raw works (.pkl, .json)
+│   ├── variation_methods.py        # The network variation method (paper §5)
+│   └── citation_data/              # The three empirical networks + PUD/perceptron artifacts
 │                                   #   pud_/tobacco_/ego_network.pkl are the three live networks
+│                                   #   *_works.pkl (raw OpenAlex, ~150 MB) are gitignored
 │
 ├── utils/                          # Shared utilities
-│   ├── __init__.py
 │   ├── imports.py                  # Central external library re-export hub
 │   ├── network_utils.py            # Network statistics and helper functions
 │   ├── network_plot_utils.py       # Network plotting helpers
 │   ├── mc_analysis.py              # Markov Chain analysis utilities
-│   ├── data_analysis_utils.py      # OLS regression, multicollinearity (VIF/Pearson), Cohen's f², diagnostics
-│   └── sa_network_variation_directed.py  # Sensitivity analysis over directed network variations
+│   └── data_analysis_utils.py      # OLS regression, multicollinearity (VIF/Pearson), Cohen's f²
 │
-├── testing/                        # All tests (no __init__.py — run via unittest discover)
-│   ├── unit_tests/                 # Automated test suite — 32 tests
-│   │   ├── test_agents.py          # Tests for Bandit and BetaAgent
-│   │   ├── test_vectorization.py   # Equivalence tests: Model vs VectorizedModel
-│   │   ├── test_mc_analysis.py     # Tests for Markov Chain analysis utilities
-│   │   ├── test_stopping_conditions.py    # Tolerance / step / AUC / choice-stability stopping
-│   │   ├── basic_model_testing_script.py           # Manual script, not collected by discover
-│   │   └── vectorized_basic_model_testing_script.py
-│   └── notebooks/                  # Interactive testing notebooks
-│       ├── basic_model_testing.ipynb
-│       ├── basic_model_testing_v2.ipynb            # Snapshot-enabled variant
-│       ├── vectorized_basic_model_testing.ipynb
-│       ├── reproducing_zollman.ipynb
-│       └── variation_methods_test.ipynb
+├── testing/unit_tests/             # Automated test suite (run via unittest discover)
+│   ├── test_agents.py              # Tests for Bandit and BetaAgent
+│   ├── test_vectorization.py       # Equivalence tests: Model vs VectorizedModel
+│   ├── test_mc_analysis.py         # Tests for Markov Chain analysis utilities
+│   ├── test_stopping_conditions.py # Tolerance / step / AUC / choice-stability stopping
+│   └── test_equality_study_aggregation.py  # Aggregation contract for notebooks 2a–2d
 │
-├── results/                        # Analysis notebooks + reference data
-│   ├── simulation_analysis.ipynb
-│   ├── playground_Hein.ipynb
-│   └── zollman_2007.csv            # Zollman (2007) reference values
-│
-├── figures/                        # Exported figures (currently empty; contents are gitignored)
-├── docs/
-│   └── COLAB_MCP_WORKFLOW.md       # Driving notebooks on Colab from an MCP client
-├── scripts/
-│   └── archive/                    # Historical one-shot scripts — not runnable, kept for provenance
-│       └── fix_notebook_paths.py
-│
-├── AI_AGENTS/                      # AI-agent context and historical design documents
-│   ├── REPOSITORY_MAP.md           # Module dependency map (partly stale — see above)
-│   ├── MD_CONVENTIONS.md           # Markdown-JSON schema conventions
-│   ├── WORKLOG.md                  # Earlier AI intervention log (superseded by root WORKLOG.md)
-│   ├── LINEARIZE_AGENT.md          # Brief for the vectorization effort
-│   └── ADD_SNAPSHOT_PLAN.md        # Snapshot feature design document
+├── results/                        # Paper figures, summary CSVs, and MANIFEST.md
+├── figures/                        # Local figure exports (gitignored contents)
 │
 ├── README.md                       # This file
-├── TODO_WORKFLOW.md                # Active task list and goals (replaces WORKPLAN.md)
-├── WORKLOG.md                      # Append-only chronological change log
+├── PUBLICATION_CHECKLIST.md        # What is excluded and why; pre-submission steps
 ├── HOUSEKEEPING.md                 # Routine sanity-check workflow
+├── CITATION.cff                    # Machine-readable citation metadata
+├── LICENSE                         # MIT
 ├── .env.example                    # Template for OPEN_ALEX_API_KEY
 ├── requirements.txt
-└── setup.py
+└── pyproject.toml
 ```
 
 Not shown: `.venv/`, `__pycache__/`, `.claude/`, `.pytest_cache/`, `.ruff_cache/`, and your local `.env` — all gitignored.
@@ -306,7 +323,24 @@ Not shown: `.venv/`, `__pycache__/`, `.claude/`, `.pytest_cache/`, `.ruff_cache/
 - status: active
 
 - **Immutable Core Files**: Do not modify `model/agents.py`, `model/model.py`, or `model/simulation_functions.py`. They are the baseline source of truth that `test_vectorization.py` checks `VectorizedModel` against. Create new versions (subclasses or new files) instead.
-- **Markdown Conventions**: All `.md` files must follow the [Markdown-JSON Hybrid Schema](AI_AGENTS/MD_CONVENTIONS.md).
-- **AI Agents**: If you are an AI assistant, start with this README, then [HOUSEKEEPING.md](HOUSEKEEPING.md) (what to run before and after changes) and [TODO_WORKFLOW.md](TODO_WORKFLOW.md) (what is in flight). [AI_AGENTS/](AI_AGENTS/) holds supplementary and historical context.
+- **Scope discipline**: This repository is scoped to the paper. Before adding a file, ask whether a
+  reader reproducing the paper's results needs it — see [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md).
+- **No CI, no merge gates, no linters.** Research code; the correctness unit is the figure. The
+  honest substitute for a build is Restart-and-Run-All over the notebooks, plus the unit tests.
 - **Import Convention**: All files use absolute imports from the project root (e.g., `from model.vectorized_model import VectorizedModel`, `from utils.imports import *`), except within-package relative imports inside `model/` (e.g. `from .bandit import VectorizedBandit`). Notebooks add the project root to `sys.path` at startup.
 - **Verify before committing**: Run the [Housekeeping Workflow](HOUSEKEEPING.md) — unit tests, import check, network integrity, notebook validation, and the snapshot smoke test.
+
+## Citation and License
+- status: active
+
+If you use this code or the derived networks, please cite the paper. Machine-readable metadata is in
+[CITATION.cff](CITATION.cff); GitHub renders it in the sidebar.
+
+> Duijf, H., Noichl, M., & Ojea Quintana, I. (2026). *Inequality and the Reliability of Science*.
+
+The bibliometric data underlying the networks comes from [OpenAlex](https://openalex.org/) and is
+subject to OpenAlex's terms. The code is released under the [MIT License](LICENSE),
+© 2026 Hein Duijf, Max Noichl, and Ignacio Ojea Quintana.
+
+**Archived version:** a DOI-bearing snapshot has not yet been minted — see
+[PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md).

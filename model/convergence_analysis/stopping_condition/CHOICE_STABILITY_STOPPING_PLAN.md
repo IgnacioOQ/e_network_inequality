@@ -124,7 +124,7 @@ Reusing the `post_stopping_drift.py` structure, compare choice-stability vs tole
 
 - Add a new study section (and a §4-style reasoning block) to `STOPPING_CONDITION_ANALYSIS.md`; mark open questions #2 (post-stopping drift) and #4 (credence vs parameter stopping) as addressed, and add a new one on the W-invariance of truth-share.
 - Reconcile `MC_AGENT.md`: `vectorized_model.py` is no longer immutable for this work — record the user authorization and the backwards-compatibility guarantee.
-- Append entries to `WORKLOG.md` and `AI_AGENTS/AGENTS_LOG.md` per repo convention. All markdown follows `AI_AGENTS/MD_CONVENTIONS.md`.
+- *(Historical note: this plan referenced `WORKLOG.md` and the `AI_AGENTS/` convention documents, both removed in the 2026-08-26 cleanup. Recover them from the `pre-cleanup-2026-08-26` tag if needed.)*
 
 **Verification:** docs updated and internally consistent; close the tracking task (`cp_mcp_task_close`, `todo.choice_stability_stopping`).
 
