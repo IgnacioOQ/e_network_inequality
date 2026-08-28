@@ -3,21 +3,45 @@ name = "e-network-inequality"
 version = "0.1.0"
 description = "Companion code for 'Inequality and the Reliability of Science' (Duijf, Noichl & Ojea Quintana): network-epistemology simulations on empirically grounded citation networks."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "dill>=0.4.1",
-    "dotenv>=0.9.9",
-    "joblib>=1.5.3",
-    "matplotlib>=3.11.1",
-    "networkx>=3.6.1",
-    "numpy>=2.5.1",
-    "pandas>=3.0.5",
-    "pyalex>=0.21",
-    "scikit-learn>=1.9.0",
-    "scipy>=1.18.0",
-    "seaborn>=0.13.2",
-    "statsmodels>=0.14.6",
-    "tqdm>=4.69.0",
-    "pytest>=8.0",
+    # Simulation and analysis core.
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=2.0",
+    "networkx>=3.1",
+    "scikit-learn>=1.3",
+    "statsmodels>=0.14",
+    "joblib>=1.3",
+    "dill>=0.3.7",
     "pyarrow>=14.0",
+    "tqdm>=4.66",
+    # Plotting.
+    "matplotlib>=3.7",
+    "seaborn>=0.13",
+    # Notebook runtime: notebooks 1 and 3 use IPython.display; 2a-2d stamp runs
+    # with pytz-localised timestamps.
+    "ipython>=8.0",
+    "pytz>=2023.3",
+    # Data collection (notebook 1): OpenAlex client and the .env reader that
+    # supplies OPEN_ALEX_API_KEY.
+    "pyalex>=0.15",
+    "python-dotenv>=1.0",
+    # Test runner.
+    "pytest>=8.0",
 ]
+
+[project.optional-dependencies]
+# Notebook 4 only. Kept out of the default install because that notebook also
+# needs `NetworkInequality.edgebundling`, which is not on any package index --
+# see PUBLICATION_CHECKLIST.md.
+viz = [
+    "powerlaw>=1.5",
+    "graphistry>=0.34",
+    "colormaps>=0.4",
+]
+
+[tool.pytest.ini_options]
+# `slow` marks the end-to-end simulation smoke test in
+# unit_tests/test_repo_integrity.py. Skip it with: pytest -m "not slow"
+markers = ["slow: end-to-end check that runs a full simulation"]
