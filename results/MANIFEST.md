@@ -1,14 +1,12 @@
 # Results Manifest
 
-- status: active
-- type: reference
-- description: Maps every committed artifact in `results/` to the code that produced it and the place it appears in the paper. Gaps are recorded explicitly rather than glossed over.
-
 Paper: *Inequality and the Reliability of Science* (Duijf, Noichl & Ojea Quintana).
 Because the manuscript tree is outside this repository (see [PUBLICATION_CHECKLIST.md](../PUBLICATION_CHECKLIST.md)),
 this file is the only surviving link between the published figures and the code.
 
 ## Figures
+
+The figures live in [`figures/`](figures/); the paths in the table below are relative to it.
 
 | File | Source | Paper location | Reproducible? |
 |:---|:---|:---|:---|
@@ -26,7 +24,7 @@ this file is the only surviving link between the published figures and the code.
 **Filenames in notebook 3 are constructed, not literal.** Figures are written through a
 `savefig(fig_path, ...)` helper where `fig_path = Path(paper_fig_dir) / filename`, so grepping
 the notebook for a `.png` name finds nothing — the name appears only as a `filename="..."` argument.
-This table is the navigation path from paper to code. Notebook 3 also writes to `results/` only
+This table is the navigation path from paper to code. Notebook 3 also writes to `results/figures/` only
 when `RUNNING_LOCALLY` is true; on Colab it targets `STUDY_ROOT / 'figures'`.
 
 **Only option 1 writes the per-network regression figures.** All three condition blocks call the
@@ -38,7 +36,7 @@ same plotting helper, but the `filename=` argument is *commented out* in options
 | 40–43 | option 2 — harder | No — `# filename=...` is commented out | `super_hard_problems_regression_grid.png` |
 | 54–57 | option 3 — phase transition | No — `# filename=...` is commented out | `varying_easiness_regression_grid.png` |
 
-So the three unsuffixed `*_regression_plot.png` files in this folder are **option 1 (literature
+So the three unsuffixed `*_regression_plot.png` files in `figures/` are **option 1 (literature
 parameters)** output, and nothing overwrites them. Options 2 and 3 are represented in the repository
 only by their grid figures. If the paper needs per-network figures for those conditions too,
 uncomment the `filename=` arguments — and give them condition-specific names at the same time, since
