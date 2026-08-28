@@ -43,6 +43,12 @@ slides/
 # reproduces, and untracking them made a collaborator's first pull delete their
 # local copy. See PUBLICATION_CHECKLIST.md before changing this.
 
+# ---------------------------------------------------------------------------
+# Methodological groundwork kept local — not part of the published companion
+# code. Untracked 2026-08-28; still reachable in history before that commit.
+# ---------------------------------------------------------------------------
+model/convergence_analysis/
+
 # Tooling caches
 .pytest_cache/
 .ruff_cache/
