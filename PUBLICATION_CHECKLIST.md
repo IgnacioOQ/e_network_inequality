@@ -59,7 +59,7 @@ was considered and **declined**:
    would have to be rewritten or dropped with it.
 
 **Corrected 2026-08-28.** This section previously said the dumps appeared "in no checkout from
-`d00ee0b` onward" and that the rewrite would have to take "24 other branches" with it. Both were
+`d2b7965` onward" and that the rewrite would have to take "24 other branches" with it. Both were
 wrong: the dumps were re-tracked the same day they were untracked, and the branch count was read
 from stale remote-tracking refs — the remote has two branches, not twenty-five. The decision stands
 on reason 1, which is unaffected; reason 2 is now much weaker than it looked.
@@ -121,7 +121,7 @@ in the working tree.
 
 - **`model/convergence_analysis/` untracked and gitignored.** The stopping-condition groundwork is
   kept locally but is not part of the published companion code. It remains reachable in history up
-  to `d8b71d3`; it is *not* deleted from anyone's disk by this repository, but pulling the
+  to `849d932`; it is *not* deleted from anyone's disk by this repository, but pulling the
   untracking commit will remove it from a collaborator's working tree — the same mechanism
   documented for the raw dumps above. Tell co-authors to back the folder up before they pull.
 - **`networks/citation_data/` reduced to the `*_works.pkl` / `*_network.pkl` pairs.** Removed:
