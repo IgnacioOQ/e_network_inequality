@@ -46,21 +46,26 @@ helpfully re-adds the excluded material undoes the boundary.
 ## Repository history — a settled decision, not an oversight
 
 **The raw OpenAlex dumps remain in git history, and that is deliberate (decided 2026-08-26).**
-`networks/citation_data/*_works.pkl` were untracked, so they appear in no checkout of any commit
-from `d00ee0b` onward. They are still reachable in history, which is why GitHub reports the
-repository at ~586 MB while a checkout is ~20 MB.
+`networks/citation_data/*_works.pkl` are tracked at `HEAD` — see *Raw data is tracked on purpose*
+below — and every superseded copy is also reachable in history, from the day they were briefly
+untracked and re-tracked. A checkout is ~159 MB, of which the dumps are ~147 MB; the local `.git`
+directory is roughly six times that.
 
-Purging them would mean `git filter-repo` plus force-replacing the remote. That was considered and
-**declined**, for two reasons:
+Purging the historical copies would mean `git filter-repo` plus force-replacing the remote. That
+was considered and **declined**:
 
-1. It rewrites *every* ref. The repository's 24 other branches would have to go with it — they
-   point at the old objects and would otherwise keep the data reachable. Those branches were
-   explicitly left alone.
-2. Both co-authors are actively pushing and would each have to re-clone.
+1. Both co-authors are actively pushing and would each have to re-clone.
+2. It rewrites every ref, so the one other branch (`alternative-simulated-annealing`, unmerged)
+   would have to be rewritten or dropped with it.
+
+**Corrected 2026-08-28.** This section previously said the dumps appeared "in no checkout from
+`d00ee0b` onward" and that the rewrite would have to take "24 other branches" with it. Both were
+wrong: the dumps were re-tracked the same day they were untracked, and the branch count was read
+from stale remote-tracking refs — the remote has two branches, not twenty-five. The decision stands
+on reason 1, which is unaffected; reason 2 is now much weaker than it looked.
 
 Do not "clean this up" without raising it first. The cost of the rewrite is coordination, not
-disk, and the current state is correct for every practical purpose: nobody who clones gets the
-150 MB in their working tree.
+disk.
 
 ### Raw data is tracked on purpose
 
