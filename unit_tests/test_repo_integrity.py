@@ -44,11 +44,8 @@ IMPORTABLE_MODULES = [
     "model.simulation_functions",
     "model.vectorized_model",
     "model.vectorized_simulation_functions",
-    "networks.network_generation",
     "networks.variation_methods",
-    "utils.data_analysis_utils",
     "utils.imports",
-    "utils.mc_analysis",
     "utils.network_utils",
 ]
 
@@ -59,10 +56,9 @@ def test_module_imports_from_the_project_root(module_name):
     importlib.import_module(module_name)
 
 
-@pytest.mark.parametrize("module_name", ["utils.imports", "utils.network_utils",
-                                         "networks.network_generation"])
+@pytest.mark.parametrize("module_name", ["utils.imports", "utils.network_utils"])
 def test_star_import_hub_exports_something(module_name):
-    """The three modules the notebooks consume with `from X import *`.
+    """The modules the notebooks consume with `from X import *`.
 
     Importing them is not enough: a hub that imports cleanly but exports nothing
     breaks every notebook downstream of it, silently and at the first use.
@@ -84,10 +80,7 @@ def test_published_network_loads_at_its_published_size(filename, n_nodes, n_edge
 
 
 def test_every_citation_network_unpickles():
-    """Including `tobacco_extended`, which no published study loads.
-
-    It ships alongside the three episodes, so a reader will try it.
-    """
+    """All shipped networks must unpickle cleanly."""
     paths = sorted(CITATION_DATA.glob("*_network.pkl"))
     assert paths, f"no *_network.pkl found in {CITATION_DATA}"
     for path in paths:
@@ -98,7 +91,7 @@ def test_every_citation_network_unpickles():
 def test_notebooks_are_valid_json_with_cells():
     """Catches a notebook truncated or mangled by a merge or a failed save."""
     notebooks = sorted(REPO_ROOT.glob("*.ipynb"))
-    assert len(notebooks) == 7, [nb.name for nb in notebooks]
+    assert len(notebooks) == 8, [nb.name for nb in notebooks]
     for notebook in notebooks:
         with open(notebook, encoding="utf-8") as f:
             content = json.load(f)

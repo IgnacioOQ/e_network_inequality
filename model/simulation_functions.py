@@ -3,13 +3,10 @@ from model.model import Model
 from utils.imports import *
 
 # from network_randomization import *
-from networks.network_generation import *
 from utils.network_utils import *
 
-G_default = barabasi_albert_directed(100, 5)
 
-
-def generate_parameters(_, G=G_default):
+def generate_parameters(_, G=None):
     unique_id = uuid.uuid4().hex
     # I am not sure what the three lines below are for
     process_seed = int.from_bytes(os.urandom(4), byteorder="little")
@@ -43,7 +40,7 @@ def generate_parameters(_, G=G_default):
 
 
 def generate_parameters_fixed(
-    _, G=G_default, uncertainty=0.005, n_experiments=50
+    _, G=None, uncertainty=0.005, n_experiments=50
 ):  # ,p_rewiring=0):
     unique_id = uuid.uuid4().hex
     # I am not sure what the three lines below are for
@@ -70,7 +67,7 @@ def generate_parameters_fixed(
 
 
 def generate_parameters_aggregate(
-    G=G_default, uncertainty=0.005, n_experiments=20, p_rewiring=0
+    G=None, uncertainty=0.005, n_experiments=20, p_rewiring=0
 ):
     unique_id = uuid.uuid4().hex
     # process_seed = int.from_bytes(os.urandom(4), byteorder='little')

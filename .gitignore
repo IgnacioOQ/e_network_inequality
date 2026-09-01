@@ -52,3 +52,5 @@ model/convergence_analysis/
 # Tooling caches
 .pytest_cache/
 .ruff_cache/
+
+model/convergence_analysis/

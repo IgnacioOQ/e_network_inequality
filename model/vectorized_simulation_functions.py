@@ -1,9 +1,6 @@
 from model.vectorized_model import VectorizedModel
 from utils.imports import *
-from networks.network_generation import *
 from utils.network_utils import *
-
-G_default = barabasi_albert_directed(100, 5)
 
 
 def run_vectorized_simulation_with_params(
