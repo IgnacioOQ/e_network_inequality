@@ -17,6 +17,10 @@ __pycache__/
 # MCP server config (local)
 .mcp.json
 
+# Phase-A variant cache (two-phase run) — a pure function of the variation
+# seeds, rebuilt on demand. See docs/PARALLELIZATION_PLAN.md.
+.variant_cache/
+
 # Generated outputs
 convergence_plot*.png
 root_influence_analysis*.png

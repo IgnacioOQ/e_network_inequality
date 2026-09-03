@@ -56,6 +56,7 @@ import traceback
 from multiprocessing import Pool
 from pathlib import Path
 
+import dill
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -209,6 +210,188 @@ def build_setting(
     # into a result row, so an un-cast np.int64 would silently vanish.
     setting.update({k: float(v) for k, v in network_statistics(variant).items()})
     return setting
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Variant cache — phase A of the two-phase run
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Variant construction is single-threaded, so in the one-phase run it leaves
+# num_cores - 1 cores idle while it works. The two-phase run builds every variant
+# of an arm up front, in parallel, and dumps each to a cache file; the replicate
+# loop then loads the variant instead of building it. The cache is a pure
+# function of the variation seeds (see docs/PARALLELIZATION_PLAN.md), so it is
+# disposable: delete it and the next run rebuilds it. Keep it on fast local
+# storage, never a Drive mount.
+
+VARIANT_CACHE_EXT = ".pkl"
+
+
+def variant_cache_dir(cache_root, network_label, method):
+    """The cache directory for one arm — mirrors :func:`arm_dir`."""
+    return Path(cache_root) / f"{network_label}_{method}"
+
+
+def variant_cache_path(cache_root, network_label, method, variant_index):
+    return (
+        variant_cache_dir(cache_root, network_label, method)
+        / f"variant_{variant_index:05d}{VARIANT_CACHE_EXT}"
+    )
+
+
+def completed_variant_caches(directory):
+    """Variant indices whose cache file is on disk — the phase-A resume state.
+
+    The mirror of :func:`completed_variants` (which is the phase-B / results
+    resume state). A directory listing, never a read of the cached objects.
+    """
+    directory = Path(directory)
+    if not directory.is_dir():
+        return set()
+    done = set()
+    for p in directory.iterdir():
+        if p.name.startswith("variant_") and p.suffix == VARIANT_CACHE_EXT:
+            try:
+                done.add(int(p.stem.split("_")[1]))
+            except (IndexError, ValueError):
+                continue
+    return done
+
+
+def write_variant_cache(setting, path):
+    """Dump one built ``setting`` dict atomically.
+
+    Same tmp-then-``os.replace`` guard as :func:`write_shard`: a kill mid-write
+    must not leave a truncated file that a later phase-A resume then trusts.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "wb") as f:
+        dill.dump(setting, f)
+    os.replace(tmp, path)
+    return path
+
+
+def read_variant_cache(path):
+    with open(path, "rb") as f:
+        return dill.load(f)
+
+
+_BUILDER = {}
+
+
+def _init_builder(G, method, sequences, n_runs, uncertainty, n_experiments, build_kwargs, directory):
+    _BUILDER.update(
+        G=G,
+        method=method,
+        sequences=sequences,
+        n_runs=n_runs,
+        uncertainty=uncertainty,
+        n_experiments=n_experiments,
+        build_kwargs=build_kwargs,
+        directory=Path(directory),
+    )
+
+
+def _build_one(i):
+    # variant_seeds' variation seed is an independent child of the variant
+    # sequence, so n_runs cannot perturb it; passed through only to match how
+    # run_arm derives the same value.
+    variation_seed, _ = variant_seeds(_BUILDER["sequences"][i], _BUILDER["n_runs"])
+    t0 = time.time()
+    setting = build_setting(
+        _BUILDER["G"],
+        _BUILDER["method"],
+        variation_seed,
+        uncertainty=_BUILDER["uncertainty"],
+        n_experiments=_BUILDER["n_experiments"],
+        **_BUILDER["build_kwargs"],
+    )
+    build_sec = time.time() - t0
+    write_variant_cache(
+        setting, _BUILDER["directory"] / f"variant_{i:05d}{VARIANT_CACHE_EXT}"
+    )
+    return i, build_sec
+
+
+BUILD_COST_COLS = ["network", "method", "variant_index", "build_sec", "num_cores"]
+
+
+def build_variants(
+    networks,
+    cache_root,
+    *,
+    methods=METHODS,
+    skip=(),
+    master_seed,
+    n_variants,
+    n_runs,
+    uncertainty,
+    n_experiments,
+    num_cores,
+    variant_slice=None,
+    build_kwargs=None,
+    progress=True,
+    sim_kwargs=None,  # accepted and ignored, so a notebook can hand the same
+    #                   kwargs dict to build_variants and run_study
+):
+    """Phase A: build every requested variant in parallel and cache it to disk.
+
+    Enumerates ``(network, arm, variant)`` exactly as :func:`run_study` does, so
+    the cache it writes lines up one-to-one with what :func:`run_arm` asks for.
+    Resumable: a variant whose cache file already exists is left alone, so a
+    rerun after a disconnect only builds what is missing. ``variant_slice``
+    restricts the session to ``range(start, stop)`` just as in :func:`run_arm`.
+
+    Returns a per-variant build-cost table. Passing the resulting ``cache_root``
+    to :func:`run_study` as ``variant_cache_root`` makes phase B load instead of
+    build; without that argument the study still runs, building inline as before.
+    """
+    build_kwargs = build_kwargs or {}
+    skip = {tuple(s) for s in skip}
+    cache_root = Path(cache_root)
+    rows = []
+    for label, G in networks:
+        for method in methods:
+            if (label, method) in skip:
+                print(f"  [{label}/{method}] SKIPPED by configuration")
+                continue
+            directory = variant_cache_dir(cache_root, label, method)
+            directory.mkdir(parents=True, exist_ok=True)
+
+            sequences = variant_sequences(master_seed, label, method, n_variants)
+            wanted = range(n_variants) if variant_slice is None else range(*variant_slice)
+            done = completed_variant_caches(directory)
+            todo = [i for i in wanted if i not in done]
+
+            print(
+                f"  [{label}/{method}] {len(wanted)} variants requested, "
+                f"{len(done & set(wanted))} already cached, {len(todo)} to build"
+            )
+            if not todo:
+                continue
+
+            with Pool(
+                num_cores,
+                initializer=_init_builder,
+                initargs=(G, method, sequences, n_runs, uncertainty, n_experiments, build_kwargs, directory),
+            ) as pool:
+                it = pool.imap_unordered(_build_one, todo)
+                if progress:
+                    it = tqdm(it, total=len(todo), desc=f"[{label}/{method}] build", unit="variant")
+                for i, build_sec in it:
+                    rows.append(
+                        {
+                            "network": label,
+                            "method": method,
+                            "variant_index": i,
+                            "build_sec": build_sec,
+                            "num_cores": num_cores,
+                        }
+                    )
+
+    return pd.DataFrame(rows, columns=BUILD_COST_COLS)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -544,6 +727,7 @@ def run_arm(
     sim_kwargs,
     num_cores,
     variant_slice=None,
+    variant_cache_root=None,
     build_kwargs=None,
     progress=True,
 ):
@@ -552,6 +736,12 @@ def run_arm(
     `variant_slice` is a ``(start, stop)`` pair restricting this session to a
     bounded index range, so several machines can divide an arm between them
     without coordinating. Leave it ``None`` to take the whole arm.
+
+    `variant_cache_root` points at a phase-A cache written by
+    :func:`build_variants`. When set, a variant whose cache file exists is loaded
+    rather than rebuilt (``build_sec`` then measures the load); a missing entry
+    falls back to an inline build, so the argument is safe to pass before phase A
+    has been run for every variant.
 
     Returns the per-variant cost table. The replicate rows themselves stay on
     disk — a finished arm is a million rows and does not belong in a notebook
@@ -582,14 +772,20 @@ def run_arm(
         variation_seed, replicate_seeds = variant_seeds(sequences[i], n_runs)
 
         t0 = time.time()
-        setting = build_setting(
-            G,
-            method,
-            variation_seed,
-            uncertainty=uncertainty,
-            n_experiments=n_experiments,
-            **build_kwargs,
-        )
+        setting = None
+        if variant_cache_root is not None:
+            cpath = variant_cache_path(variant_cache_root, network_label, method, i)
+            if cpath.exists():
+                setting = read_variant_cache(cpath)
+        if setting is None:
+            setting = build_setting(
+                G,
+                method,
+                variation_seed,
+                uncertainty=uncertainty,
+                n_experiments=n_experiments,
+                **build_kwargs,
+            )
         build_sec = time.time() - t0
 
         t1 = time.time()
