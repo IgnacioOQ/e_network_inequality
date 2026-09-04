@@ -91,7 +91,7 @@ def test_every_citation_network_unpickles():
 def test_notebooks_are_valid_json_with_cells():
     """Catches a notebook truncated or mangled by a merge or a failed save."""
     notebooks = sorted(REPO_ROOT.glob("*.ipynb"))
-    assert len(notebooks) == 8, [nb.name for nb in notebooks]
+    assert len(notebooks) == 9, [nb.name for nb in notebooks]
     for notebook in notebooks:
         with open(notebook, encoding="utf-8") as f:
             content = json.load(f)
