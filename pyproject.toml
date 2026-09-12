@@ -19,9 +19,14 @@ dependencies = [
     # Plotting.
     "matplotlib>=3.7",
     "seaborn>=0.13",
+    "colorspacious>=1.1.2",
+    "opinionated>=0.0.3.0",
+    # opinionated imports pkg_resources, removed in Setuptools 82.
+    "setuptools<82",
     # Notebook runtime: notebooks 1 and 3 use IPython.display; 2a-2d stamp runs
     # with pytz-localised timestamps.
     "ipython>=8.0",
+    "ipykernel>=6.29",
     "pytz>=2023.3",
     # Data collection (notebook 1): OpenAlex client and the .env reader that
     # supplies OPEN_ALEX_API_KEY.

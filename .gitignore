@@ -22,6 +22,7 @@ __pycache__/
 .variant_cache/
 
 # Generated outputs
+data/
 convergence_plot*.png
 root_influence_analysis*.png
 two_phase_dynamics*.png

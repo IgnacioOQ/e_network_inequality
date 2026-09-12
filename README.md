@@ -110,8 +110,15 @@ With [uv](https://docs.astral.sh/uv/) (the canonical path — `pyproject.toml` a
 source of truth):
 
 ```bash
-uv sync                 # simulation, analysis and test dependencies
+uv sync                 # simulation, analysis, notebook kernel and test dependencies
 uv sync --extra viz     # additionally: notebook 4's plotting stack
+```
+
+This creates a local `.venv`. In your editor's notebook kernel picker, select
+`.venv/bin/python`. To activate the same environment in a terminal on macOS/Linux:
+
+```bash
+source .venv/bin/activate
 ```
 
 With pip, from the generated lockfile export:
@@ -161,6 +168,15 @@ sharing a number are alternatives at that stage, not sequential steps.
 | 2d | `2d. GColab Simulations Equality - Aggregation.ipynb` | Aggregates the 2a/2b/2c partial runs into the summary CSVs in `results/`. Resumable across sessions. |
 | 3 | `3. Results Data Analysis.ipynb` | Load the summary CSVs, run the regressions, produce the §6.2 figures. |
 | 4 | `4. Network-Visualizations.ipynb` | Network statistics and visualisations (Figure 1 family). |
+
+The combined analysis at the bottom of notebook 3 reads the local study in
+`data/equality_study/<condition>/full/` (`easy`, `moderate`, `hard`, and `super_hard`).
+Extract `data/equality_study.zip` into `data/` to supply these inputs; the whole
+`data/` directory is ignored by Git. The loader uses `variant_summary.csv` when
+available and aggregates downloaded shards otherwise. It reports missing or
+partial groups, and the balanced overall estimate uses only conditions complete
+for all three networks. The original Option 1–3 sections retain their historical
+inputs in `results/`.
 
 Stages 2a–2c are the three parameter conditions of the study reported in §6.1; each is a multi-day
 Google Colab job whose partial outputs 2d accumulates. The headline runs use problem easiness 0.001,
