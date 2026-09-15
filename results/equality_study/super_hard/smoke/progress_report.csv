@@ -1,0 +1,4 @@
+network,method,variants_done,variants_target,sims_done,sims_target,pct_complete,variants_left,sims_left,beyond_target,sec_per_variant,hours_left,status
+pud,equalize,3,3,24,24,100.0,0,0,0,0.8,0.0,complete
+tobacco,equalize,3,3,24,24,100.0,0,0,0,0.9,0.0,complete
+ego,equalize,3,3,24,24,100.0,0,0,0,0.9,0.0,complete

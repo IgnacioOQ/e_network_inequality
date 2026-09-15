@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "master_seed": 20260724,
+  "max_steps": 100000,
+  "methods": [
+    "equalize"
+  ],
+  "min_steps": 0,
+  "n_experiments": 1000,
+  "n_runs": 1000,
+  "n_variants": 1000,
+  "option": "hard",
+  "proportion_edges_max": 0.1,
+  "skip_arms": [],
+  "smoke": false,
+  "uncertainty": 0.001,
+  "window": 100
+}

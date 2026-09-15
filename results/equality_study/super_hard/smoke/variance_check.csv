@@ -1,0 +1,10 @@
+network,method,variant_index,n_runs,n_unique_seeds,seeds_distinct,std_share_of_correct_agents_at_convergence,std_convergence_step,std_proportion_reached_by_truth,any_variance
+pud,equalize,0,8,8,True,0.13134366146642712,276.39328863053095,0.07047841364647374,True
+pud,equalize,1,8,8,True,0.12726345765505898,329.95823599358755,0.07657804862272348,True
+pud,equalize,2,8,8,True,0.1451903816152442,424.2696666036826,0.11771191816894476,True
+tobacco,equalize,0,8,8,True,0.12551229416816695,0.0,0.012203058805939337,True
+tobacco,equalize,1,8,8,True,0.12489144721988892,0.0,0.014882915686924961,True
+tobacco,equalize,2,8,8,True,0.16818475607313832,0.0,0.016594572745026702,True
+ego,equalize,0,8,8,True,0.1773022079001261,0.0,0.0,True
+ego,equalize,1,8,8,True,0.29597071223040294,0.0,0.0017217204846609116,True
+ego,equalize,2,8,8,True,0.2573938534484361,0.0,0.5,True
