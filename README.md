@@ -17,8 +17,7 @@ from bibliometric data (peptic ulcer disease, tobacco and health, ego depletion)
 inequality-varying counterfactual variants of each; **(3)** running Bayesian bandit simulations
 across both and testing statistically whether equality predicts reliability.
 
-The manuscript itself is not tracked here — see [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md)
-for what is deliberately excluded and why.
+The manuscript itself is not tracked in this repository.
 
 ## The model
 
@@ -130,11 +129,10 @@ pip install -r requirements.txt
 Notebook 1 also needs an OpenAlex API key: copy `.env.example` to `.env` and fill in
 `OPEN_ALEX_API_KEY`. The other notebooks read the pre-built networks and need no key.
 
-**Known gap — `NetworkInequality`.** `utils/network_plot_utils.py` imports
-`NetworkInequality.edgebundling`, a small package that lives outside this repository (written for a
-separate Hugging Face app) and is on no package index. Running `4. Network-Visualizations.ipynb`
-end to end therefore fails for anyone but the authors; notebooks 1, 2a–2d and 3 are unaffected.
-Resolving this is tracked in [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md).
+**Optional edge bundling.** `utils/network_plot_utils.py` can use `NetworkInequality.edgebundling`,
+a small package that lives outside this repository and is on no package index. Notebook 4 treats it
+(and Graphistry/igraph) as optional: without it, the notebook falls back to a community-weighted
+spring layout with straight edges. Notebooks 1–3 do not use it.
 
 ## Usage
 
@@ -156,35 +154,58 @@ simulation smoke test, marked `slow` — skip it with `pytest unit_tests -m "not
 
 ### Notebooks
 
-The entry points are at the project root. The leading number is the workflow stage; notebooks
-sharing a number are alternatives at that stage, not sequential steps.
+The entry points are at the project root, numbered by workflow stage.
 
 | Stage | Notebook | Purpose |
 |:--|:---|:---|
 | 1 | `1. Citation Data and Networks Generation.ipynb` | Fetch OpenAlex data and build the three empirical networks. Needs an API key. |
-| 2a | `2a. GColab Simulations Equality - Literature.ipynb` | Colab study, literature-standard parameters. |
-| 2b | `2b. GColab Simulations Equality - Harder.ipynb` | Colab study, harder inquiry regime. |
-| 2c | `2c. GColab Simulations Equality - Phase Transition.ipynb` | Colab study, phase-transition regime. |
-| 2d | `2d. GColab Simulations Equality - Aggregation.ipynb` | Aggregates the 2a/2b/2c partial runs into the summary CSVs in `results/`. Resumable across sessions. |
-| 3 | `3. Results Data Analysis.ipynb` | Load the summary CSVs, run the regressions, produce the §6.2 figures. |
-| 4 | `4. Network-Visualizations.ipynb` | Network statistics and visualisations (Figure 1 family). |
+| 2 | `2. Simulations.ipynb` | Run the equality study: one self-contained, resumable study per difficulty condition, then combine the four summaries. |
+| 3 | `3. Results Data Analysis.ipynb` | Regressions of reliability on degree Gini (controlling for clustering): a combined LaTeX table, per-condition detail, and the combined four-condition model with its figures. |
+| 4 | `4. Network-Visualizations.ipynb` | Build and plot an empirical network next to its equalized and randomized variants, plus degree distributions. |
 
-The combined analysis at the bottom of notebook 3 reads the local study in
-`data/equality_study/<condition>/full/` (`easy`, `moderate`, `hard`, and `super_hard`).
-Extract `data/equality_study.zip` into `data/` to supply these inputs; the whole
-`data/` directory is ignored by Git. The loader uses `variant_summary.csv` when
-available and aggregates downloaded shards otherwise. It reports missing or
-partial groups, and the balanced overall estimate uses only conditions complete
-for all three networks. The original Option 1–3 sections retain their historical
-inputs in `results/`.
+Notebooks 2 and 3 run either locally (`RUNNING_LOCALLY = True`, reading and writing
+`results/equality_study/`) or on Google Colab (clone the repository, read and write Google Drive).
 
-Stages 2a–2c are the three parameter conditions of the study reported in §6.1; each is a multi-day
-Google Colab job whose partial outputs 2d accumulates. The headline runs use problem easiness 0.001,
-1,000 experiments per step, a stability window of 100 and a horizon of 100,000 steps, with 1,000
-network variants per empirical network at rewiring probabilities sampled uniformly in [0, 10%].
+### The equality study
 
-For the mapping from each committed figure and CSV back to the notebook that produced it, see
-[results/MANIFEST.md](results/MANIFEST.md).
+The study in notebook 2 (machinery in `model/equality_study.py`) is nested: for each empirical
+network it builds `N_VARIANTS` counterfactual variants with the *equalize* method, editing a
+fraction of edges drawn uniformly from [0, 10%], and simulates each variant `N_RUNS` times under
+different seeds. Problem difficulty (the gap between the two theories' success rates) is the one
+parameter that varies across the four conditions; everything else is held fixed.
+
+| Condition | Easiness ε | Master seed |
+|:---|:---|:---|
+| `easy` | 0.1 | 20260722 |
+| `moderate` | 0.01 | 20260723 |
+| `hard` | 0.001 | 20260724 |
+| `super_hard` | 0.0001 | 20260725 |
+
+Shared settings of the full runs: 1,000 variants per network, 1,000 runs per variant, 1,000
+experiments per step, choice-stability stopping with a window of 100 and no minimum, and a horizon
+of 100,000 steps — 3 networks × 4 conditions × 1,000 variants = 12,000 variant summaries. With
+`ACCUMULATE = True` (the default), every variant is checkpointed as it finishes, so an interrupted
+study resumes where it stopped; `SMOKE_TEST = True` runs a tiny grid into a separate `smoke/`
+directory to check the plumbing. The notebook can also be converted to a script with
+`jupyter nbconvert --to script` and run with `ipython`.
+
+### Results
+
+Each study writes to `results/equality_study/<condition>/<run_tag>/`, where `<run_tag>` is `full`
+or `smoke`:
+
+- `equality_study_config.json` — the parameters and seed the study ran with;
+- `variant_summary.csv` (and per-network `variant_summary_<network>.csv`) — one row per variant:
+  network statistics (degree Gini, clustering, …) and the reliability outcomes averaged over its
+  runs;
+- diagnostics: `parameter_coverage.csv`, `variance_check.csv`, `progress_report.csv`,
+  `runtime_projection.csv`, `cost_all_arms.csv`, `failed_arms.json`, and a per-network scatter plot.
+
+The per-variant simulation shards are not committed; the summaries are. The last cell of notebook 2
+stacks the four `full` summaries into `results/equality_study/variant_summary_combined.csv`, which
+is what notebook 3 reads. Notebook 3 writes its figures to `results/figures/`: the combined
+regression facets (`combined_conditions_regression_facets*`), in shared and zoomed y-scales, each
+with grayscale, protanopia and deuteranopia previews.
 
 ## Repository layout
 
@@ -192,8 +213,7 @@ For the mapping from each committed figure and CSV back to the notebook that pro
 e_network_inequality/
 │
 ├── 1. Citation Data and Networks Generation.ipynb   # Stage 1: fetch OpenAlex data, build networks
-├── 2a-2c. GColab Simulations Equality - *.ipynb     # Stage 2: the three parameter conditions
-├── 2d. GColab Simulations Equality - Aggregation.ipynb
+├── 2. Simulations.ipynb                             # Stage 2: the equality study, four conditions
 ├── 3. Results Data Analysis.ipynb                   # Stage 3: regressions and paper figures
 ├── 4. Network-Visualizations.ipynb                  # Stage 4: network stats and visualisations
 │
@@ -204,7 +224,6 @@ e_network_inequality/
 │   └── equality_study.py                              # The paper's study: variants, runs, aggregation
 │
 ├── networks/
-│   ├── network_generation.py       # Synthetic graph generators (BA, WS, etc.)
 │   ├── variation_methods.py        # The network variation method (paper §5)
 │   └── citation_data/              # *_works.pkl (raw OpenAlex) + *_network.pkl (derived)
 │
@@ -212,15 +231,15 @@ e_network_inequality/
 │   ├── imports.py                  # Central external-library re-export hub
 │   ├── network_utils.py            # Network statistics and helpers
 │   ├── network_plot_utils.py       # Network plotting helpers
-│   ├── mc_analysis.py              # Markov chain analysis utilities
-│   └── data_analysis_utils.py      # OLS regression, VIF/Pearson, Cohen's f²
+│   └── equality_plots.py           # Figure rendering for notebook 3
 │
 ├── unit_tests/                     # Automated test suite
 │
-├── results/                        # Summary CSVs, zollman_2007.csv, MANIFEST.md
-│   └── figures/                    # Committed paper figures
+├── results/
+│   ├── equality_study/             # Per-condition study outputs + variant_summary_combined.csv
+│   └── figures/                    # Figures written by notebook 3
 │
-├── README.md, PUBLICATION_CHECKLIST.md
+├── README.md
 ├── CITATION.cff, LICENSE, .env.example
 └── pyproject.toml, uv.lock, requirements.txt
 ```
@@ -231,17 +250,14 @@ e_network_inequality/
   `model/simulation_functions.py` — they are the baseline that `test_vectorization.py` checks
   `VectorizedModel` against. Subclass or add new files instead.
 - **Scope discipline.** Before adding a file, ask whether a reader reproducing the paper's results
-  needs it — see [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md).
+  needs it.
 - **No CI, no merge gates, no linters.** Research code; the correctness unit is the figure. The
   honest substitute for a build is Restart-and-Run-All over the notebooks, plus the unit tests.
 - **Imports** are absolute from the project root (`from model.vectorized_model import ...`), except
   within-package relative imports inside `model/`. Notebooks add the project root to `sys.path` at
   startup.
 
-Supporting documents: [PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md) (what is excluded and
-why, plus remaining pre-submission steps), [results/MANIFEST.md](results/MANIFEST.md) (figure and
-data traceability, including which figures are *not* reproducible from this repo),
-[CITATION.cff](CITATION.cff), [LICENSE](LICENSE).
+Supporting documents: [CITATION.cff](CITATION.cff), [LICENSE](LICENSE).
 
 ## Citation and license
 
@@ -250,9 +266,8 @@ If you use this code or the derived networks, please cite the paper; machine-rea
 
 > Duijf, H., Noichl, M., & Ojea Quintana, I. (2026). *Inequality and the Reliability of Science*.
 
-The bibliometric data comes from [OpenAlex](https://openalex.org/) and is subject to OpenAlex's
-terms. The code is released under the [MIT License](LICENSE), © 2026 Hein Duijf, Max Noichl and
-Ignacio Ojea Quintana.
+The code is released under the [MIT License](LICENSE), © 2026 Hein Duijf, Max Noichl and
+Ignacio Ojea Quintana. The bibliometric data comes from [OpenAlex](https://openalex.org/), which
+releases its data under CC0.
 
-A DOI-bearing archived snapshot has not yet been minted — see
-[PUBLICATION_CHECKLIST.md](PUBLICATION_CHECKLIST.md).
+A DOI-bearing archived snapshot has not yet been minted.
