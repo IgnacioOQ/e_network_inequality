@@ -1,5 +1,6 @@
 """Shared rendering for the equality-study figures in the analysis notebook."""
 
+import io
 from pathlib import Path
 
 import matplotlib.image as mpimg
@@ -152,7 +153,7 @@ def _transform_pixels(rgb, mode):
 
 
 def finished_plot_previews(png_path, *, prefix=''):
-    """Save/display grayscale and red–green simulations of a finished plot."""
+    """Display grayscale and red–green simulations of a finished plot; nothing is written."""
     png_path = Path(png_path)
     pixels = mpimg.imread(png_path)
     rgb = pixels[..., :3]
@@ -164,13 +165,11 @@ def finished_plot_previews(png_path, *, prefix=''):
         'protanopia': 'Protanopia simulation (full severity)',
         'deuteranopia': 'Deuteranopia simulation (full severity)',
     }
-    paths = {}
     for mode, label in modes.items():
-        path = png_path.with_name(f'{png_path.stem}_{mode}.png')
-        mpimg.imsave(path, _transform_pixels(rgb, mode), dpi=300)
-        paths[mode] = path
+        # Encoded in memory: the previews are for checking the figure, not deliverables.
+        buffer = io.BytesIO()
+        mpimg.imsave(buffer, _transform_pixels(rgb, mode), format='png', dpi=300)
         print(prefix + label, flush=True)
-        display(Image(filename=str(path), width=1080))
-        print(f'Saved: {path}')
-    print('Transformations applied to the finished figure, including its legend and shading.')
-    return paths
+        display(Image(data=buffer.getvalue(), width=1080))
+    print('Transformations applied to the finished figure, including its legend and shading. '
+          'Previews are displayed only; the saved files are the original PNG and SVG.')
